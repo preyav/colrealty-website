@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_head %}
+  <!-- Leaflet CSS & JS -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+{% endblock %}
+
+{% block title %}{{ listing.title }} – Col Realty{% endblock %}
+
+{% block content %}
+<section class="bg-gradient-to-b from-sky-50 to-slate-50 border-b border-slate-200">
+  <div class="max-w-6xl mx-auto px-4 pt-8 pb-6">
+    <a href="{% url 'listings:list' %}" class="inline-flex items-center text-xs text-slate-500 hover:text-sky-600 mb-3">
+      ← Back to all listings
+    </a>
+
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+      <h1 class="text-2xl md:text-3xl font-semibold tracking-tight text-slate-900">
+        {{ listing.street_address }}
+      </h1>
+      <span class="inline-flex items-center px-3 py-1 rounded-full bg-sky-50 text-[11px] text-sky-700 font-medium">
+        {{ listing.get_status_display }}
+      </span>
+    </div>
+
+    <p class="text-sm text-slate-600 mb-4">
+      {{ listing.city }}, {{ listing.state }} {{ listing.zip_code }}
+    </p>
+
+    <div class="flex flex-wrap items-end gap-6 mb-4">
+      <p class="text-2xl font-semibold text-slate-900">
+        ${{ listing.price|floatformat:0 }}
+      </p>
+      <p class="text-sm text-slate-600">
+        {{ listing.beds|default_if_none:"-" }} bd ·
+        {{ listing.baths|default_if_none:"-" }} ba
+        {% if listing.sqft %}
+          · {{ listing.sqft|floatformat:0 }} sqft
+        {% endif %}
+        {% if listing.lot_size %}
+          · {{ listing.lot_size }} acres
+        {% endif %}
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="max-w-6xl mx-auto px-4 py-8 grid gap-8 lg:grid-cols-[1.6fr,1fr]">
+  <!-- Left column: images + details -->
+  <div class="space-y-6">
+    <!-- Main image -->
+    <div class="rounded-3xl overflow-hidden bg-slate-100 border border-slate-200">
+      <div class="aspect-[4/3]">
+        {% if listing.main_image_url %}
+          <img src="{{ listing.main_image_url }}"
+               alt="{{ listing.title }}"
+               class="w-full h-full object-cover">
+        {% else %}
+          <div class="w-full h-full flex items-center justify-center text-slate-400 text-xs">
+            Photo coming soon
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Property highlights -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-4">
+      <h2 class="text-sm font-semibold text-slate-900 mb-3">Property details</h2>
+      <dl class="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-3 text-[12px] text-slate-600">
+        <div>
+          <dt class="text-slate-500">MLS ID</dt>
+          <dd class="font-medium text-slate-800">{{ listing.mls_id }}</dd>
+        </div>
+        <div>
+          <dt class="text-slate-500">Property type</dt>
+          <dd class="font-medium text-slate-800">
+            {{ listing.property_type|default:"—" }}
+          </dd>
+        </div>
+        <div>
+          <dt class="text-slate-500">Year built</dt>
+          <dd class="font-medium text-slate-800">
+            {% if listing.year_built %}{{ listing.year_built }}{% else %}—{% endif %}
+          </dd>
+        </div>
+        <div>
+          <dt class="text-slate-500">Beds</dt>
+          <dd class="font-medium text-slate-800">
+            {{ listing.beds|default_if_none:"—" }}
+          </dd>
+        </div>
+        <div>
+          <dt class="text-slate-500">Baths</dt>
+          <dd class="font-medium text-slate-800">
+            {{ listing.baths|default_if_none:"—" }}
+          </dd>
+        </div>
+        <div>
+          <dt class="text-slate-500">Square feet</dt>
+          <dd class="font-medium text-slate-800">
+            {% if listing.sqft %}{{ listing.sqft|floatformat:0 }}{% else %}—{% endif %}
+          </dd>
+        </div>
+        <div>
+          <dt class="text-slate-500">Lot size</dt>
+          <dd class="font-medium text-slate-800">
+            {% if listing.lot_size %}{{ listing.lot_size }} acres{% else %}—{% endif %}
+          </dd>
+        </div>
+        <div>
+          <dt class="text-slate-500">Status</dt>
+          <dd class="font-medium text-slate-800">
+            {{ listing.get_status_display }}
+          </dd>
+        </div>
+        <div>
+          <dt class="text-slate-500">Last updated</dt>
+          <dd class="font-medium text-slate-800">
+            {{ listing.updated_at|date:"M j, Y" }}
+          </dd>
+        </div>
+      </dl>
+    </div>
+
+    <!-- Map placeholder -->
+<!-- Map / Location -->
+<div class="bg-white rounded-2xl border border-slate-200 p-4">
+  <div class="flex items-center justify-between mb-3">
+    <h2 class="text-sm font-semibold text-slate-900">Location</h2>
+  </div>
+  <p class="text-xs text-slate-600 mb-3">
+    {{ listing.street_address }}, {{ listing.city }}, {{ listing.state }} {{ listing.zip_code }}
+  </p>
+
+  <div class="rounded-xl border border-slate-200 overflow-hidden bg-slate-100">
+    <div id="map" class="w-full aspect-[16/9]"></div>
+  </div>
+
+  <p id="map-fallback" class="mt-2 text-[11px] text-slate-500 hidden">
+    Map is unavailable for this listing. Please contact us for more location details.
+  </p>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Use Django to inject lat/lng as JS values
+    const lat = {{ listing.latitude|default:"null" }};
+    const lng = {{ listing.longitude|default:"null" }};
+
+    const mapContainer = document.getElementById("map");
+    const fallbackText = document.getElementById("map-fallback");
+
+    if (lat !== null && lng !== null) {
+      const map = L.map("map").setView([lat, lng], 15);
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors',
+      }).addTo(map);
+
+      L.marker([lat, lng])
+        .addTo(map)
+        .bindPopup("{{ listing.street_address|escapejs }}")
+        .openPopup();
+    } else {
+      // If we don't have coordinates, hide the map & show fallback text
+      if (mapContainer) {
+        mapContainer.classList.add("hidden");
+      }
+      if (fallbackText) {
+        fallbackText.classList.remove("hidden");
+      }
+    }
+  });
+</script>
+
+  <!-- Right column: contact & quick facts -->
+  <div class="space-y-4">
+    <div class="bg-slate-900 text-slate-50 rounded-2xl p-5">
+      <h2 class="text-sm font-semibold mb-2">Schedule a tour or ask a question</h2>
+      <p class="text-[12px] text-slate-200 mb-4">
+        Want a quick video walkthrough, in-person showing, or investment analysis on this property?
+        Share a few details and we’ll follow up shortly.
+      </p>
+      <form class="space-y-3 text-[12px]">
+        <div>
+          <label class="block mb-1 text-slate-200">Name</label>
+          <input type="text"
+                 class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-500 text-slate-50">
+        </div>
+        <div>
+          <label class="block mb-1 text-slate-200">Email</label>
+          <input type="email"
+                 class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-500 text-slate-50">
+        </div>
+        <div>
+          <label class="block mb-1 text-slate-200">Phone (optional)</label>
+          <input type="text"
+                 class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-500 text-slate-50">
+        </div>
+        <div>
+          <label class="block mb-1 text-slate-200">What would you like to know?</label>
+          <textarea rows="3"
+                    class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-500 text-slate-50"></textarea>
+        </div>
+        <button type="submit"
+                class="w-full mt-1 px-4 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-900 font-semibold">
+          Contact Col Realty about this home
+        </button>
+      </form>
+      <p class="mt-3 text-[10px] text-slate-400">
+        No spam. Your info is only used to respond to this inquiry.
+      </p>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-slate-200 p-4 text-[12px] text-slate-600">
+      <h3 class="text-sm font-semibold text-slate-900 mb-2">Quick snapshot</h3>
+      <ul class="space-y-1.5">
+        <li>• Neighborhood: {{ listing.city }}, {{ listing.state }}</li>
+        <li>• Ideal for:
+          {% if listing.beds and listing.beds|floatformat:0 >= "3" %}
+            growing households or investors
+          {% else %}
+            first-time buyers or downsizers
+          {% endif %}
+        </li>
+        <li>• Ask your agent about nearby schools, commute routes, and rental potential.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+{% endblock %}

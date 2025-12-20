@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Contact | Col Realty{% endblock %}
+
+{% block content %}
+<section class="section">
+    <h1>Contact Col Realty</h1>
+    <p class="section-sub">
+        Have a quick question, or want to talk through buying or selling? Start here.
+    </p>
+
+    <div class="card-full">
+        <p>For now, this is a simple static form. Later, you can connect it to email or a CRM.</p>
+        <form class="contact-form">
+            <input type="text" name="name" placeholder="Your name" required />
+            <input type="email" name="email" placeholder="Email" required />
+            <input type="tel" name="phone" placeholder="Phone (optional)" />
+            <select name="role">
+                <option value="">I am…</option>
+                <option value="buyer">a Buyer</option>
+                <option value="seller">a Seller</option>
+                <option value="both">both (buying & selling)</option>
+                <option value="investor">an Investor</option>
+            </select>
+            <textarea name="message" rows="4" placeholder="How can we help?"></textarea>
+            <button type="submit">Send Message</button>
+        </form>
+    </div>
+</section>
+{% endblock %}

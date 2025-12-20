@@ -1,0 +1,32 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}Col Realty{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <header class="bg-white border-b border-slate-200">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="{% url 'pages:home' %}" class="font-semibold text-lg">Col Realty</a>
+      <nav class="flex gap-4 text-sm">
+        <a href="{% url 'pages:buy' %}">Buy</a>
+        <a href="{% url 'listings:list' %}">Listings</a>
+        <a href="{% url 'pages:contact' %}">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="mt-12 border-t border-slate-200">
+    <div class="max-w-6xl mx-auto px-4 py-4 text-xs text-slate-500">
+      © {% now "Y" %} Col Realty. All rights reserved.
+    </div>
+  </footer>
+</body>
+</html>

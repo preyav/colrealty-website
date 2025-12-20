@@ -1,0 +1,21 @@
+{% extends "core/base.html" %}
+{% block title %}Sell Your Home | Col Realty{% endblock %}
+
+{% block content %}
+<section class="section">
+    <h1>Sell with a Clear, Modern Plan</h1>
+    <p class="section-sub">
+        Get a straightforward view of value, timing, and what it takes to sell in today's Central Texas market.
+    </p>
+
+    <div class="card-full">
+        <h2>What You Get</h2>
+        <ul>
+            <li>Value range based on recent MLS activity.</li>
+            <li>Simple prep checklist for your home.</li>
+            <li>Digital-first marketing that meets buyers where they are.</li>
+        </ul>
+        <a href="{% url 'core:contact' %}" class="link-button">Request a Seller Consultation</a>
+    </div>
+</section>
+{% endblock %}

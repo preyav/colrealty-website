@@ -1,0 +1,40 @@
+{% load humanize %}
+{% extends "base.html" %}
+{% block title %}Search Results | Col Realty{% endblock %}
+
+{% block content %}
+<section class="section">
+    <h1>Search Results</h1>
+    <p class="section-sub">
+        Showing homes
+        {% if location %} near <strong>{{ location }}</strong>{% endif %}
+        {% if max_price %} under <strong>${{ max_price }}</strong>{% endif %}
+        {% if beds %} with at least <strong>{{ beds }} beds</strong>{% endif %}.
+    </p>
+
+    {% if listings %}
+    <div class="listing-grid">
+        {% for l in listings %}
+        <article class="listing-card">
+            <img src="{{ l.photo_url }}" alt="Listing photo" />
+            <div class="listing-body">
+                <h2>${{ l.price|floatformat:0|intcomma }}</h2>
+                <p class="address">
+                    {{ l.address }}, {{ l.city }}, {{ l.state }}
+                </p>
+                <p class="meta">
+                    {{ l.beds }} bd · {{ l.baths }} ba · {{ l.sqft }} sqft
+                </p>
+                <p class="mls-id">MLS #{{ l.mls_id }}</p>
+                <a href="{% url 'core:contact' %}" class="link-button small">
+                    Ask About This Home
+                </a>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p>No listings matched your filters. Try adjusting price, beds, or location.</p>
+    {% endif %}
+</section>
+{% endblock %}
