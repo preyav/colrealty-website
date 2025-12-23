@@ -1,5 +1,3 @@
-from django.db import models
-
 # Create your models here.
 from django.db import models
 
@@ -10,13 +8,14 @@ class Listing(models.Model):
         ("sold", "Sold"),
     ]
 
-    mls_id = models.CharField(max_length=64, unique=True, db_index=True)
-    title = models.CharField(max_length=255)
+    mls_id = models.CharField(max_length=128, unique=True, db_index=True)
+    mls_modification_timestamp = models.DateTimeField(null=True, blank=True)
+    title = models.CharField(max_length=512)
 
     street_address = models.CharField(max_length=255)
     city = models.CharField(max_length=100)
-    state = models.CharField(max_length=2)
-    zip_code = models.CharField(max_length=10)
+    state = models.CharField(max_length=50)
+    zip_code = models.CharField(max_length=20)
 
     price = models.DecimalField(max_digits=12, decimal_places=2)
     beds = models.DecimalField(max_digits=3, decimal_places=1, null=True, blank=True)
@@ -27,11 +26,12 @@ class Listing(models.Model):
     property_type = models.CharField(max_length=100, blank=True)
     year_built = models.IntegerField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=MLS_STATUS_CHOICES, default="active")
+    description = models.TextField(blank=True)
 
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
 
-    main_image_url = models.URLField(blank=True)
+    main_image_url = models.URLField(max_length=1000, blank=True)
     is_featured = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)

@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'listings',
     'pages',
+    'mls_sync',
 ]
 
 MIDDLEWARE = [
@@ -125,3 +126,6 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
+MLS_API_BASE_URL = env("MLS_API_BASE_URL", default="")
+MLS_API_TOKEN = env("MLS_API_TOKEN", default="")
+MLS_ORIGINATING_SYSTEM_NAME = env("MLS_ORIGINATING_SYSTEM_NAME", default="actris")
