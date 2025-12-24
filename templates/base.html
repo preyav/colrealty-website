@@ -2,31 +2,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>{% block title %}Col Realty{% endblock %}</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8" />
+    <title>{% block title %}Col Realty{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Optional Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    >
+
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    {% block extra_head %}{% endblock %}
 </head>
-<body class="bg-slate-50 text-slate-900">
-  <header class="bg-white border-b border-slate-200">
-    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-      <a href="{% url 'pages:home' %}" class="font-semibold text-lg">Col Realty</a>
-      <nav class="flex gap-4 text-sm">
-        <a href="{% url 'pages:buy' %}">Buy</a>
-        <a href="{% url 'listings:list' %}">Listings</a>
-        <a href="{% url 'pages:contact' %}">Contact</a>
-      </nav>
+<body class="page">
+<header class="site-header">
+    <div class="container header-inner">
+        <a href="/" class="brand">
+            <span class="brand-mark">CR</span>
+            <span class="brand-text">
+              <span class="brand-name">Col Realty</span>
+              <span class="brand-tagline">Modern Austin Real Estate</span>
+            </span>
+        </a>
+        <nav class="main-nav">
+            <a href="/" class="nav-link">Home</a>
+            <a href="/listings/" class="nav-link">Buy</a>
+            <a href="/contact/" class="nav-link">Contact</a>
+        </nav>
     </div>
-  </header>
+</header>
 
-  <main>
-    {% block content %}{% endblock %}
-  </main>
-
-  <footer class="mt-12 border-t border-slate-200">
-    <div class="max-w-6xl mx-auto px-4 py-4 text-xs text-slate-500">
-      © {% now "Y" %} Col Realty. All rights reserved.
+<main class="page-main">
+    <div class="container">
+        {% block content %}{% endblock %}
     </div>
-  </footer>
+</main>
+
+<footer class="site-footer">
+    <div class="container footer-inner">
+        <p>© {{ now|date:"Y" }} Col Realty. All rights reserved.</p>
+        <p class="footer-meta">Austin · Cedar Park · Round Rock · Central Texas</p>
+    </div>
+</footer>
+
+{% block extra_js %}{% endblock %}
 </body>
 </html>

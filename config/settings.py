@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'listings',
     'pages',
     'mls_sync',
+    'django.contrib.humanize',
 ]
 
 MIDDLEWARE = [
