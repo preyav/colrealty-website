@@ -44,5 +44,6 @@ class Listing(models.Model):
     def __str__(self):
         return f"{self.title} – {self.city}, {self.state}"
 
+
     def get_absolute_url(self):
-        return reverse("listing_detail", args=[self.pk])
+        return reverse("listings:listing_detail", args=[self.pk])
