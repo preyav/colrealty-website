@@ -28,7 +28,7 @@ class ListingListView(ListView):
         if beds:
             qs = qs.filter(beds__gte=beds)
 
-        return qs
+        return qs.filter(property_type__iexact="Residential")
 
 class ListingDetailView(DetailView):
     model = Listing
