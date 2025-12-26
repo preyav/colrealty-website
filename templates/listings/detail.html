@@ -12,12 +12,13 @@
   <div class="detail-gallery">
     {% if listing.main_image_url %}
       <img
+        class="detail-main-image-img"
         src="{{ listing.main_image_url }}"
         alt="{{ listing.title }}"
-        class="detail-main-image"
-      >
+        loading="lazy"
+      />
     {% else %}
-      <div class="detail-main-image" style="background: radial-gradient(circle at center, #31334b, #11111a);"></div>
+      <div class="detail-main-image-img" style="background: radial-gradient(circle at center, #31334b, #11111a);"></div>
     {% endif %}
 
     <div class="detail-content">

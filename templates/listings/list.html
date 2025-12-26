@@ -60,6 +60,8 @@
           <div class="listing-image-wrap">
             {% if listing.main_image_url %}
               <img src="{{ listing.main_image_url }}" alt="{{ listing.title }}" class="listing-image">
+            {% elif listing.main_image %}
+              <img src="{{ listing.main_image.url }}" alt="{{ listing.title }}">
             {% endif %}
 
             <div class="badge-strip">
