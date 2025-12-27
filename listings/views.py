@@ -5,30 +5,57 @@ from .models import Listing
 class ListingListView(ListView):
     model = Listing
     template_name = "listings/list.html"
-    context_object_name = "listings"
-    paginate_by = 12
+    paginate_by = 20
 
     def get_queryset(self):
-        qs = Listing.objects.filter(status="active")
-        q = self.request.GET.get("q")
-        min_price = self.request.GET.get("min_price")
-        max_price = self.request.GET.get("max_price")
-        beds = self.request.GET.get("beds")
+        qs = super().get_queryset()
 
-        if q:
-            qs = qs.filter(
-                Q(city__icontains=q) |
-                Q(zip_code__icontains=q) |
-                Q(street_address__icontains=q)
-            )
-        if min_price:
-            qs = qs.filter(price__gte=min_price)
-        if max_price:
-            qs = qs.filter(price__lte=max_price)
-        if beds:
-            qs = qs.filter(beds__gte=beds)
+        # 1) Base filter: Active + Residential
+        qs = qs.filter(
+            status__iexact="active",
+            property_type__iexact="Residential",
+        )
 
-        return qs.filter(property_type__iexact="Residential")
+        # 2) Text filters
+        city = (self.request.GET.get("city") or "").strip()
+        zip_code = (self.request.GET.get("zip") or "").strip()
+        neighborhood = (self.request.GET.get("neighborhood") or "").strip()
+
+        if city:
+            qs = qs.filter(city__iexact=city)
+
+        if zip_code:
+            qs = qs.filter(zip_code__iexact=zip_code)
+
+        if neighborhood:
+            # If you have a neighborhood field, use it; otherwise fallback to text search
+            if any(f.name == "neighborhood" for f in Listing._meta.fields):
+                qs = qs.filter(neighborhood__icontains=neighborhood)
+            else:
+                qs = qs.filter(
+                    Q(street_address__icontains=neighborhood) |
+                    Q(description__icontains=neighborhood) |
+                    Q(city__icontains=neighborhood)
+                )
+
+        # 3) Price range filters (min/max optional)
+        min_price_raw = (self.request.GET.get("min_price") or "").strip()
+        max_price_raw = (self.request.GET.get("max_price") or "").strip()
+
+        try:
+            if min_price_raw:
+                qs = qs.filter(price__gte=min_price_raw)
+        except (ValueError, TypeError):
+            pass
+
+        try:
+            if max_price_raw:
+                qs = qs.filter(price__lte=max_price_raw)
+        except (ValueError, TypeError):
+            pass
+
+        # 4) Sort newest first (or change to price, etc.)
+        return qs.order_by("-created_at")
 
 class ListingDetailView(DetailView):
     model = Listing
