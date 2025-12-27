@@ -13,7 +13,7 @@ class ListingListView(ListView):
         # 1) Base filter: Active + Residential
         qs = qs.filter(
             status__iexact="active",
-            property_type__iexact="Residential",
+            property_type__istartswith="residential",
         )
 
         # 2) Text filters
