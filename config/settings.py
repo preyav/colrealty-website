@@ -9,18 +9,21 @@ https://docs.djangoproject.com/en/6.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
-
 import os
 from pathlib import Path
 import environ
+
+ 
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 env = environ.Env(
     DJANGO_DEBUG=(bool, True),
 )
 
-# Read .env
-if os.path.exists(os.path.join(BASE_DIR, ".env")) and env.bool("DJANGO_DEBUG", default=False):
-    environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
+# Read .env ONLY for local development (when DJANGO_DEBUG is true)
+if os.path.exists(BASE_DIR / ".env") and env.bool("DJANGO_DEBUG", default=False):
+    environ.Env.read_env(str(BASE_DIR / ".env"))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
@@ -30,9 +33,6 @@ if os.path.exists(os.path.join(BASE_DIR, ".env")) and env.bool("DJANGO_DEBUG", d
 SECRET_KEY = env("DJANGO_SECRET_KEY")
 DEBUG = env("DJANGO_DEBUG")
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
- 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
 
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
