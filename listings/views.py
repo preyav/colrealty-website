@@ -5,56 +5,48 @@ from .models import Listing
 class ListingListView(ListView):
     model = Listing
     template_name = "listings/list.html"
-    paginate_by = 20
+    context_object_name = "listings"
+    paginate_by = 21
 
     def get_queryset(self):
-        qs = super().get_queryset()
+        # 1. Start with the base requirement: only active listings
+        qs = Listing.objects.filter(status="active")
+        
+        # 2. Get the property type from the URL (e.g., ?property_type=Residential)
+        # We use "Residential" as a default if nothing is provided
+        p_type = self.request.GET.get("property_type", "Residential")
+        
+        # 3. Apply the filter based on the variable
+        if p_type:
+            qs = qs.filter(property_type=p_type)
 
+<<<<<<< HEAD
         # 1) Base filter: Active + Residential
         qs = qs.filter(
             status__iexact="Active",
         )
+=======
+        # --- Your existing search logic ---
+        q = self.request.GET.get("q")
+        min_price = self.request.GET.get("min_price")
+        max_price = self.request.GET.get("max_price")
+        beds = self.request.GET.get("beds")
+>>>>>>> 2c0d81a (Polish UI for listings and detail pages)
 
-        # 2) Text filters
-        city = (self.request.GET.get("city") or "").strip()
-        zip_code = (self.request.GET.get("zip") or "").strip()
-        neighborhood = (self.request.GET.get("neighborhood") or "").strip()
+        if q:
+            qs = qs.filter(
+                Q(city__icontains=q) |
+                Q(zip_code__icontains=q) |
+                Q(street_address__icontains=q)
+            )
+        if min_price:
+            qs = qs.filter(price__gte=min_price)
+        if max_price:
+            qs = qs.filter(price__lte=max_price)
+        if beds:
+            qs = qs.filter(beds__gte=beds)
 
-        if city:
-            qs = qs.filter(city__iexact=city)
-
-        if zip_code:
-            qs = qs.filter(zip_code__iexact=zip_code)
-
-        if neighborhood:
-            # If you have a neighborhood field, use it; otherwise fallback to text search
-            if any(f.name == "neighborhood" for f in Listing._meta.fields):
-                qs = qs.filter(neighborhood__icontains=neighborhood)
-            else:
-                qs = qs.filter(
-                    Q(street_address__icontains=neighborhood) |
-                    Q(description__icontains=neighborhood) |
-                    Q(city__icontains=neighborhood)
-                )
-
-        # 3) Price range filters (min/max optional)
-        min_price_raw = (self.request.GET.get("min_price") or "").strip()
-        max_price_raw = (self.request.GET.get("max_price") or "").strip()
-
-        try:
-            if min_price_raw:
-                qs = qs.filter(price__gte=min_price_raw)
-        except (ValueError, TypeError):
-            pass
-
-        try:
-            if max_price_raw:
-                qs = qs.filter(price__lte=max_price_raw)
-        except (ValueError, TypeError):
-            pass
-
-        # 4) Sort newest first (or change to price, etc.)
-        return qs.order_by("-created_at")
+        return qs
 
 class ListingDetailView(DetailView):
     model = Listing
