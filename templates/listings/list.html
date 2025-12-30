@@ -23,32 +23,33 @@
 
   <div class="search-card">
     <div class="search-heading">
-      <h2>Search coming soon</h2>
-      <span>We’ll wire filters here next.</span>
     </div>
-    <form class="search-row" method="get" action="">
-      <input
-        type="text"
-        name="q"
-        class="input-field"
-        placeholder="Search by city, neighborhood, street..."
-      />
-      <input
-        type="text"
-        name="price_min"
-        class="input-field"
-        placeholder="Min price"
-      />
-      <input
-        type="text"
-        name="price_max"
-        class="input-field"
-        placeholder="Max price"
-      />
-    </form>
-    <button type="button" class="btn-primary" disabled>
-      Filters coming soon
-    </button>
+	<form class="search-row" method="get" action="">
+	  <input
+		type="text"
+		name="q"
+		class="input-field"
+		value="{{ request.GET.q|default_if_none:'' }}"
+		placeholder="Search by city, neighborhood, street..."
+	  />
+	  <input
+		type="text"
+		name="price_min"
+		class="input-field"
+		value="{{ request.GET.price_min|default_if_none:'' }}"
+		placeholder="Min price"
+	  />
+	  <input
+		type="text"
+		name="price_max"
+		class="input-field"
+		value="{{ request.GET.price_max|default_if_none:'' }}"
+		placeholder="Max price"
+	  />
+	  <button type="submit" class="btn-primary">
+		Search
+	  </button>
+	</form>
   </div>
 </section>
 
@@ -118,4 +119,24 @@
     <p>No listings found. Check back soon for new inventory.</p>
   {% endif %}
 </section>
+{% if is_paginated %}
+  <nav class="pagination">
+    {% if page_obj.has_previous %}
+      <a href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">← Prev</a>
+    {% endif %}
+
+    {% for p in paginator.page_range %}
+      {% if p == page_obj.number %}
+        <strong>{{ p }}</strong>
+      {% else %}
+        <a href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}page={{ p }}">{{ p }}</a>
+      {% endif %}
+    {% endfor %}
+
+    {% if page_obj.has_next %}
+      <a href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">Next →</a>
+    {% endif %}
+  </nav>
+{% endif %}
+
 {% endblock %}

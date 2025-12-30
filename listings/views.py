@@ -1,5 +1,8 @@
-from django.views.generic import ListView, DetailView
+import re
+from decimal import Decimal, InvalidOperation
 from django.db.models import Q
+from django.views.generic import ListView, DetailView
+
 from .models import Listing
 
 
@@ -10,35 +13,45 @@ class ListingListView(ListView):
     paginate_by = 21
 
     def get_queryset(self):
-        # 1. Start with the base requirement: only active listings
-        qs = Listing.objects.filter(status="active")
+        qs = (
+            Listing.objects
+            .filter(status="active", property_type__iexact="Residential")
+            .order_by("-created_at")
+        )
 
-        # 2. Get the property type from the URL (e.g., ?property_type=Residential)
-        # We use "Residential" as a default if nothing is provided
-        p_type = self.request.GET.get("property_type", "Residential")
+        # Single search field: city/zip/"neighborhood" (best-effort)
+        q = (self.request.GET.get("q") or "").strip()
 
-        # 3. Apply the filter based on the variable
-        if p_type:
-            qs = qs.filter(property_type=p_type)
-
-        # --- Your existing search logic ---
-        q = self.request.GET.get("q")
-        min_price = self.request.GET.get("min_price")
-        max_price = self.request.GET.get("max_price")
-        beds = self.request.GET.get("beds")
+        # Price filters (match your template names)
+        price_min = (self.request.GET.get("price_min") or "").strip()
+        price_max = (self.request.GET.get("price_max") or "").strip()
 
         if q:
+            q_zip = re.sub(r"\D", "", q)  # digits only, if user types zip-ish input
+
             qs = qs.filter(
-                Q(city__icontains=q) |
-                Q(zip_code__icontains=q) |
-                Q(street_address__icontains=q)
+                Q(city__icontains=q)
+                | Q(zip_code__icontains=(q_zip if q_zip else q))
+                # "Neighborhood" stand-in until you add a neighborhood field:
+                | Q(street_address__icontains=q)
+                | Q(title__icontains=q)
+                | Q(description__icontains=q)
             )
-        if min_price:
-            qs = qs.filter(price__gte=min_price)
-        if max_price:
-            qs = qs.filter(price__lte=max_price)
-        if beds:
-            qs = qs.filter(beds__gte=beds)
+
+        def to_decimal(val: str):
+            try:
+                cleaned = (val or "").replace(",", "").replace("$", "").strip()
+                return Decimal(cleaned) if cleaned else None
+            except (InvalidOperation, AttributeError):
+                return None
+
+        min_v = to_decimal(price_min)
+        max_v = to_decimal(price_max)
+
+        if min_v is not None:
+            qs = qs.filter(price__gte=min_v)
+        if max_v is not None:
+            qs = qs.filter(price__lte=max_v)
 
         return qs
 
