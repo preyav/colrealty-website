@@ -13,26 +13,24 @@ class ListingListView(ListView):
     paginate_by = 21
 
     def get_queryset(self):
-        qs = (
-            Listing.objects
-            .filter(status="active", property_type__iexact="Residential")
-            .order_by("-created_at")
-        )
+        qs = Listing.objects.all()
 
-        # Single search field: city/zip/"neighborhood" (best-effort)
+        # Base filters: Active + Residential (adjust if your MLS uses different wording)
+        qs = qs.filter(status="active").filter(
+            property_type__iexact="Residential")
+
+        # Single search field (q) across city / zip / street / title / description
         q = (self.request.GET.get("q") or "").strip()
 
-        # Price filters (match your template names)
+        # Price filters (match your template field names)
         price_min = (self.request.GET.get("price_min") or "").strip()
         price_max = (self.request.GET.get("price_max") or "").strip()
 
         if q:
-            q_zip = re.sub(r"\D", "", q)  # digits only, if user types zip-ish input
-
+            q_zip = re.sub(r"\D", "", q)  # digits only
             qs = qs.filter(
                 Q(city__icontains=q)
-                | Q(zip_code__icontains=(q_zip if q_zip else q))
-                # "Neighborhood" stand-in until you add a neighborhood field:
+                | Q(zip_code__icontains=q_zip if q_zip else q)
                 | Q(street_address__icontains=q)
                 | Q(title__icontains=q)
                 | Q(description__icontains=q)
@@ -40,7 +38,7 @@ class ListingListView(ListView):
 
         def to_decimal(val: str):
             try:
-                cleaned = (val or "").replace(",", "").replace("$", "").strip()
+                cleaned = val.replace(",", "").replace("$", "").strip()
                 return Decimal(cleaned) if cleaned else None
             except (InvalidOperation, AttributeError):
                 return None
@@ -53,7 +51,7 @@ class ListingListView(ListView):
         if max_v is not None:
             qs = qs.filter(price__lte=max_v)
 
-        return qs
+        return qs.order_by("-created_at")
 
 
 class ListingDetailView(DetailView):
