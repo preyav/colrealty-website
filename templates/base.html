@@ -15,6 +15,7 @@
     >
 
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+	<link rel="icon" href="{% static 'favicon.ico' %}">
     {% block extra_head %}{% endblock %}
 </head>
 <body class="page">
@@ -24,12 +25,17 @@
             <span class="brand-mark">CR</span>
             <span class="brand-text">
               <span class="brand-name">Col Realty</span>
-              <span class="brand-tagline">Modern Austin Real Estate</span>
+              <span class="brand-tagline">Austin Real Estate Company</span>
             </span>
         </a>
         <nav class="main-nav">
             <a href="/" class="nav-link">Home</a>
+            <a href="/buy/" class="nav-link">Buy</a>
+            <a href="/sell/" class="nav-link">Sell</a>
             <a href="/listings/" class="nav-link">Listings</a>
+            <a href="/callus/" class="nav-link">Call Us</a>
+            <a href="/lifestyle/" class="nav-link">Lifestyle</a>
+            <a href="/clientportal/" class="nav-link">Client Portal</a>
             <a href="/contact/" class="nav-link">Contact</a>
         </nav>
     </div>
