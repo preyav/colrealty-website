@@ -1,8 +1,0 @@
-DATABASE_URL postgresql://colrealty_db_user:2r4oV0TwRcmp8tea5RFE74kBZUH2p9Ul@dpg-d4s92du3jp1c73b68aig-a/colrealty_db
-DJANGO_ALLOWED_HOSTS colrealty.onrender.com
-DJANGO_DEBUG False
-DJANGO_SECRET_KEY f1b4633650258f7aab4125f1b67fb2f4
-
-MLS_API_BASE_URL https://api.mlsgrid.com/v2
-MLS_API_TOKEN 95c6a78bb95102caf100571f83b01adf8a546ce8
-MLS_ORIGINATING_SYSTEM_NAME actris
