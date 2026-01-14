@@ -1,59 +1,77 @@
 {% load static %}
+{% load humanize %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8" />
-    <title>{% block title %}Col Realty{% endblock %}</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-    <!-- Optional Google Font -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
-      rel="stylesheet"
-    >
 
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
-	<link rel="icon" href="{% static 'favicon.ico' %}">
-    {% block extra_head %}{% endblock %}
+
 </head>
+
 <body class="page">
-<header class="site-header">
-    <div class="container header-inner">
-        <a href="/" class="brand">
-            <span class="brand-mark">CR</span>
-            <span class="brand-text">
-              <span class="brand-name">Col Realty</span>
-              <span class="brand-tagline">Austin Real Estate Company</span>
-            </span>
-        </a>
-        <nav class="main-nav">
-            <a href="/" class="nav-link">Home</a>
-            <a href="/buy/" class="nav-link">Buy</a>
-            <a href="/sell/" class="nav-link">Sell</a>
-            <a href="/listings/" class="nav-link">Listings</a>
-            <a href="/callus/" class="nav-link">Call Us</a>
-            <a href="/lifestyle/" class="nav-link">Lifestyle</a>
-            <a href="/clientportal/" class="nav-link">Client Portal</a>
-            <a href="/contact/" class="nav-link">Contact</a>
-        </nav>
-    </div>
-</header>
+    <header class="site-header">
+        <div class="container header-inner">
+            <a href="/" class="brand">
+                <span class="brand-mark">CR</span>
+                <span class="brand-text">
+                    <span class="brand-name">Col Realty</span>
+                    <span class="brand-tagline">Realestate Redefined</span>
+                </span>
+            </a>
+            <nav class="main-nav">
+                <a href="{% url 'pages:home' %}" class="nav-link">Home</a>
+				<div class="nav-item has-dropdown">
+				  <a class="nav-link dropdown-toggle" href="{% url 'pages:buy' %}">
+					Buy <span class="chevron">▾</span>
+				  </a>
+				  <div class="dropdown-menu">
+					<a class="dropdown-link" href="{% url 'pages:buy_map' %}">Map</a>
+					<a class="dropdown-link" href="{% url 'pages:buy_neighborhoods' %}">Neighborhoods</a>
+					<a class="dropdown-link" href="{% url 'pages:buy_off_market' %}">Off-Market</a>
+				  </div>
+				</div>
+				<div class="nav-item has-dropdown">
+				  <a class="nav-link dropdown-toggle" href="{% url 'pages:sell' %}">
+					Sell <span class="chevron">▾</span>
+				  </a>
+				  <div class="dropdown-menu">
+					<a class="dropdown-link" href="{% url 'pages:sell_valuation' %}">Valuation</a>
+					<a class="dropdown-link" href="{% url 'pages:sell_marketing' %}">Marketing</a>
+					<a class="dropdown-link" href="{% url 'pages:sell_concierge' %}">Concierge</a>
+				  </div>
+				</div>
+				<div class="nav-item has-dropdown">
+				  <a class="nav-link dropdown-toggle" href="{% url 'pages:rent' %}">
+					Rent <span class="chevron">▾</span>
+				  </a>
+				  <div class="dropdown-menu">
+					<a class="dropdown-link" href="{% url 'pages:rent_marketing' %}">Marketing</a>
+				  </div>
+				</div>
+                <a href="/listings/" class="nav-link">Listings</a>
+                <a href="{% url 'pages:contact' %}" class="nav-link">Contact</a>
+                <a href="{% url 'pages:login' %}" class="nav-link">Join/Sign In</a>
+            </nav>
+        </div>
+    </header>
 
-<main class="page-main">
-    <div class="container">
-        {% block content %}{% endblock %}
-    </div>
-</main>
+    <main class="page-main">
+        <div class="container">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
 
-<footer class="site-footer">
-    <div class="container footer-inner">
-        <p>© {{ now|date:"Y" }} Col Realty. All rights reserved.</p>
-        <p class="footer-meta">Austin · Cedar Park · Round Rock · Central Texas</p>
-    </div>
-</footer>
+    <footer class="site-footer">
+        <div class="container footer-inner">
+            <p>© {{ now|date:"Y" }} Col Realty. All rights reserved.</p>
+            <p class="footer-meta">Austin · DFW · San Antonio</p>
+        </div>
+    </footer>
 
-{% block extra_js %}{% endblock %}
+    {% block extra_js %}{% endblock %}
 </body>
+
 </html>
+

@@ -3,43 +3,33 @@ from datetime import timedelta
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.utils import timezone
-
+from django.core.paginator import Paginator
 from listings.models import Listing
 
-
 def home(request):
-    # Base filters (align with your listing list page)
-    base = Listing.objects.filter(
-        status="active",
-        property_type__icontains="Residential"
-    )
+    qs = Listing.objects.all().order_by("-id")
 
-    new_listings = base.order_by("-created_at")[:3]
-
-    recently_sold = Listing.objects.filter(status="sold").order_by("-updated_at")[:1]
-    sold_one = recently_sold[0] if recently_sold else None
-
-    last_30 = timezone.now() - timedelta(days=30)
-    homes_sold_30_days = Listing.objects.filter(status="sold", updated_at__gte=last_30).count()
+    paginator = Paginator(qs, 12)  # 12 listings per page
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
 
     context = {
-        "new_listings": new_listings,
-        "recently_sold": sold_one,
-        "homes_sold_30_days": homes_sold_30_days,
-        # CTA labels (optional)
-        "cta_primary": "Book a Discovery Call",
-        "cta_buyer": "Find My Lifestyle Match",
-        "cta_seller": "Get Your Precision Equity Report",
-        "cta_newsletter": "Join The Neighborhood Edit",
+        "listings": page_obj,              # important: template loops over listings
+        "page_obj": page_obj,
+        "paginator": paginator,
+        "is_paginated": page_obj.has_other_pages(),
     }
     return render(request, "pages/home.html", context)
 
-
+# BUY pages
 def contact(request):
     return render(request, "pages/contact.html")
 
 
 # BUY pages
+def buy(request):
+    return render(request, "pages/buy.html")  
+
 def buy_map(request):
     return render(request, "pages/buy/map.html")
 
@@ -53,6 +43,9 @@ def buy_off_market(request):
 
 
 # SELL pages
+def sell(request):
+    return render(request, "pages/sell.html")  
+
 def sell_valuation(request):
     return render(request, "pages/sell/valuation.html")
 
@@ -65,18 +58,21 @@ def sell_concierge(request):
     return render(request, "pages/sell/concierge.html")
 
 
-# LIFESTYLE
-def lifestyle(request):
-    return render(request, "pages/lifestyle.html")
+# RENT
+def rent(request):
+    return render(request, "pages/rent.html")
 
+def rent_marketing(request):
+    return render(request, "pages/rent/marketing.html")
 
-# PORTAL placeholders
-def portal_login(request):
+# CONTACT
+def contact(request):
+    return render(request, "pages/contact.html")
+
+# LOGIN placeholders
+def login(request):
     return render(request, "pages/portal/login.html")
 
-
-def portal_dashboard(request):
-    return render(request, "pages/portal/dashboard.html")
 
 
 def health(request):
