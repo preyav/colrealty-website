@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Buy a Home | Col Realty{% endblock %}
+
+{% block content %}
+<section class="section">
+    <h1>Buy a Home in Central Texas</h1>
+    <p class="section-sub">
+        One simple place to see homes, understand the numbers, and talk with a local agent when you're ready.
+    </p>
+
+    <div class="card-full">
+        <h2>Essential Buyer Journey</h2>
+        <ol class="steps">
+            <li>Search live MLS homes that fit your life and budget.</li>
+            <li>Get a quick, realistic sense of monthly payments.</li>
+            <li>Book a short call or showing on the homes you like.</li>
+        </ol>
+        <a href="{% url 'pages:buy' %}" class="link-button">Start Browsing Homes</a>
+    </div>
+</section>
+{% endblock %}

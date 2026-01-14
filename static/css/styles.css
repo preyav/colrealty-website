@@ -41,11 +41,13 @@ body.page {
 .site-header {
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(18px);
-  background: linear-gradient(to bottom,
-      rgba(5, 6, 12, 0.9),
-      rgba(5, 6, 12, 0.6),
-      rgba(5, 6, 12, 0.3),
-      transparent);
+  background: linear-gradient(
+    to bottom,
+    rgba(5, 6, 12, 0.9),
+    rgba(5, 6, 12, 0.6),
+    rgba(5, 6, 12, 0.3),
+    transparent
+  );
   position: sticky;
   top: 0;
   z-index: 20;
@@ -529,12 +531,70 @@ body.page {
   color: var(--muted);
 }
 
-.detail-main-image-img {
-  width: 100%;
-  height: 420px;
-  /* adjust to match your design */
-  object-fit: cover;
-  border-radius: 16px;
-  /* match your card rounding */
+/* ===========================
+   NAV DROPDOWN (Buy submenu)
+   =========================== */
+.site-header,
+.header-inner,
+.main-nav,
+.container {
+  overflow: visible;
+}
+
+.main-nav { align-items: center; }
+
+.nav-item {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.dropdown-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dropdown-menu {
+  position: absolute;
+  left: 0;
+  top: 100%;
+  margin-top: 10px;
+  min-width: 220px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 10px;
+  box-shadow: var(--shadow-soft);
+  display: none;
+  z-index: 9999;
+}
+
+/* hover bridge so it doesn't close */
+.dropdown-menu::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0;
+  top: -12px;
+  height: 12px;
+}
+
+.dropdown-link {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 12px;
+  text-decoration: none;
+  color: var(--text);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.dropdown-link:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.has-dropdown:hover .dropdown-menu,
+.has-dropdown:focus-within .dropdown-menu {
   display: block;
 }
+
