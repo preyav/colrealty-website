@@ -1,5 +1,19 @@
-.env
-venv/
+# Python
 __pycache__/
+*.py[cod]
+*.pyo
+*.pyd
 *.pyc
+
+# Virtualenv
+venv/
+.venv/
+
+# Env files
+.env
+
+# Django collectstatic
+staticfiles/
+
+# Media
 media
