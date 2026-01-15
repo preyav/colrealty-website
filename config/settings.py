@@ -22,6 +22,7 @@ env = environ.Env(
 )
 
 # Read .env ONLY in local development
+<<<<<<< HEAD
 if env.bool("DJANGO_DEBUG", default=False):
     env_file = BASE_DIR / ".env"
     if env_file.exists():
@@ -31,9 +32,15 @@ if env.bool("DJANGO_DEBUG", default=False):
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 # SECURITY WARNING: keep the secret key used in production secret!
 # SECURITY WARNING: don't run with debug turned on in production!
+=======
+#if env.bool("DJANGO_DEBUG", default=False):
+env_file = BASE_DIR / ".env"
+if env_file.exists():
+    environ.Env.read_env(str(env_file))
+>>>>>>> 9434139 (Polish UI for listings and detail pages)
 
 SECRET_KEY = env("DJANGO_SECRET_KEY")
-DEBUG = env("DJANGO_DEBUG")
+DEBUG = env.bool("DJANGO_DEBUG", default=False)
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 DEBUG_PROPAGATE_EXCEPTIONS = True
 
@@ -96,7 +103,7 @@ ASGI_APPLICATION = "config.asgi.application"
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 DATABASES = {
-    "default": env.db("DATABASE_URL")
+    "default": env.db("DATABASE_URL", default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}")
 }
 
 
@@ -139,7 +146,6 @@ if AWS_STORAGE_BUCKET_NAME:
     AWS_S3_REGION_NAME = os.environ.get("AWS_S3_REGION_NAME", "us-east-1")
     AWS_S3_SIGNATURE_VERSION = "s3v4"
     AWS_S3_FILE_OVERWRITE = False
-
     AWS_S3_CUSTOM_DOMAIN = os.environ.get("AWS_S3_CUSTOM_DOMAIN")  # optional (CloudFront)
 
     STATIC_LOCATION = "static"
@@ -163,9 +169,9 @@ else:
     MEDIA_URL = "/media/"
     MEDIA_ROOT = BASE_DIR / "media"
     STORAGES = {
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-    },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        }
     }
 # MLS Connection
 
