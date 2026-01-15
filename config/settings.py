@@ -22,22 +22,11 @@ env = environ.Env(
 )
 
 # Read .env ONLY in local development
-<<<<<<< HEAD
-if env.bool("DJANGO_DEBUG", default=False):
-    env_file = BASE_DIR / ".env"
-    if env_file.exists():
-        environ.Env.read_env(str(env_file))
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
-# SECURITY WARNING: keep the secret key used in production secret!
-# SECURITY WARNING: don't run with debug turned on in production!
-=======
 #if env.bool("DJANGO_DEBUG", default=False):
 env_file = BASE_DIR / ".env"
 if env_file.exists():
     environ.Env.read_env(str(env_file))
->>>>>>> 9434139 (Polish UI for listings and detail pages)
 
 SECRET_KEY = env("DJANGO_SECRET_KEY")
 DEBUG = env.bool("DJANGO_DEBUG", default=False)
