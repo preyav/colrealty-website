@@ -157,11 +157,12 @@ else:
     STATIC_ROOT = BASE_DIR / "staticfiles"
     MEDIA_URL = "/media/"
     MEDIA_ROOT = BASE_DIR / "media"
-    STORAGES = {
-        "staticfiles": {
-            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    if not DEBUG:
+        STORAGES = {
+            "staticfiles": {
+                "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+            }
         }
-    }
 # MLS Connection
 
 MLS_API_BASE_URL = env("MLS_API_BASE_URL", default="")
