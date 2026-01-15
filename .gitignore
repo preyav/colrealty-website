@@ -12,8 +12,6 @@ venv/
 # Env files
 .env
 
-# Django collectstatic
-staticfiles/
 
 # Media
 media
