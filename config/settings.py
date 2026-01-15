@@ -21,14 +21,11 @@ env = environ.Env(
     DJANGO_DEBUG=(bool, False),
 )
 
-# Read .env ONLY for local development (when DJANGO_DEBUG is true)
-#if os.path.exists(BASE_DIR / ".env") and env.bool("DJANGO_DEBUG", default=False):
-#    environ.Env.read_env(str(BASE_DIR / ".env"))
-
-env_file = BASE_DIR / ".env"
-if env_file.exists():
-    environ.Env.read_env(str(env_file))
-
+# Read .env ONLY in local development
+if env.bool("DJANGO_DEBUG", default=False):
+    env_file = BASE_DIR / ".env"
+    if env_file.exists():
+        environ.Env.read_env(str(env_file))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
