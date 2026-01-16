@@ -15,6 +15,4 @@ venv/
 
 # Media
 media
-__pycache__/
-*.pyc
 
