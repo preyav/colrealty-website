@@ -20,10 +20,11 @@
                     <span class="brand-tagline">Realestate Redefined</span>
                 </span>
             </a>
+
             <nav class="main-nav">
                 <a href="{% url 'pages:home' %}" class="nav-link">Home</a>
 				<div class="nav-item has-dropdown">
-				  <a class="nav-link dropdown-toggle" href="{% url 'pages:buy' %}">
+				  <a class="nav-link dropdown-toggle" href="/listings/">
 					Buy <span class="chevron">▾</span>
 				  </a>
 				  <div class="dropdown-menu">
@@ -32,7 +33,7 @@
 					<a class="dropdown-link" href="{% url 'pages:buy_off_market' %}">Off-Market</a>
 				  </div>
 				</div>
-				<div class="nav-item has-dropdown">
+			<div class="nav-item has-dropdown">
 				  <a class="nav-link dropdown-toggle" href="{% url 'pages:sell' %}">
 					Sell <span class="chevron">▾</span>
 				  </a>
@@ -50,8 +51,8 @@
 					<a class="dropdown-link" href="{% url 'pages:rent_marketing' %}">Marketing</a>
 				  </div>
 				</div>
-                <a href="/listings/" class="nav-link">Listings</a>
-                <a href="{% url 'pages:contact' %}" class="nav-link">Contact</a>
+                <a href="{% url 'pages:buy' %}" class="nav-link">Property Management</a>
+	            <a href="{% url 'pages:contact' %}" class="nav-link">Contact</a>
                 <a href="{% url 'pages:login' %}" class="nav-link">Join/Sign In</a>
             </nav>
         </div>
