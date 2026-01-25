@@ -19,9 +19,5 @@ media
 #preya_files
 preya_files
 
-#docker files
-.dockerignore.txt
-docker-compose.yml
-Dockerfile
 
 
