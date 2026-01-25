@@ -15,7 +15,7 @@ env = environ.Env(
 
 # IMPORTANT:
 # Only read .env locally (DEBUG=True). In Render/production, use Render env vars.
-DEBUG = env.bool("DJANGO_DEBUG", default=False)
+DEBUG = env.bool("DJANGO_DEBUG", default=True)
 
 if DEBUG:
     env_file = BASE_DIR / ".env"
