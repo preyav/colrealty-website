@@ -98,25 +98,15 @@ body.page {
   color: var(--muted);
 }
 
-/* Make the whole logo area behave nicely */
 .site-logo{
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  text-decoration: none;
-}
-
-/* Control the logo size */
-.logo-img{
-  height: 10px;      /* change this */
-  width: auto;
-  display: block;
-}
-
-/* If your header is too tall, this will tighten it */
-.site-header .header-inner{
   display: flex;
   align-items: center;
+  gap: 10px;
+  max-height: 24px;
+}
+
+.brand-tagline{
+  line-height: 1;
 }
 
 .main-nav {
