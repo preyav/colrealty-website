@@ -99,7 +99,7 @@ body.page {
 }
 
 .logo-img{
-  height: 22px;      /* adjust */
+  height: 10px;      /* adjust */
   width: auto;
   display: block;
   object-fit: contain;
