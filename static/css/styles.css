@@ -98,15 +98,15 @@ body.page {
   color: var(--muted);
 }
 
-.site-logo{
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  max-height: 24px;
-}
-
 .brand-tagline{
   line-height: 1;
+}
+
+.logo-img{
+  height: 44px;      /* adjust */
+  width: auto;
+  display: block;
+  object-fit: contain;
 }
 
 .main-nav {
