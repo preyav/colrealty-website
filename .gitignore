@@ -10,7 +10,7 @@ venv/
 .venv/
 
 # Env files
-.env
+*.env
 
 
 # Media
@@ -18,6 +18,9 @@ media
 
 #preya_files
 preya_files
+
+credentials.json
+token.json
 
 
 
