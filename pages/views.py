@@ -4,7 +4,13 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.utils import timezone
 from django.core.paginator import Paginator
+from django.contrib.auth.views import LoginView
 from listings.models import Listing
+
+class ColRealtyLoginView(LoginView):
+    template_name = 'pages/login.html'
+    # Redirect to homepage or a specific dashboard after login
+    next_page = 'index'
 
 def home(request):
     qs = Listing.objects.all().order_by("-id")
@@ -65,6 +71,10 @@ def rent(request):
 def rent_marketing(request):
     return render(request, "pages/rent/marketing.html")
 
+# PROPERTY MANAGEMENT
+def propman(request):
+    return render(request, "pages/propman.html")
+
 # CONTACT
 def contact(request):
     return render(request, "pages/contact.html")
@@ -73,6 +83,9 @@ def contact(request):
 def login(request):
     return render(request, "pages/portal/login.html")
 
+# CUSTOM LOGIN placeholders
+def login(request):
+    return render(request, "pages/login.html")
 
 
 def health(request):

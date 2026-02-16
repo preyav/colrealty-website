@@ -32,7 +32,7 @@
 					<a class="dropdown-link" href="{% url 'pages:buy_off_market' %}">Off-Market</a>
 				  </div>
 				</div>
-			<div class="nav-item has-dropdown">
+				<div class="nav-item has-dropdown">
 				  <a class="nav-link dropdown-toggle" href="{% url 'pages:sell' %}">
 					Sell <span class="chevron">▾</span>
 				  </a>
@@ -50,9 +50,19 @@
 					<a class="dropdown-link" href="{% url 'pages:rent_marketing' %}">Marketing</a>
 				  </div>
 				</div>
-                <a href="{% url 'pages:buy' %}" class="nav-link">Property Management</a>
+                <a href="{% url 'pages:propman' %}" class="nav-link">Property Management</a>
 	            <a href="{% url 'pages:contact' %}" class="nav-link">Contact</a>
                 <a href="{% url 'pages:login' %}" class="nav-link">Join/Sign In</a>
+
+				{% if user.is_staff %}
+				<li class="nav-item ms-lg-3">
+					<a class="nav-link btn btn-outline-primary" href="{% url 'admin:index' %}">Broker Dashboard</a>
+				</li>
+				{% else %}
+				<li class="nav-item">
+					<a class="nav-link" href="{% url 'pages:login' %}">Team Login</a>
+				</li>
+				{% endif %}
             </nav>
         </div>
     </header>

@@ -1,0 +1,31 @@
+name: Deploy Col Realty
+on:
+  push:
+    branches: [ main ] # Runs every time you push to the main branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Execute Remote Deploy Command via SSM
+        run: |
+          aws ssm send-command \
+            --instance-ids "i-YOUR_WEB_APP_INSTANCE_ID" \
+            --document-name "AWS-RunShellScript" \
+            --comment "Deploying latest code from GitHub" \
+            --parameters 'commands=[
+              "cd /home/ec2-user/col-realty",
+              "git pull origin main",
+              "source venv/bin/activate",
+              "pip install -r requirements.txt",
+              "python manage.py migrate --noinput",
+              "python manage.py collectstatic --noinput",
+              "sudo systemctl restart gunicorn"
+            ]'

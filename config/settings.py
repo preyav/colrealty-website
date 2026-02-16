@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
+
 import environ
+from django.core.exceptions import ImproperlyConfigured
 
 # ------------------------------------------------------------
 # Paths / Env
@@ -9,15 +11,33 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 env = environ.Env(
     DJANGO_DEBUG=(bool, False),
+    DJANGO_READ_DOTENV=(bool, None),  # default handled below
     WHITENOISE_MANIFEST_STRICT=(bool, False),
     DEBUG_PROPAGATE_EXCEPTIONS=(bool, False),
 )
 
-# IMPORTANT:
-# Only read .env locally (DEBUG=True). In Render/production, use Render env vars.
+def _require_env(name: str) -> str:
+    """Fail fast when a required env var is missing (especially in production)."""
+    val = os.environ.get(name)
+    if val is None or str(val).strip() == "":
+        raise ImproperlyConfigured(f"Missing required environment variable: {name}")
+    return val
+
+# ------------------------------------------------------------
+# Environment mode
+# ------------------------------------------------------------
+# Keep default DEBUG=True so local dev works even if you haven't set env vars yet.
+# In live, set DJANGO_DEBUG=False explicitly.
 DEBUG = env.bool("DJANGO_DEBUG", default=True)
 
-if DEBUG:
+# Read .env only when explicitly allowed.
+# Recommended:
+#   - Local dev: let this default to True (because DEBUG=True)
+#   - Live: set DJANGO_READ_DOTENV=False (or just ensure no .env file exists)
+_read_dotenv_default = True if DEBUG else False
+READ_DOTENV = env.bool("DJANGO_READ_DOTENV", default=_read_dotenv_default)
+
+if READ_DOTENV:
     env_file = BASE_DIR / ".env"
     if env_file.exists():
         environ.Env.read_env(str(env_file))
@@ -25,31 +45,34 @@ if DEBUG:
 # ------------------------------------------------------------
 # Core Security / Hosts
 # ------------------------------------------------------------
-SECRET_KEY = env("DJANGO_SECRET_KEY")  # must exist in env vars (Render or local .env)
+# Required in all environments (local can be provided via .env)
+SECRET_KEY = env("DJANGO_SECRET_KEY", default=None)
+if not SECRET_KEY:
+    # In production, do not allow blank secret key
+    _require_env("DJANGO_SECRET_KEY")
+    SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 
+# Only allow localhost by default; everything else should come from env.
 ALLOWED_HOSTS = env.list(
     "DJANGO_ALLOWED_HOSTS",
-    default=[
-        "localhost",
-        "127.0.0.1",
-        "colrealty-website.onrender.com",  # Render service URL
-    ],
+    default=["localhost", "127.0.0.1"],
 )
 
-# Do NOT default to propagating exceptions in production
 DEBUG_PROPAGATE_EXCEPTIONS = env.bool("DEBUG_PROPAGATE_EXCEPTIONS", default=False)
 
+# Production security bits (works behind ALB / Nginx / reverse proxy)
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-
-    # Must match your actual Render URL(s)
-    CSRF_TRUSTED_ORIGINS = env.list(
-        "DJANGO_CSRF_TRUSTED_ORIGINS",
-        default=["https://colrealty-website.onrender.com"],
-    )
-
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+
+    # REQUIRED in production (avoid silent misconfig)
+    if not os.environ.get("DJANGO_ALLOWED_HOSTS"):
+        _require_env("DJANGO_ALLOWED_HOSTS")
+
+    CSRF_TRUSTED_ORIGINS = env.list("DJANGO_CSRF_TRUSTED_ORIGINS", default=[])
+    if not CSRF_TRUSTED_ORIGINS:
+        _require_env("DJANGO_CSRF_TRUSTED_ORIGINS")
 
 # ------------------------------------------------------------
 # Applications
@@ -102,8 +125,9 @@ ASGI_APPLICATION = "config.asgi.application"
 # ------------------------------------------------------------
 # Database
 # ------------------------------------------------------------
-# Fail-fast in production so you don't silently fall back to sqlite
+# Fail-fast in production so you don't silently fall back to sqlite.
 if not DEBUG:
+    _require_env("DATABASE_URL")
     DATABASES = {"default": env.db("DATABASE_URL")}
 else:
     DATABASES = {
@@ -133,7 +157,7 @@ USE_TZ = True
 # ------------------------------------------------------------
 # Two supported modes:
 # 1) S3 (if AWS_STORAGE_BUCKET_NAME is set)
-# 2) WhiteNoise local static collection (recommended for Render unless you truly use S3)
+# 2) WhiteNoise local static collection
 AWS_STORAGE_BUCKET_NAME = os.environ.get("AWS_STORAGE_BUCKET_NAME")
 
 if AWS_STORAGE_BUCKET_NAME:
@@ -154,12 +178,10 @@ if AWS_STORAGE_BUCKET_NAME:
         STATIC_URL = f"https://{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/{STATIC_LOCATION}/"
         MEDIA_URL = f"https://{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/{MEDIA_LOCATION}/"
 
-    # If using django-storages, typically use these:
     DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
     STATICFILES_STORAGE = "storages.backends.s3boto3.S3StaticStorage"
 
 else:
-    # WhiteNoise / local static collection
     STATIC_URL = "/static/"
     STATIC_ROOT = BASE_DIR / "staticfiles"
     STATICFILES_DIRS = [BASE_DIR / "static"]
@@ -167,15 +189,11 @@ else:
     MEDIA_URL = "/media/"
     MEDIA_ROOT = BASE_DIR / "media"
 
-    # Consistent STORAGES definition
     STORAGES = {
         "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
-        "staticfiles": {
-            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"
-        },
+        "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
     }
 
-    # Safety valve while fixing manifest/static issues
     WHITENOISE_MANIFEST_STRICT = env.bool("WHITENOISE_MANIFEST_STRICT", default=False)
 
 # ------------------------------------------------------------

@@ -24,6 +24,9 @@ urlpatterns = [
     path("rent/", views.rent, name="rent"),
     path("rent/marketing/", views.rent_marketing, name="rent_marketing"),
 
+    # PROPERTY MANAGEMENT
+    path("propman/", views.propman, name="propman"),
+
     # CONTACT
     path("contact/", views.contact, name="contact"),
 

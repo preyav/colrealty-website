@@ -1,0 +1,13 @@
+{% extends "admin/login.html" %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style type="text/css">
+    /* Change the header color */
+    #header { background: #004d40 !important; color: #fff; }
+    /* Change the login button color */
+    .submit-row input { background: #004d40 !important; border-color: #004d40 !important; }
+    /* Change the links */
+    a { color: #004d40; }
+</style>
+{% endblock %}
