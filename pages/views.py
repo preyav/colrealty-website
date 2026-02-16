@@ -79,9 +79,6 @@ def propman(request):
 def contact(request):
     return render(request, "pages/contact.html")
 
-# LOGIN placeholders
-def login(request):
-    return render(request, "pages/portal/login.html")
 
 # CUSTOM LOGIN placeholders
 def login(request):
