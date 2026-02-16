@@ -2,11 +2,7 @@ name: Deploy Col Realty
 on:
   push:
     branches: [ main ] # Runs every time you push to the main branch
-    
-permissions:
-  id-token: write   # This is the "magic" line that fixes your error
-  contents: read    # Required to pull your code    
-  
+ 
 jobs:
   deploy:
     runs-on: ubuntu-latest
