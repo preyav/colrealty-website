@@ -17,7 +17,7 @@ jobs:
       - name: Execute Remote Deploy Command via SSM
         run: |
           aws ssm send-command \
-            --instance-ids "i-YOUR_WEB_APP_INSTANCE_ID" \
+            --instance-ids "i-090afaf02884ea670" \
             --document-name "AWS-RunShellScript" \
             --comment "Deploying latest code from GitHub" \
             --parameters 'commands=[
