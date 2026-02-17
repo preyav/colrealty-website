@@ -542,6 +542,49 @@ body.page {
   color: var(--muted);
 }
 
+.footer-container {
+    max-width: 1000px; /* Adjust this number (e.g., 900px or 1500px) to your preference */
+    margin: 0 auto;   /* Keeps it centered */
+}
+
+/* Layout Wrapper */
+.split-view-container {
+    display: flex;
+    height: calc(100vh - 80px); /* Adjust 80px based on your header height */
+    overflow: hidden; /* Prevents the whole page from scrolling */
+}
+
+/* Listings Column */
+.listings-column {
+    flex: 1; /* Takes up 50-60% of the space */
+    overflow-y: auto; /* Makes only this side scrollable */
+    padding: 20px;
+}
+
+/* Map Column */
+.map-column {
+    flex: 1; /* Adjust to 0.8 if you want the map slightly narrower */
+    position: sticky;
+    top: 0;
+    height: 100%;
+    background: #e5e5e5;
+}
+
+/* Responsive: Stack them on mobile */
+@media (max-width: 992px) {
+    .split-view-container {
+        flex-direction: column;
+        height: auto;
+        overflow: visible;
+    }
+    .map-column {
+        height: 400px;
+        order: -1; /* Puts map on top for mobile users */
+    }
+    .listings-column {
+        overflow-y: visible;
+    }
+}
 /* ===========================
    NAV DROPDOWN (Buy submenu)
    =========================== */

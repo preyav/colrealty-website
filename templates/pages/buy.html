@@ -15,7 +15,11 @@
             <li>Get a quick, realistic sense of monthly payments.</li>
             <li>Book a short call or showing on the homes you like.</li>
         </ol>
-        <a href="{% url 'pages:buy' %}" class="link-button">Start Browsing Homes</a>
+		<a href="{% url 'pages:buy' %}" class="link-button">Start Browsing Homes</a>
+
     </div>
 </section>
+
+{% include "partials/listings_map.html" with map_id="buy-map" %}
+
 {% endblock %}

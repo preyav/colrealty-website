@@ -16,7 +16,11 @@
             <li>Responsive Support: Dedicated assistance for maintenance requests and tenant inquiries throughout your stay.</li>
             <li>Market Expertise: Local insights to help you find a neighborhood that fits both your lifestyle and your budget.</li>
         </ol>
-        <a href="{% url 'pages:buy' %}" class="link-button">Start Browsing Homes</a>
+		<a href="{% url 'pages:rent' %}" class="link-button">Start Browsing Rentals</a>
+
     </div>
 </section>
+
+{% include "partials/listings_map.html" with map_id="rent-map" %}
+
 {% endblock %}

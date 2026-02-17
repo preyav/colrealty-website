@@ -1,0 +1,128 @@
+<div id="{{ map_id|default:'map' }}" class="listing-map"></div>
+
+{{ markers|json_script:"markers-data" }}
+
+{# Load Google Maps JS only once #}
+<script src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&callback=initMap&v=weekly" async defer></script>
+
+<script>
+    function initMap() {
+        // 1. Initialize the Map centered on Austin
+        const map = new google.maps.Map(document.getElementById("{{ map_id }}"), {
+            zoom: 11,
+            center: { lat: 30.2672, lng: -97.7431 },
+            mapId: "COL_REALTY_MAP_STYLE", // Your custom style ID
+            disableDefaultUI: false,
+            gestureHandling: "greedy", // Makes mobile scrolling easier
+        });
+
+        // 2. Check if we have listingData (passed from buy.html)
+        if (typeof listingData !== 'undefined' && listingData.length > 0) {
+            const bounds = new google.maps.LatLngBounds();
+
+            listingData.forEach(listing => {
+                if (listing.lat && listing.lng) {
+                    const position = { lat: parseFloat(listing.lat), lng: parseFloat(listing.lng) };
+                    
+                    // 3. Create a Price-Tag Marker
+                    // In a real Compass-style map, these are AdvancedMarkers or custom HTML
+                    const marker = new google.maps.Marker({
+                        position: position,
+                        map: map,
+                        title: listing.title,
+                        label: {
+                            text: listing.price,
+                            color: "white",
+                            fontSize: "12px",
+                            fontWeight: "bold"
+                        },
+                        icon: {
+                            path: google.maps.SymbolPath.CIRCLE,
+                            fillColor: "#000", // Black background like Compass/Col Realty branding
+                            fillOpacity: 1,
+                            strokeWeight: 0,
+                            scale: 25 // Size of the tag
+                        }
+                    });
+
+                    // 4. Add Click Listener to open the listing
+                    marker.addListener("click", () => {
+                        window.location.href = `/listings/${listing.id}/`;
+                    });
+
+                    bounds.extend(position);
+                }
+            });
+
+            // 5. Automatically adjust map to show all visible pins
+            map.fitBounds(bounds);
+        }
+    }
+</script>
+<script>
+  window.addEventListener("load", () => {
+    const markers = JSON.parse(document.getElementById("markers-data").textContent || "[]");
+
+    const fallback = { lat: 30.2672, lng: -97.7431 }; // Austin
+    const mapEl = document.getElementById("{{ map_id|default:'map' }}");
+
+    if (!mapEl) return;
+
+    const map = new google.maps.Map(mapEl, {
+      center: fallback,
+      zoom: 11,
+    });
+
+    const info = new google.maps.InfoWindow();
+    const bounds = new google.maps.LatLngBounds();
+    let hasAny = false;
+
+    markers.forEach(m => {
+      if (typeof m.lat !== "number" || typeof m.lng !== "number") return;
+
+      hasAny = true;
+      const pos = { lat: m.lat, lng: m.lng };
+      bounds.extend(pos);
+
+      const marker = new google.maps.Marker({
+        map,
+        position: pos,
+        title: m.title || "",
+      });
+
+      marker.addListener("click", () => {
+        const img = m.image
+          ? `<img src="${m.image}" style="width:100%;max-width:220px;border-radius:10px;margin:6px 0;" />`
+          : "";
+
+        info.setContent(`
+          <div style="max-width:240px">
+            <div style="font-weight:700;margin-bottom:6px">${m.title || ""}</div>
+            <div style="margin-bottom:6px">${m.address || ""}</div>
+            <div style="margin-bottom:10px"><b>$${m.price || ""}</b></div>
+            ${img}
+            <a href="${m.url || "#"}">View listing</a>
+          </div>
+        `);
+        info.open(map, marker);
+      });
+    });
+
+    if (hasAny) {
+      map.fitBounds(bounds);
+      // Prevent over-zoom when only one marker exists
+      google.maps.event.addListenerOnce(map, "bounds_changed", () => {
+        if (map.getZoom() > 16) map.setZoom(16);
+      });
+    }
+  });
+</script>
+
+<style>
+  .listing-map {
+    height: 520px;
+    width: 100%;
+    border-radius: 16px;
+    margin: 18px 0;
+  }
+</style>

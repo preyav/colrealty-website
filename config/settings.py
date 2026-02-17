@@ -1,5 +1,8 @@
 import os
 from pathlib import Path
+import os
+GOOGLE_MAPS_API_KEY=os.getenv("GOOGLE_MAPS_API_KEY")
+
 
 import environ
 from django.core.exceptions import ImproperlyConfigured
