@@ -6,6 +6,9 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include("pages.urls")),  # home, contact
     path("listings/", include(("listings.urls", "listings"), namespace="listings")),
+    path("rentals/", include("rentals.urls")),
+    path("leads/", include("leads.urls")),
+
 ]
 
 

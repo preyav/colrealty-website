@@ -32,7 +32,7 @@ body.page {
 /* Containers */
 .container {
   width: 100%;
-  max-width: 1120px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 0 1.5rem;
 }
@@ -550,13 +550,13 @@ body.page {
 /* Layout Wrapper */
 .split-view-container {
     display: flex;
-    height: calc(100vh - 80px); /* Adjust 80px based on your header height */
+    height: calc(100vh - 92px); /* Adjust 80px based on your header height */
     overflow: hidden; /* Prevents the whole page from scrolling */
 }
 
 /* Listings Column */
 .listings-column {
-    flex: 1; /* Takes up 50-60% of the space */
+    flex: 1.35; /* Takes up 50-60% of the space */
     overflow-y: auto; /* Makes only this side scrollable */
     padding: 20px;
 }
@@ -567,7 +567,7 @@ body.page {
     position: sticky;
     top: 0;
     height: 100%;
-    background: #e5e5e5;
+    background: var(--bg-elevated);
 }
 
 /* Responsive: Stack them on mobile */
@@ -652,3 +652,48 @@ body.page {
   display: block;
 }
 
+/* Two-column layout */
+.detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2.2fr) minmax(480px, 1.3fr);
+  gap: 36px;
+  align-items: start;
+}
+
+/* Left column */
+.detail-main {
+  min-width: 0;
+}
+
+/* Right column */
+.detail-map-wrap {
+  position: relative;
+}
+
+/* Sticky map */
+.detail-map-wrap .card-full {
+  position: sticky;
+  top: 90px; /* adjust if you have fixed header */
+}
+
+/* Map sizing */
+.detail-map {
+  height: 560px;
+  width: 100%;
+  border-radius: 16px;
+}
+
+/* Mobile fallback */
+@media (max-width: 900px) {
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-map-wrap .card-full {
+    position: static;
+  }
+
+  .detail-map {
+    height: 320px;
+  }
+}

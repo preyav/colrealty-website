@@ -1,4 +1,5 @@
 # pages/views.py
+import os
 from datetime import timedelta
 from django.conf import settings
 from django.shortcuts import render
@@ -64,16 +65,37 @@ def _build_markers(qs):
 # BUY pages
 def buy(request):
     qs = Listing.objects.filter(status="active", property_type__in=BUY_TYPES).order_by("-id")
+    listings = Listing.objects.exclude(latitude__isnull=True)[:100]
 
+    # Prepare the list for the map
+    marker_list = []
+    for l in listings:
+        marker_list.append({
+            'lat': float(l.latitude),
+            'lng': float(l.longitude),
+            'title': l.title,
+            'price': f"{l.price:,.0f}",
+            'url': l.get_absolute_url(),
+            'image': l.main_image_url if l.main_image_url else ""
+        })
+
+    context = {
+        'markers': marker_list, # This name must match the json_script tag
+        'GOOGLE_MAPS_API_KEY': os.environ.get('GOOGLE_MAPS_API_KEY'),
+    }
     paginator = Paginator(qs, 12)
     page_obj = paginator.get_page(request.GET.get("page"))
 
-    return render(request, "pages/buy.html", {
+
+    markers = _build_markers(qs)
+    print("BUY markers type:", type(markers), "len:", len(markers))
+
+    return render(request, "listings/list.html", {
         "listings": page_obj,
         "page_obj": page_obj,
         "paginator": paginator,
         "is_paginated": page_obj.has_other_pages(),
-        "markers": _build_markers(qs),
+        "markers": markers,
         "GOOGLE_MAPS_API_KEY": settings.GOOGLE_MAPS_API_KEY,
     })
 

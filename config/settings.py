@@ -1,8 +1,5 @@
 import os
 from pathlib import Path
-import os
-GOOGLE_MAPS_API_KEY=os.getenv("GOOGLE_MAPS_API_KEY")
-
 
 import environ
 from django.core.exceptions import ImproperlyConfigured
@@ -14,13 +11,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 env = environ.Env(
     DJANGO_DEBUG=(bool, False),
-    DJANGO_READ_DOTENV=(bool, None),  # default handled below
+    DJANGO_READ_DOTENV=(bool, None),
     WHITENOISE_MANIFEST_STRICT=(bool, False),
     DEBUG_PROPAGATE_EXCEPTIONS=(bool, False),
+    EMAIL_PORT=(int, 587),
+    EMAIL_USE_TLS=(bool, True),
 )
 
 def _require_env(name: str) -> str:
-    """Fail fast when a required env var is missing (especially in production)."""
     val = os.environ.get(name)
     if val is None or str(val).strip() == "":
         raise ImproperlyConfigured(f"Missing required environment variable: {name}")
@@ -29,14 +27,8 @@ def _require_env(name: str) -> str:
 # ------------------------------------------------------------
 # Environment mode
 # ------------------------------------------------------------
-# Keep default DEBUG=True so local dev works even if you haven't set env vars yet.
-# In live, set DJANGO_DEBUG=False explicitly.
 DEBUG = env.bool("DJANGO_DEBUG", default=True)
 
-# Read .env only when explicitly allowed.
-# Recommended:
-#   - Local dev: let this default to True (because DEBUG=True)
-#   - Live: set DJANGO_READ_DOTENV=False (or just ensure no .env file exists)
 _read_dotenv_default = True if DEBUG else False
 READ_DOTENV = env.bool("DJANGO_READ_DOTENV", default=_read_dotenv_default)
 
@@ -46,9 +38,16 @@ if READ_DOTENV:
         environ.Env.read_env(str(env_file))
 
 # ------------------------------------------------------------
+# Custom app variables (read AFTER .env load)
+# ------------------------------------------------------------
+GOOGLE_MAPS_API_KEY = env("GOOGLE_MAPS_API_KEY", default="")
+HUBSPOT_PRIVATE_APP_TOKEN = env("HUBSPOT_PRIVATE_APP_TOKEN", default="")
+LEAD_NOTIFY_EMAIL = env("LEAD_NOTIFY_EMAIL", default="")
+
+# ------------------------------------------------------------
 # Core Security / Hosts
 # ------------------------------------------------------------
-# Required in all environments (local can be provided via .env)
+
 SECRET_KEY = env("DJANGO_SECRET_KEY", default=None)
 if not SECRET_KEY:
     # In production, do not allow blank secret key
@@ -56,10 +55,7 @@ if not SECRET_KEY:
     SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 
 # Only allow localhost by default; everything else should come from env.
-ALLOWED_HOSTS = env.list(
-    "DJANGO_ALLOWED_HOSTS",
-    default=["localhost", "127.0.0.1"],
-)
+ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 
 DEBUG_PROPAGATE_EXCEPTIONS = env.bool("DEBUG_PROPAGATE_EXCEPTIONS", default=False)
 
@@ -89,7 +85,9 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.humanize",
     "listings",
+    "rentals",
     "pages",
+    "leads",
     "mls_sync",
 ]
 
@@ -117,6 +115,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "config.context_processors.export_vars",
             ],
         },
     }
@@ -205,6 +204,21 @@ else:
 MLS_API_BASE_URL = env("MLS_API_BASE_URL", default="")
 MLS_API_TOKEN = env("MLS_API_TOKEN", default="")
 MLS_ORIGINATING_SYSTEM_NAME = env("MLS_ORIGINATING_SYSTEM_NAME", default="actris")
+
+# ------------------------------------------------------------
+# Email (Gmail SMTP)
+# ------------------------------------------------------------
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+
+EMAIL_HOST = env("EMAIL_HOST", default="smtp.gmail.com")
+EMAIL_PORT = env.int("EMAIL_PORT", default=587)
+EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
+
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
+
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default=EMAIL_HOST_USER or "no-reply@colrealty.com")
+SERVER_EMAIL = env("SERVER_EMAIL", default=DEFAULT_FROM_EMAIL)
 
 # ------------------------------------------------------------
 # Django defaults

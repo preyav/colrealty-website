@@ -1,7 +1,5 @@
 {% extends "base.html" %}
-{% load humanize %}
-
-{% block title %}{{ listing.title }} | Buy | Col Realty{% endblock %}
+{% block title %}{{ rental.title }} | Rental | Col Realty{% endblock %}
 
 {% block content %}
 
@@ -11,34 +9,34 @@
   <div class="listings-column">
 
     <div class="card-full">
-      <h1 style="margin-bottom:6px;">{{ listing.title }}</h1>
+      <h1 style="margin-bottom:6px;">{{ rental.title }}</h1>
       <p class="section-sub" style="margin-top:0;">
-        {{ listing.street_address }}, {{ listing.city }}, {{ listing.state }} {{ listing.zip_code }}
+        {{ rental.street_address }}, {{ rental.city }}, {{ rental.state }} {{ rental.zip_code }}
       </p>
 
       <div style="display:flex; flex-wrap:wrap; gap:14px; margin-top:14px;">
-        <div class="pill"><b>${{ listing.price|floatformat:0 }}</b></div>
-        {% if listing.beds %}<div class="pill">{{ listing.beds }} beds</div>{% endif %}
-        {% if listing.baths %}<div class="pill">{{ listing.baths }} baths</div>{% endif %}
-        {% if listing.sqft %}<div class="pill">{{ listing.sqft }} sqft</div>{% endif %}
-        {% if listing.property_type %}<div class="pill">{{ listing.property_type }}</div>{% endif %}
-        {% if listing.status %}<div class="pill">{{ listing.status|title }}</div>{% endif %}
+        <div class="pill"><b>${{ rental.rent }}</b> / month</div>
+        {% if rental.beds %}<div class="pill">{{ rental.beds }} beds</div>{% endif %}
+        {% if rental.baths %}<div class="pill">{{ rental.baths }} baths</div>{% endif %}
+        {% if rental.sqft %}<div class="pill">{{ rental.sqft }} sqft</div>{% endif %}
+        {% if rental.property_type %}<div class="pill">{{ rental.property_type }}</div>{% endif %}
+        {% if rental.status %}<div class="pill">{{ rental.status|title }}</div>{% endif %}
       </div>
 
-      {% if listing.main_image_url %}
+      {% if rental.main_image_url %}
         <div style="margin-top:16px;">
           <img
-            src="{{ listing.main_image_url }}"
-            alt="{{ listing.title }}"
+            src="{{ rental.main_image_url }}"
+            alt="{{ rental.title }}"
             style="width:100%; max-height:520px; object-fit:cover; border-radius:16px;"
           />
         </div>
       {% endif %}
 
-      {% if listing.description %}
+      {% if rental.description %}
         <div style="margin-top:16px;">
           <h2 style="margin-bottom:8px;">Description</h2>
-          <p style="white-space:pre-line; margin-top:0;">{{ listing.description }}</p>
+          <p style="white-space:pre-line; margin-top:0;">{{ rental.description }}</p>
         </div>
       {% endif %}
     </div>
@@ -49,17 +47,11 @@
         Call/text <b>(512) 699-3810</b> or use the form below and we’ll get back quickly.
       </p>
 
-      <form method="post" action="{% url 'leads:create' %}">
-	    {% csrf_token %}
-
-	    <input type="hidden" name="source_type" value="listing">
-	    <input type="hidden" name="source_id" value="{{ listing.id }}">
-	    <input type="hidden" name="page_url" value="{{ request.build_absolute_uri }}">
 		<form method="post" action="{% url 'leads:create' %}">
 		  {% csrf_token %}
 
-		  <input type="hidden" name="source_type" value="listing">
-		  <input type="hidden" name="source_id" value="{{ listing.id }}">
+		  <input type="hidden" name="source_type" value="rental">
+		  <input type="hidden" name="source_id" value="{{ rental.id }}">
 		  <input type="hidden" name="page_url" value="{{ request.build_absolute_uri }}">
 
 		  <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
@@ -81,7 +73,7 @@
 
 		  <div style="margin-top:12px;">
 			<label>Message</label>
-			<textarea name="message" rows="4" style="width:100%;">Hi, I’m interested in {{ listing.street_address }}, {{ listing.city }}.</textarea>
+			<textarea name="message" rows="4" style="width:100%;">Hi, I’m interested in {{ rental.street_address }}, {{ rental.city }}.</textarea>
 		  </div>
 
 		  <button type="submit" class="link-button" style="margin-top:12px;">
@@ -94,20 +86,20 @@
 
   <!-- RIGHT: Map (fixed like list page) -->
   <div class="map-column">
-    <div id="listing-map" style="height:100%; width:100%;"></div>
+    <div id="rental-map" style="height:100%; width:100%;"></div>
   </div>
 
 </div>
 
-{% if listing.latitude and listing.longitude %}
+{% if rental.latitude and rental.longitude %}
 <script src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&v=weekly" defer></script>
 <script>
   window.addEventListener("load", () => {
-    const el = document.getElementById("listing-map");
+    const el = document.getElementById("rental-map");
     if (!el) return;
 
-    const lat = parseFloat("{{ listing.latitude }}");
-    const lng = parseFloat("{{ listing.longitude }}");
+    const lat = parseFloat("{{ rental.latitude }}");
+    const lng = parseFloat("{{ rental.longitude }}");
     if (Number.isNaN(lat) || Number.isNaN(lng)) return;
 
     const pos = { lat, lng };
@@ -120,18 +112,15 @@
     new google.maps.Marker({
       map,
       position: pos,
-      title: "{{ listing.title|escapejs }}",
+      title: "{{ rental.title|escapejs }}",
     });
   });
 </script>
-{% else %}
-<script>
-  window.addEventListener("load", () => {
-    const el = document.getElementById("listing-map");
-    if (!el) return;
-    el.innerHTML = "<div style='padding:14px;color:#999;'>Map unavailable (missing coordinates).</div>";
-  });
-</script>
 {% endif %}
+
+<style>
+  /* These already exist in your styles.css, but keep this if you want detail page to feel nicer */
+  .map-column { background: transparent; } /* you had grey background before */
+</style>
 
 {% endblock %}

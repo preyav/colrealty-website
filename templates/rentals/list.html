@@ -1,17 +1,17 @@
 {% extends "base.html" %}
-{% block title %}Buy | Col Realty{% endblock %}
+{% block title %}Rentals | Col Realty{% endblock %}
 
 {% block content %}
 
 <section class="listings-hero">
   <div>
-    <h1 class="hero-title">Homes for Sale in Central Texas</h1>
+    <h1 class="hero-title">Rentals in Central Texas</h1>
     <p class="hero-text">
-      Browse active homes for sale and explore them on the map. Click a pin to view details.
+      Browse available lease listings and explore them on the map. Click a pin to open details.
     </p>
 
     <div class="hero-pills">
-      <span class="hero-pill">Live MLS</span>
+      <span class="hero-pill">Live inventory</span>
       <span class="hero-pill">Map view</span>
       <span class="hero-pill">Schedule showings</span>
     </div>
@@ -25,7 +25,7 @@
 
     <div class="search-row">
       <input class="input-field" placeholder="City (e.g., Austin)" disabled>
-      <input class="input-field" placeholder="Max price" disabled>
+      <input class="input-field" placeholder="Max rent" disabled>
       <input class="input-field" placeholder="Beds" disabled>
     </div>
 
@@ -42,43 +42,44 @@
   <div class="listings-column">
 
     <div class="listing-grid">
-      {% for l in listings %}
-        <a class="listing-card" href="{% url 'listings:listing_detail' l.id %}">
+      {% for r in rentals %}
+        <a class="listing-card" href="{% url 'rentals:detail' r.id %}">
           <div class="listing-image-wrap">
-            {% if l.main_image_url %}
-              <img class="listing-image" src="{{ l.main_image_url }}" alt="{{ l.title }}">
+            {% if r.main_image_url %}
+              <img class="listing-image" src="{{ r.main_image_url }}" alt="{{ r.title }}">
             {% endif %}
 
             <div class="badge-strip">
-              <span class="badge badge-status-active">{{ l.status|default:"active"|title }}</span>
-              {% if l.property_type %}<span class="badge">{{ l.property_type }}</span>{% endif %}
+              <span class="badge badge-status-active">{{ r.status|default:"active"|title }}</span>
+              {% if r.property_type %}<span class="badge">{{ r.property_type }}</span>{% endif %}
             </div>
           </div>
 
           <div class="listing-body">
             <div class="listing-price">
-              <div class="price-main">${{ l.price|floatformat:0 }}</div>
+              <div class="price-main">${{ r.rent|floatformat:0 }}</div>
+              <div class="price-label">/month</div>
             </div>
 
-            <div class="listing-title">{{ l.title }}</div>
+            <div class="listing-title">{{ r.title }}</div>
 
             <div class="listing-location">
-              {{ l.street_address }}, {{ l.city }}, {{ l.state }} {{ l.zip_code }}
+              {{ r.street_address }}, {{ r.city }}, {{ r.state }} {{ r.zip_code }}
             </div>
 
             <div class="listing-meta">
-              {% if l.beds %}<span class="meta-pill">{{ l.beds }} bd</span>{% endif %}
-              {% if l.baths %}<span class="meta-pill">{{ l.baths }} ba</span>{% endif %}
-              {% if l.sqft %}<span class="meta-pill">{{ l.sqft }} sqft</span>{% endif %}
+              {% if r.beds %}<span class="meta-pill">{{ r.beds }} bd</span>{% endif %}
+              {% if r.baths %}<span class="meta-pill">{{ r.baths }} ba</span>{% endif %}
+              {% if r.sqft %}<span class="meta-pill">{{ r.sqft }} sqft</span>{% endif %}
             </div>
           </div>
         </a>
       {% empty %}
-        <p>No active homes found.</p>
+        <p>No rentals found.</p>
       {% endfor %}
     </div>
 
-	{% if is_paginated %}
+	{% if page_obj and page_obj.has_other_pages %}
 	  <nav aria-label="Pagination" style="margin-top: 20px;">
 		<ul class="pagination">
 
@@ -125,12 +126,16 @@
     if (!mapEl) return;
 
     const fallback = { lat: 30.2672, lng: -97.7431 }; // Austin
-    const map = new google.maps.Map(mapEl, { center: fallback, zoom: 11 });
+    const map = new google.maps.Map(mapEl, {
+      center: fallback,
+      zoom: 11,
+    });
 
     const info = new google.maps.InfoWindow();
     const bounds = new google.maps.LatLngBounds();
 
-	fetch("{% url 'listings:markers' %}" + window.location.search)
+    // Load markers via API (prevents huge HTML payload)
+    fetch("{% url 'rentals:markers' %}")
       .then(res => res.json())
       .then(markers => {
         if (!Array.isArray(markers) || markers.length === 0) return;
@@ -161,9 +166,10 @@
                 <div style="margin-bottom:6px">${m.address || ""}</div>
                 <div style="margin-bottom:10px"><b>$${m.price || ""}</b></div>
                 ${img}
-                <a href="${m.url || "#"}">View home</a>
+                <a href="${m.url || "#"}">View rental</a>
               </div>
             `);
+
             info.open(map, marker);
           });
         });
@@ -175,7 +181,9 @@
           });
         }
       })
-      .catch(err => console.error("Failed to load listing markers:", err));
+      .catch(err => {
+        console.error("Failed to load rental markers:", err);
+      });
   });
 </script>
 
