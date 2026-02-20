@@ -33,6 +33,32 @@ urlpatterns = [
     # portal
     path("portal/", views.login, name="login"),
 
+    # ABOUT US
+    path("company/aboutus/", views.company_aboutus, name="aboutus"),
+
+    # JOIN US
+    path("company/joinus/", views.company_joinus, name="joinus"),
+
+    # CONTACT US
+    path("company/contactus/", views.company_contactus, name="contactus"),
+
+    # BLOG
+    path("colcircle/blog/", views.colcircle_blog, name="blog"),
+
+    # NEWSLETTER
+    path("colcircle/newsletter/", views.colcircle_newsletter, name="newsletter"),
+
+    # COL CIRCLE
+    path("colcircle/colcircle/", views.colcircle_colcircle, name="colcircle"),
+
+    # NEIGHBORHOODS
+    path("explore/neighborhoods/", views.explore_neighborhoods, name="neighborhoods"),
+
+    # NEW HOMES
+    path("explore/newhomes/", views.explore_newhomes, name="newhomes"),
+
+    # COMMERCIAL
+    path("explore/commercial/", views.explore_commercial, name="commercial"),
 
     # HEALTHCHECK
     path("health/", views.health, name="health"),

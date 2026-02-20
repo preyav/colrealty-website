@@ -155,11 +155,40 @@ def propman(request):
 def contact(request):
     return render(request, "pages/contact.html")
 
-
-# CUSTOM LOGIN placeholders
 def login(request):
     return render(request, "pages/login.html")
 
+def company_aboutus(request):
+    return render(request, "pages/company/aboutus.html")
+
+def company_joinus(request):
+    return render(request, "pages/company/joinus.html")
+
+def company_contactus(request):
+    return render(request, "pages/company/contactus.html")
+
+def colcircle_blog(request):
+    return render(request, "pages/colcircle/blog.html")
+
+def colcircle_newsletter(request):
+    return render(request, "pages/colcircle/newsletter.html")
+
+def colcircle_colcircle(request):
+    return render(request, "pages/colcircle/colcircle.html")
+
+def explore_neighborhoods(request):
+    return render(request, "pages/explore/neighborhoods.html")
+
+def explore_newhomes(request):
+    return render(request, "pages/explore/newhomes.html")
+
+def explore_commercial(request):
+    return render(request, "pages/explore/commercial.html")
+
+
+
+def colcircle(request):
+    return render(request, "pages/colcircle.html")
 
 def health(request):
     return JsonResponse({"status": "ok"})
