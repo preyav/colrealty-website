@@ -55,7 +55,14 @@ if not SECRET_KEY:
     SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 
 # Only allow localhost by default; everything else should come from env.
-ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
+# Use the name exactly as it appears in your .sh script
+allowed_hosts_raw = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost")
+
+# Convert the string "54.82.48.58,colrealty.com" into a Python list
+ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_raw.split(",") if host.strip()]
+
+# ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
+
 
 DEBUG_PROPAGATE_EXCEPTIONS = env.bool("DEBUG_PROPAGATE_EXCEPTIONS", default=False)
 
