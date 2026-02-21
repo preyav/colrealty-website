@@ -46,7 +46,7 @@
         <a class="listing-card" href="{% url 'listings:listing_detail' l.id %}">
           <div class="listing-image-wrap">
             {% if l.main_image_url %}
-              <img class="listing-image" src="{{ l.main_image_url }}" alt="{{ l.title }}">
+              <img class="listing-image" src="{{ l.main_image_url }}" alt="{{ l.title }}" referrerpolicy="no-referrer">
             {% endif %}
 
             <div class="badge-strip">
