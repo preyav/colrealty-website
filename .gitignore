@@ -12,10 +12,6 @@ venv/
 # Env files
 *.env
 
-
-# Media
-media
-
 #preya_files
 preya_files
 
