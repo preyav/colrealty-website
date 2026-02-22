@@ -30,9 +30,6 @@
     </div>
 
     <button class="btn-primary" disabled>Search</button>
-    <p style="margin:10px 0 0; font-size:0.85rem; color: var(--muted);">
-      We’ll wire filters to both results + map next.
-    </p>
   </div>
 </section>
 
@@ -66,7 +63,6 @@
             <div class="listing-location">
               {{ r.street_address }}, {{ r.city }}, {{ r.state }} {{ r.zip_code }}
             </div>
-
             <div class="listing-meta">
               {% if r.beds %}<span class="meta-pill">{{ r.beds }} bd</span>{% endif %}
               {% if r.baths %}<span class="meta-pill">{{ r.baths }} ba</span>{% endif %}
