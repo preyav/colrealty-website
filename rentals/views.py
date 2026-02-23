@@ -7,11 +7,14 @@ from django.views.decorators.http import require_GET
 
 from .models import Rental
 
+RENT_TYPES = {"Residential Lease", "Commercial Lease"}
+
 @require_GET
 def rental_markers(request):
 
     qs = Rental.objects.filter(
         status="active",
+        property_type__in=RENT_TYPES,
         latitude__isnull=False,
         longitude__isnull=False
     )
@@ -51,7 +54,7 @@ def _build_markers(qs):
     return markers
 
 def rental_list(request):
-    qs = Rental.objects.filter(status="active").order_by("-id")
+    qs = Rental.objects.filter(status="active", property_type__in=RENT_TYPES).order_by("-id")
 
     paginator = Paginator(qs, 12)
     page_obj = paginator.get_page(request.GET.get("page"))
@@ -70,12 +73,3 @@ def rental_detail(request, pk):
         "GOOGLE_MAPS_API_KEY": settings.GOOGLE_MAPS_API_KEY,
     })
 
-def force_public_mlsgrid_s3(url: str) -> str:
-    if not url:
-        return ""
-    if "s3.amazonaws.com/mlsgrid" in url or "mlsgrid.s3.amazonaws.com" in url:
-        return url
-    if "/images/" in url:
-        return "https://s3.amazonaws.com/mlsgrid" + url[url.find("/images/"):]
-    return url
-    Rental.main_image_url = force_public_mlsgrid_s3(raw_photo_url)
