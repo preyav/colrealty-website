@@ -69,3 +69,13 @@ def rental_detail(request, pk):
         "rental": rental,
         "GOOGLE_MAPS_API_KEY": settings.GOOGLE_MAPS_API_KEY,
     })
+
+def force_public_mlsgrid_s3(url: str) -> str:
+    if not url:
+        return ""
+    if "s3.amazonaws.com/mlsgrid" in url or "mlsgrid.s3.amazonaws.com" in url:
+        return url
+    if "/images/" in url:
+        return "https://s3.amazonaws.com/mlsgrid" + url[url.find("/images/"):]
+    return url
+    Rental.main_image_url = force_public_mlsgrid_s3(raw_photo_url)
