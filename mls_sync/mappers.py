@@ -72,3 +72,4 @@ def map_property_to_listing_data(record: Dict[str, Any]) -> Dict[str, Any]:
         "is_featured": bool(price and price > 750000),
         "mls_modification_timestamp": modification_ts,
     }
+

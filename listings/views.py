@@ -62,15 +62,22 @@ class ListingListView(ListView):
         ctx["GOOGLE_MAPS_API_KEY"] = settings.GOOGLE_MAPS_API_KEY
         return ctx
     
-    def force_public_mlsgrid_s3(url: str) -> str:
+    def force_s3_url(url: str) -> str:
         if not url:
             return ""
-        if "s3.amazonaws.com/mlsgrid" in url or "mlsgrid.s3.amazonaws.com" in url:
-            return url
-        if "/images/" in url:
-            return "https://s3.amazonaws.com/mlsgrid" + url[url.find("/images/"):]
-        return url
-        listing.main_image_url = force_public_mlsgrid_s3(raw_photo_url)
+        u = url.strip()
+
+        # If already S3, keep it
+        if "s3.amazonaws.com/mlsgrid/images/" in u:
+            return u
+
+        # If it's a tokenized MLSGrid media URL, convert it
+        if "media.mlsgrid.com" in u and "/images/" in u:
+            tail = u.split("/images/", 1)[1]  # e.g. ACT218348751/<uuid>.jpeg
+            return f"https://s3.amazonaws.com/mlsgrid/images/{tail}"
+
+        return u
+        listing.main_image_url = force_s3_url(photo_url)
 
 
 class ListingDetailView(DetailView):
