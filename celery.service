@@ -1,0 +1,60 @@
+# /etc/systemd/system/celery.service
+# ─────────────────────────────────────────────────────────────────────────────
+# Celery worker systemd service for Col Realty
+#
+# Installation (run on EC2):
+#   sudo cp celery.service /etc/systemd/system/celery.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable celery      ← auto-start on EC2 boot
+#   sudo systemctl start celery
+#   sudo systemctl status celery      ← verify it's running
+#
+# Useful commands:
+#   sudo systemctl restart celery     ← after deployments
+#   sudo journalctl -u celery -f      ← tail live logs
+#   sudo journalctl -u celery -n 100  ← last 100 log lines
+# ─────────────────────────────────────────────────────────────────────────────
+
+[Unit]
+Description=Col Realty Celery Worker
+After=network.target redis.service postgresql.service
+Wants=redis.service
+
+[Service]
+Type=forking
+User=ec2-user
+Group=ec2-user
+WorkingDirectory=/home/ec2-user/colrealty
+
+# Load production environment variables from the .env file
+EnvironmentFile=/home/ec2-user/colrealty/.env
+
+# PID file so systemd can track the process
+PIDFile=/var/run/celery/colrealty.pid
+
+# Start Celery — listens on both queues
+# --concurrency=2 means 2 parallel worker processes (adjust to your EC2 size)
+# t3.micro:  --concurrency=2
+# t3.small:  --concurrency=4
+# t3.medium: --concurrency=8
+ExecStart=/home/ec2-user/colrealty/venv/bin/celery \
+    -A config worker \
+    --loglevel=info \
+    -Q default,hubspot \
+    --concurrency=2 \
+    --pidfile=/var/run/celery/colrealty.pid \
+    --logfile=/var/log/celery/colrealty.log \
+    --detach
+
+ExecStop=/home/ec2-user/colrealty/venv/bin/celery \
+    -A config control shutdown
+
+# Restart automatically if the process crashes
+Restart=on-failure
+RestartSec=10s
+
+# Give it 60 seconds to start before systemd considers it failed
+TimeoutStartSec=60
+
+[Install]
+WantedBy=multi-user.target
