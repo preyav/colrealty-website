@@ -1,0 +1,94 @@
+{% extends "portal/base.html" %}
+{% block title %}Leads | Col Realty Portal{% endblock %}
+{% block page_title %}Leads ({{ total }}){% endblock %}
+
+{% block content %}
+
+<div class="card">
+  <!-- Filter bar -->
+  <form method="get" class="filter-bar">
+    <input type="text" name="q" placeholder="Search name, email, phone…" value="{{ search }}" />
+    <select name="source">
+      <option value="">All Sources</option>
+      <option value="listing" {% if source_filter == "listing" %}selected{% endif %}>Buy Listings</option>
+      <option value="rental"  {% if source_filter == "rental"  %}selected{% endif %}>Rentals</option>
+    </select>
+    <select name="synced">
+      <option value="">All HubSpot Status</option>
+      <option value="yes" {% if synced_filter == "yes" %}selected{% endif %}>Synced ✅</option>
+      <option value="no"  {% if synced_filter == "no"  %}selected{% endif %}>Not Synced ❌</option>
+    </select>
+    <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+    {% if search or source_filter or synced_filter %}
+      <a href="{% url 'portal:leads' %}" class="btn btn-sm" style="background:#f1f5f9;">Clear</a>
+    {% endif %}
+    <div style="margin-left:auto;">
+      <a href="{% url 'portal:leads_retry_all' %}" class="btn btn-danger btn-sm">🔄 Retry All Unsynced</a>
+    </div>
+  </form>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Phone</th>
+        <th>Source</th>
+        <th>Message</th>
+        <th>Email</th>
+        <th>HubSpot</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for lead in leads %}
+      <tr>
+        <td style="color:#64748b;white-space:nowrap;font-size:0.8rem;">{{ lead.created_at|date:"M d, Y H:i" }}</td>
+        <td><strong>{{ lead.name }}</strong></td>
+        <td><a href="mailto:{{ lead.email }}" style="color:#2563eb;">{{ lead.email }}</a></td>
+        <td>{{ lead.phone|default:"—" }}</td>
+        <td>
+          <span class="badge {% if lead.source_type == 'listing' %}badge-blue{% else %}badge-orange{% endif %}">
+            {{ lead.source_type|title }} #{{ lead.source_id }}
+          </span>
+        </td>
+        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#64748b;font-size:0.8rem;"
+            title="{{ lead.message }}">
+          {{ lead.message|default:"—"|truncatechars:50 }}
+        </td>
+        <td>
+          {% if lead.email_sent %}
+            <span class="badge badge-green">✅</span>
+          {% else %}
+            <span class="badge badge-gray">—</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if lead.hubspot_sent %}
+            <a href="https://app-na2.hubspot.com/contacts/242914945/record/0-1/{{ lead.hubspot_contact_id }}"
+               target="_blank" class="badge badge-green" style="text-decoration:none;">
+              ✅ {{ lead.hubspot_contact_id }}
+            </a>
+          {% elif lead.error %}
+            <span class="badge badge-red" title="{{ lead.error }}">⚠️ Error</span>
+          {% else %}
+            <span class="badge badge-gray">Pending</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if not lead.hubspot_sent %}
+            <a href="{% url 'portal:lead_retry' lead.id %}" class="btn btn-danger btn-sm">Retry</a>
+          {% else %}
+            <span style="color:#94a3b8;font-size:0.75rem;">—</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="9" style="text-align:center;color:#94a3b8;padding:32px;">No leads found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends "portal/base.html" %}
+{% block title %}Rentals | Col Realty Portal{% endblock %}
+{% block page_title %}Rentals ({{ total }}){% endblock %}
+
+{% block content %}
+
+<div class="card">
+  <form method="get" class="filter-bar">
+    <input type="text" name="q" placeholder="Search title, city…" value="{{ search }}" />
+    <select name="status">
+      <option value="">All Status</option>
+      <option value="active"   {% if status_filter == "active"   %}selected{% endif %}>Active</option>
+      <option value="leased"   {% if status_filter == "leased"   %}selected{% endif %}>Leased</option>
+      <option value="inactive" {% if status_filter == "inactive" %}selected{% endif %}>Inactive</option>
+    </select>
+    <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+    {% if search or status_filter %}
+      <a href="{% url 'portal:rentals' %}" class="btn btn-sm" style="background:#f1f5f9;">Clear</a>
+    {% endif %}
+  </form>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Address</th>
+        <th>Rent/mo</th>
+        <th>Beds/Ba</th>
+        <th>Type</th>
+        <th>Status</th>
+        <th>Updated</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rentals %}
+      <tr>
+        <td>
+          <a href="/rentals/{{ r.id }}/" target="_blank"
+             style="color:#2563eb;font-weight:500;font-size:0.85rem;">
+            {{ r.title|truncatechars:40 }}
+          </a>
+        </td>
+        <td style="color:#64748b;font-size:0.8rem;">{{ r.city }}, {{ r.state }}</td>
+        <td style="font-weight:600;">${{ r.rent|floatformat:0 }}/mo</td>
+        <td style="color:#64748b;">
+          {{ r.beds|default:"—" }}bd / {{ r.baths|default:"—" }}ba
+        </td>
+        <td><span class="badge badge-gray">{{ r.property_type|truncatechars:16 }}</span></td>
+        <td>
+          {% if r.status == "active" %}
+            <span class="badge badge-green">Active</span>
+          {% elif r.status == "leased" %}
+            <span class="badge badge-orange">Leased</span>
+          {% else %}
+            <span class="badge badge-red">Inactive</span>
+          {% endif %}
+        </td>
+        <td style="color:#94a3b8;font-size:0.78rem;white-space:nowrap;">{{ r.updated_at|date:"M d, Y" }}</td>
+        <td>
+          <a href="/admin/rentals/rental/{{ r.id }}/change/" class="btn btn-sm" style="background:#f1f5f9;">Edit</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="8" style="text-align:center;color:#94a3b8;padding:32px;">No rentals found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

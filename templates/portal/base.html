@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}Col Realty Portal{% endblock %}</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f1f5f9;
+      color: #1e293b;
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 220px;
+      background: #0f172a;
+      color: #94a3b8;
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      z-index: 100;
+    }
+
+    .sidebar-logo {
+      padding: 24px 20px 16px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+      border-bottom: 1px solid #1e293b;
+      letter-spacing: -0.3px;
+    }
+
+    .sidebar-logo span { color: #3b82f6; }
+
+    .sidebar-nav { flex: 1; padding: 16px 0; }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 20px;
+      color: #94a3b8;
+      text-decoration: none;
+      font-size: 0.9rem;
+      border-left: 3px solid transparent;
+      transition: all 0.15s;
+    }
+
+    .nav-item:hover { background: #1e293b; color: #e2e8f0; }
+    .nav-item.active { background: #1e293b; color: #fff; border-left-color: #3b82f6; }
+    .nav-icon { font-size: 1rem; width: 20px; text-align: center; }
+
+    .sidebar-footer {
+      padding: 16px 20px;
+      border-top: 1px solid #1e293b;
+      font-size: 0.8rem;
+    }
+
+    .sidebar-footer a { color: #64748b; text-decoration: none; }
+    .sidebar-footer a:hover { color: #94a3b8; }
+
+    /* ── Main ── */
+    .main {
+      margin-left: 220px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      background: #fff;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 14px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .topbar h1 { font-size: 1.1rem; font-weight: 600; color: #0f172a; }
+
+    .topbar-user {
+      font-size: 0.85rem;
+      color: #64748b;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .topbar-user a { color: #3b82f6; text-decoration: none; font-size: 0.8rem; }
+
+    .content { padding: 28px; flex: 1; }
+
+    /* ── Stat cards ── */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .stat-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .stat-label { font-size: 0.78rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .stat-value { font-size: 2rem; font-weight: 700; color: #0f172a; line-height: 1; }
+    .stat-sub   { font-size: 0.78rem; color: #94a3b8; margin-top: 4px; }
+
+    .stat-card.green  .stat-value { color: #16a34a; }
+    .stat-card.red    .stat-value { color: #dc2626; }
+    .stat-card.orange .stat-value { color: #d97706; }
+    .stat-card.blue   .stat-value { color: #2563eb; }
+
+    /* ── Section card ── */
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-header h2 { font-size: 0.95rem; font-weight: 600; }
+
+    /* ── Table ── */
+    .data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .data-table th {
+      text-align: left;
+      padding: 10px 16px;
+      background: #f8fafc;
+      color: #64748b;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .data-table td {
+      padding: 10px 16px;
+      border-bottom: 1px solid #f1f5f9;
+      vertical-align: middle;
+    }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background: #f8fafc; }
+
+    /* ── Badges ── */
+    .badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 100px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge-green  { background: #dcfce7; color: #15803d; }
+    .badge-red    { background: #fee2e2; color: #b91c1c; }
+    .badge-orange { background: #fef3c7; color: #b45309; }
+    .badge-blue   { background: #dbeafe; color: #1d4ed8; }
+    .badge-gray   { background: #f1f5f9; color: #475569; }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      border: none;
+    }
+    .btn-primary { background: #2563eb; color: #fff; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-danger  { background: #fee2e2; color: #b91c1c; }
+    .btn-danger:hover  { background: #fecaca; }
+    .btn-sm { padding: 4px 10px; font-size: 0.75rem; }
+
+    /* ── Filters bar ── */
+    .filter-bar {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      padding: 14px 20px;
+      border-bottom: 1px solid #f1f5f9;
+      flex-wrap: wrap;
+    }
+
+    .filter-bar input, .filter-bar select {
+      padding: 6px 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      background: #f8fafc;
+    }
+
+    .filter-bar input:focus, .filter-bar select:focus {
+      outline: none;
+      border-color: #3b82f6;
+    }
+
+    /* ── Messages ── */
+    .messages { margin-bottom: 20px; }
+    .alert {
+      padding: 12px 16px;
+      border-radius: 10px;
+      margin-bottom: 8px;
+      font-size: 0.875rem;
+    }
+    .alert-success { background: #dcfce7; color: #15803d; }
+    .alert-error   { background: #fee2e2; color: #b91c1c; }
+    .alert-info    { background: #dbeafe; color: #1d4ed8; }
+  </style>
+</head>
+<body>
+
+  <!-- ── Sidebar ───────────────────────────────────────────────────── -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">Col<span>Realty</span> Portal</div>
+
+    <div class="sidebar-nav">
+      <a href="{% url 'portal:dashboard' %}"
+         class="nav-item {% if section == 'dashboard' %}active{% endif %}">
+        <span class="nav-icon">📊</span> Dashboard
+      </a>
+      <a href="{% url 'portal:leads' %}"
+         class="nav-item {% if section == 'leads' %}active{% endif %}">
+        <span class="nav-icon">👥</span> Leads
+      </a>
+      <a href="{% url 'portal:listings' %}"
+         class="nav-item {% if section == 'listings' %}active{% endif %}">
+        <span class="nav-icon">🏠</span> Buy Listings
+      </a>
+      <a href="{% url 'portal:rentals' %}"
+         class="nav-item {% if section == 'rentals' %}active{% endif %}">
+        <span class="nav-icon">🔑</span> Rentals
+      </a>
+    </div>
+
+    <div class="sidebar-footer">
+      <a href="/admin/">Django Admin ↗</a><br>
+      <a href="https://app-na2.hubspot.com" target="_blank" style="margin-top:4px;display:block;">HubSpot CRM ↗</a>
+    </div>
+  </nav>
+
+  <!-- ── Main content ──────────────────────────────────────────────── -->
+  <div class="main">
+    <div class="topbar">
+      <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+      <div class="topbar-user">
+        Hello, {{ request.user.first_name|default:request.user.username }}
+        <a href="/admin/logout/">Log out</a>
+      </div>
+    </div>
+
+    <div class="content">
+      {% if messages %}
+        <div class="messages">
+          {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,78 @@
+{% extends "portal/base.html" %}
+{% block title %}Buy Listings | Col Realty Portal{% endblock %}
+{% block page_title %}Buy Listings ({{ total }}){% endblock %}
+
+{% block content %}
+
+<div class="card">
+  <form method="get" class="filter-bar">
+    <input type="text" name="q" placeholder="Search title, city, MLS ID…" value="{{ search }}" />
+    <select name="status">
+      <option value="">All Status</option>
+      <option value="active"  {% if status_filter == "active"  %}selected{% endif %}>Active</option>
+      <option value="pending" {% if status_filter == "pending" %}selected{% endif %}>Pending</option>
+      <option value="sold"    {% if status_filter == "sold"    %}selected{% endif %}>Sold</option>
+    </select>
+    <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+    {% if search or status_filter %}
+      <a href="{% url 'portal:listings' %}" class="btn btn-sm" style="background:#f1f5f9;">Clear</a>
+    {% endif %}
+  </form>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Address</th>
+        <th>Price</th>
+        <th>Beds/Ba</th>
+        <th>Type</th>
+        <th>Status</th>
+        <th>Featured</th>
+        <th>Updated</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for l in listings %}
+      <tr>
+        <td>
+          <a href="/listings/{{ l.id }}/" target="_blank"
+             style="color:#2563eb;font-weight:500;font-size:0.85rem;">
+            {{ l.title|truncatechars:40 }}
+          </a>
+        </td>
+        <td style="color:#64748b;font-size:0.8rem;">{{ l.city }}, {{ l.state }}</td>
+        <td style="font-weight:600;">${{ l.price|floatformat:0 }}</td>
+        <td style="color:#64748b;">
+          {{ l.beds|default:"—" }}bd / {{ l.baths|default:"—" }}ba
+        </td>
+        <td><span class="badge badge-gray">{{ l.property_type|truncatechars:16 }}</span></td>
+        <td>
+          {% if l.status == "active" %}
+            <span class="badge badge-green">Active</span>
+          {% elif l.status == "pending" %}
+            <span class="badge badge-orange">Pending</span>
+          {% else %}
+            <span class="badge badge-red">Sold</span>
+          {% endif %}
+        </td>
+        <td style="text-align:center;">
+          <a href="{% url 'portal:toggle_featured' l.id %}"
+             title="{% if l.is_featured %}Remove featured{% else %}Mark as featured{% endif %}">
+            {% if l.is_featured %}⭐{% else %}☆{% endif %}
+          </a>
+        </td>
+        <td style="color:#94a3b8;font-size:0.78rem;white-space:nowrap;">{{ l.updated_at|date:"M d, Y" }}</td>
+        <td>
+          <a href="/admin/listings/listing/{{ l.id }}/change/" class="btn btn-sm" style="background:#f1f5f9;">Edit</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="9" style="text-align:center;color:#94a3b8;padding:32px;">No listings found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}
