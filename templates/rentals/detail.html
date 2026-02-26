@@ -1,95 +1,460 @@
 {% extends "base.html" %}
-{% block title %}{{ rental.title }} | Rental | Col Realty{% endblock %}
+{% load humanize %}
+
+{% block title %}{{ rental.title }} | Rent | Col Realty{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ── Detail page layout ─────────────────────────────────────── */
+  .detail-layout {
+    display: grid;
+    grid-template-columns: 1fr 420px;
+    gap: 0;
+    max-width: 1400px;
+    margin: 0 auto;
+    align-items: start;
+  }
+  .detail-main { padding: 32px 32px 60px 32px; min-width: 0; }
+  .detail-sidebar {
+    position: sticky;
+    top: 72px;
+    height: calc(100vh - 72px);
+    overflow-y: auto;
+    border-left: 1px solid #e8e8e8;
+  }
+
+  @media (max-width: 900px) {
+    .detail-layout { grid-template-columns: 1fr; }
+    .detail-sidebar { position: static; height: 400px; border-left: none; border-top: 1px solid #e8e8e8; }
+  }
+
+  .hero-address { font-size: 13px; color: #888; margin-bottom: 4px; letter-spacing: 0.02em; }
+  .hero-title { font-size: 26px; font-weight: 700; color: #1a1a1a; margin: 0 0 16px 0; line-height: 1.3; }
+
+  .stats-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    border: 1px solid #e8e8e8;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .stat-item { flex: 1; min-width: 100px; padding: 14px 20px; border-right: 1px solid #e8e8e8; text-align: center; }
+  .stat-item:last-child { border-right: none; }
+  .stat-value { font-size: 20px; font-weight: 700; color: #1a1a1a; }
+  .stat-label { font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+
+  .status-row { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+  .badge { display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+  .badge-active { background: #dcfce7; color: #15803d; }
+  .badge-leased { background: #e0e7ff; color: #3730a3; }
+  .badge-inactive { background: #f5f5f5; color: #777; }
+  .badge-mls { background: #f0f4ff; color: #3b5bdb; }
+  .badge-dom { background: #f5f5f5; color: #555; }
+
+  .main-photo { width: 100%; max-height: 500px; object-fit: cover; border-radius: 16px; margin-bottom: 28px; display: block; }
+  .no-photo { width: 100%; height: 300px; background: #f5f5f5; border-radius: 16px; display: flex; align-items: center; justify-content: center; color: #bbb; font-size: 15px; margin-bottom: 28px; }
+
+  .detail-section { margin-bottom: 36px; border-bottom: 1px solid #f0f0f0; padding-bottom: 36px; }
+  .detail-section:last-child { border-bottom: none; margin-bottom: 0; }
+  .section-title { font-size: 18px; font-weight: 700; color: #1a1a1a; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px; }
+
+  .description-text { font-size: 15px; line-height: 1.75; color: #444; white-space: pre-line; }
+  .description-preview { max-height: 120px; overflow: hidden; position: relative; }
+  .description-preview::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 60px; background: linear-gradient(transparent, white); }
+  .read-more-btn { background: none; border: none; color: #2d6a4f; font-weight: 600; font-size: 14px; cursor: pointer; padding: 8px 0 0 0; display: block; }
+  .read-more-btn:hover { text-decoration: underline; }
+
+  .facts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1px; background: #e8e8e8; border: 1px solid #e8e8e8; border-radius: 12px; overflow: hidden; }
+  .fact-item { background: #fff; padding: 14px 18px; }
+  .fact-label { font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+  .fact-value { font-size: 14px; font-weight: 600; color: #1a1a1a; }
+
+  .features-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .feature-group-title { font-size: 13px; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 10px 0; }
+  .feature-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .feature-tag { background: #f5f5f5; border: 1px solid #e8e8e8; border-radius: 6px; padding: 5px 10px; font-size: 13px; color: #444; }
+
+  .school-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f5f5f5; }
+  .school-item:last-child { border-bottom: none; }
+  .school-name { font-size: 14px; font-weight: 600; color: #1a1a1a; }
+  .school-type { font-size: 12px; color: #888; margin-top: 2px; }
+  .school-district-badge { display: inline-block; background: #f0f4ff; color: #3b5bdb; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; margin-bottom: 14px; }
+
+  .open-house-card { background: linear-gradient(135deg, #2d6a4f 0%, #40916c 100%); color: white; border-radius: 12px; padding: 20px 24px; display: flex; align-items: center; gap: 16px; }
+  .oh-icon { font-size: 28px; }
+  .oh-label { font-size: 11px; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.06em; }
+  .oh-datetime { font-size: 17px; font-weight: 700; margin-top: 2px; }
+
+  .virtual-tour-btn { display: inline-flex; align-items: center; gap: 8px; background: #1a1a1a; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 600; transition: background 0.2s; }
+  .virtual-tour-btn:hover { background: #333; }
+
+  /* Rental-specific highlights */
+  .rental-highlights { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .highlight-card { background: #f9f9f9; border: 1px solid #e8e8e8; border-radius: 10px; padding: 14px; text-align: center; }
+  .highlight-icon { font-size: 22px; margin-bottom: 6px; }
+  .highlight-value { font-size: 15px; font-weight: 700; color: #1a1a1a; }
+  .highlight-label { font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+
+  /* Sidebar */
+  .lead-form-card { background: white; padding: 24px; border-bottom: 1px solid #e8e8e8; }
+  .lead-form-price { font-size: 24px; font-weight: 700; color: #1a1a1a; margin-bottom: 4px; }
+  .lead-form-address { font-size: 13px; color: #888; margin-bottom: 20px; }
+  .form-field { margin-bottom: 12px; }
+  .form-field label { display: block; font-size: 12px; font-weight: 600; color: #555; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .form-field input, .form-field textarea { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid #e8e8e8; border-radius: 8px; font-size: 14px; color: #1a1a1a; transition: border-color 0.2s; font-family: inherit; }
+  .form-field input:focus, .form-field textarea:focus { outline: none; border-color: #2d6a4f; }
+  .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .submit-btn { width: 100%; background: #2d6a4f; color: white; border: none; padding: 13px; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 4px; transition: background 0.2s; font-family: inherit; }
+  .submit-btn:hover { background: #1b4332; }
+  .agent-info { display: flex; align-items: center; gap: 10px; padding: 16px 24px; border-bottom: 1px solid #e8e8e8; }
+  .agent-avatar { width: 40px; height: 40px; background: #2d6a4f; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 16px; flex-shrink: 0; }
+  .agent-name { font-size: 14px; font-weight: 600; color: #1a1a1a; }
+  .agent-role { font-size: 12px; color: #888; }
+  .agent-phone { font-size: 13px; color: #2d6a4f; font-weight: 600; text-decoration: none; margin-top: 2px; display: block; }
+
+  .map-container { height: 300px; }
+  #rental-map { height: 100%; width: 100%; }
+</style>
+{% endblock %}
 
 {% block content %}
+<div class="detail-layout">
 
-<div class="split-view-container">
+  <!-- ═══════════════════════════════════════════════════════════════
+       LEFT COLUMN
+  ═══════════════════════════════════════════════════════════════════ -->
+  <div class="detail-main">
 
-  <!-- LEFT: Detail content (scrollable like list page) -->
-  <div class="listings-column">
+    <!-- Hero -->
+    <p class="hero-address">
+      {{ rental.street_address }}, {{ rental.city }}, {{ rental.state }} {{ rental.zip_code }}
+      {% if rental.county %} &middot; {{ rental.county }} County{% endif %}
+    </p>
+    <h1 class="hero-title">{{ rental.title }}</h1>
 
-    <div class="card-full">
-      <h1 style="margin-bottom:6px;">{{ rental.title }}</h1>
-      <p class="section-sub" style="margin-top:0;">
-        {{ rental.street_address }}, {{ rental.city }}, {{ rental.state }} {{ rental.zip_code }}
-      </p>
+    <div class="status-row">
+      <span class="badge badge-{{ rental.status }}">
+        {% if rental.status == 'active' %}● {% elif rental.status == 'leased' %}✓ {% else %}○ {% endif %}
+        {{ rental.status|title }}
+      </span>
+      {% if rental.mls_id %}
+        <span class="badge badge-mls">MLS# {{ rental.mls_id }}</span>
+      {% endif %}
+      {% if rental.days_on_market is not None %}
+        <span class="badge badge-dom">{{ rental.days_on_market }} days listed</span>
+      {% endif %}
+      {% if rental.available_date %}
+        <span class="badge" style="background:#f0fdf4;color:#15803d;">
+          ✓ Available {{ rental.available_date|date:"M j, Y" }}
+        </span>
+      {% endif %}
+      {% if rental.open_house_date %}
+        <span class="badge" style="background:#fff4e6;color:#c05c00;">
+          🏠 Open {{ rental.open_house_date|date:"D, M j" }}
+          {% if rental.open_house_start_time %} {{ rental.open_house_start_time|time:"g:i A" }}{% endif %}
+          {% if rental.open_house_end_time %} – {{ rental.open_house_end_time|time:"g:i A" }}{% endif %}
+        </span>
+      {% endif %}
+    </div>
 
-      <div style="display:flex; flex-wrap:wrap; gap:14px; margin-top:14px;">
-        <div class="pill"><b>${{ rental.price }}</b> / month</div>
-        {% if rental.beds %}<div class="pill">{{ rental.beds }} beds</div>{% endif %}
-        {% if rental.baths %}<div class="pill">{{ rental.baths }} baths</div>{% endif %}
-        {% if rental.sqft %}<div class="pill">{{ rental.sqft }} sqft</div>{% endif %}
-        {% if rental.property_type %}<div class="pill">{{ rental.property_type }}</div>{% endif %}
-        {% if rental.status %}<div class="pill">{{ rental.status|title }}</div>{% endif %}
+    <!-- Stats bar -->
+    <div class="stats-bar">
+      <div class="stat-item">
+        <div class="stat-value">${{ rental.rent|floatformat:0|intcomma }}<span style="font-size:13px;font-weight:400;">/mo</span></div>
+        <div class="stat-label">Rent</div>
       </div>
-
-      {% if rental.main_image_url %}
-        <div style="margin-top:16px;">
-          <img
-            src="{{ rental.main_image_url }}"
-            alt="{{ rental.title }}"
-            style="width:100%; max-height:520px; object-fit:cover; border-radius:16px;"
-          />
-        </div>
+      {% if rental.beds %}
+      <div class="stat-item">
+        <div class="stat-value">{{ rental.beds|floatformat:0 }}</div>
+        <div class="stat-label">Beds</div>
+      </div>
       {% endif %}
-
-      {% if rental.description %}
-        <div style="margin-top:16px;">
-          <h2 style="margin-bottom:8px;">Description</h2>
-          <p style="white-space:pre-line; margin-top:0;">{{ rental.description }}</p>
-        </div>
+      {% if rental.baths %}
+      <div class="stat-item">
+        <div class="stat-value">{{ rental.baths|floatformat:0 }}</div>
+        <div class="stat-label">Baths</div>
+      </div>
+      {% endif %}
+      {% if rental.sqft %}
+      <div class="stat-item">
+        <div class="stat-value">{{ rental.sqft|intcomma }}</div>
+        <div class="stat-label">Sq. Ft.</div>
+      </div>
+      {% endif %}
+      {% if rental.deposit %}
+      <div class="stat-item">
+        <div class="stat-value">${{ rental.deposit|floatformat:0|intcomma }}</div>
+        <div class="stat-label">Deposit</div>
+      </div>
       {% endif %}
     </div>
 
-    <div class="card-full" style="margin-top:18px;">
-      <h2 style="margin-bottom:10px;">Interested?</h2>
-      <p style="margin-top:0;">
-        Call/text <b>(512) 699-3810</b> or use the form below and we’ll get back quickly.
+    <!-- Photo -->
+    {% if rental.main_image_url %}
+      <img src="{{ rental.main_image_url }}" alt="{{ rental.title }}" class="main-photo" />
+    {% else %}
+      <div class="no-photo">📷 No photo available</div>
+    {% endif %}
+
+    {% if rental.virtual_tour_url %}
+      <div style="margin-bottom:24px;">
+        <a href="{{ rental.virtual_tour_url }}" target="_blank" class="virtual-tour-btn">🎥 Virtual Tour</a>
+      </div>
+    {% endif %}
+
+    <!-- Rental highlights -->
+    <div class="rental-highlights">
+      {% if rental.lease_term %}
+      <div class="highlight-card">
+        <div class="highlight-icon">📋</div>
+        <div class="highlight-value">{{ rental.lease_term }}</div>
+        <div class="highlight-label">Lease Term</div>
+      </div>
+      {% endif %}
+      {% if rental.pets_allowed is not None %}
+      <div class="highlight-card">
+        <div class="highlight-icon">{% if rental.pets_allowed %}🐾{% else %}🚫{% endif %}</div>
+        <div class="highlight-value">{% if rental.pets_allowed %}Yes{% else %}No{% endif %}</div>
+        <div class="highlight-label">Pets Allowed</div>
+      </div>
+      {% endif %}
+      {% if rental.has_garage %}
+      <div class="highlight-card">
+        <div class="highlight-icon">🚗</div>
+        <div class="highlight-value">{% if rental.garage_spaces %}{{ rental.garage_spaces }}{% else %}Yes{% endif %}</div>
+        <div class="highlight-label">Garage</div>
+      </div>
+      {% endif %}
+      {% if rental.has_pool %}
+      <div class="highlight-card">
+        <div class="highlight-icon">🏊</div>
+        <div class="highlight-value">Yes</div>
+        <div class="highlight-label">Pool</div>
+      </div>
+      {% endif %}
+      {% if rental.utilities_included %}
+      <div class="highlight-card">
+        <div class="highlight-icon">⚡</div>
+        <div class="highlight-value">Included</div>
+        <div class="highlight-label">{{ rental.utilities_included }}</div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Description -->
+    {% if rental.description %}
+    <div class="detail-section">
+      <h2 class="section-title"><span>📝</span> Description</h2>
+      <div id="desc-preview" class="description-text description-preview">{{ rental.description }}</div>
+      <div id="desc-full" class="description-text" style="display:none;">{{ rental.description }}</div>
+      <button class="read-more-btn" onclick="toggleDesc(this)">Read more ↓</button>
+    </div>
+    {% endif %}
+
+    <!-- Property Details -->
+    <div class="detail-section">
+      <h2 class="section-title"><span>🏠</span> Property Details</h2>
+      <div class="facts-grid">
+        {% if rental.status %}<div class="fact-item"><div class="fact-label">Status</div><div class="fact-value">{{ rental.status|title }}</div></div>{% endif %}
+        {% if rental.property_type %}<div class="fact-item"><div class="fact-label">Type</div><div class="fact-value">{{ rental.property_type }}</div></div>{% endif %}
+        {% if rental.year_built %}<div class="fact-item"><div class="fact-label">Year Built</div><div class="fact-value">{{ rental.year_built }}</div></div>{% endif %}
+        {% if rental.stories %}<div class="fact-item"><div class="fact-label">Stories</div><div class="fact-value">{{ rental.stories }}</div></div>{% endif %}
+        {% if rental.sqft %}<div class="fact-item"><div class="fact-label">Living Area</div><div class="fact-value">{{ rental.sqft|intcomma }} sqft</div></div>{% endif %}
+        {% if rental.lot_size %}<div class="fact-item"><div class="fact-label">Lot Size</div><div class="fact-value">{{ rental.lot_size }} AC</div></div>{% endif %}
+        {% if rental.garage_spaces %}<div class="fact-item"><div class="fact-label">Garage</div><div class="fact-value">{{ rental.garage_spaces }} spaces</div></div>{% endif %}
+        {% if rental.county %}<div class="fact-item"><div class="fact-label">County</div><div class="fact-value">{{ rental.county }}</div></div>{% endif %}
+        {% if rental.subdivision %}<div class="fact-item"><div class="fact-label">Subdivision</div><div class="fact-value">{{ rental.subdivision }}</div></div>{% endif %}
+        {% if rental.lease_term %}<div class="fact-item"><div class="fact-label">Lease Term</div><div class="fact-value">{{ rental.lease_term }}</div></div>{% endif %}
+        {% if rental.deposit %}<div class="fact-item"><div class="fact-label">Deposit</div><div class="fact-value">${{ rental.deposit|floatformat:0|intcomma }}</div></div>{% endif %}
+        {% if rental.available_date %}<div class="fact-item"><div class="fact-label">Available</div><div class="fact-value">{{ rental.available_date|date:"M j, Y" }}</div></div>{% endif %}
+        {% if rental.mls_id %}<div class="fact-item"><div class="fact-label">MLS #</div><div class="fact-value">{{ rental.mls_id }}</div></div>{% endif %}
+        {% if rental.days_on_market is not None %}<div class="fact-item"><div class="fact-label">Days Listed</div><div class="fact-value">{{ rental.days_on_market }}</div></div>{% endif %}
+      </div>
+    </div>
+
+    <!-- Features -->
+    {% if rental.interior_features or rental.exterior_features or rental.appliances or rental.community_features %}
+    <div class="detail-section">
+      <h2 class="section-title"><span>✨</span> Features & Amenities</h2>
+      <div class="features-grid">
+        {% if rental.interior_features %}
+        <div>
+          <p class="feature-group-title">Interior</p>
+          <div class="feature-tags">
+            {% for feature in rental.interior_features_list %}<span class="feature-tag">{{ feature }}</span>{% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        {% if rental.exterior_features %}
+        <div>
+          <p class="feature-group-title">Exterior</p>
+          <div class="feature-tags">
+            {% for feature in rental.exterior_features_list %}<span class="feature-tag">{{ feature }}</span>{% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        {% if rental.appliances %}
+        <div>
+          <p class="feature-group-title">Appliances</p>
+          <div class="feature-tags">
+            {% for appliance in rental.appliances_list %}<span class="feature-tag">{{ appliance }}</span>{% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        {% if rental.community_features %}
+        <div>
+          <p class="feature-group-title">Community</p>
+          <div class="feature-tags">
+            {% for feature in rental.community_features_list %}<span class="feature-tag">{{ feature }}</span>{% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        {% if rental.heating or rental.cooling or rental.flooring %}
+        <div>
+          <p class="feature-group-title">Utilities & Finishes</p>
+          <div class="feature-tags">
+            {% if rental.heating %}<span class="feature-tag">Heat: {{ rental.heating }}</span>{% endif %}
+            {% if rental.cooling %}<span class="feature-tag">AC: {{ rental.cooling }}</span>{% endif %}
+            {% if rental.flooring %}<span class="feature-tag">{{ rental.flooring }}</span>{% endif %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+      <div style="margin-top:20px; display:flex; flex-wrap:wrap; gap:8px;">
+        {% if rental.has_fireplace %}<span class="feature-tag">🔥 Fireplace</span>{% endif %}
+        {% if rental.has_pool %}<span class="feature-tag">🏊 Pool</span>{% endif %}
+        {% if rental.has_garage %}<span class="feature-tag">🚗 Garage</span>{% endif %}
+        {% if rental.pets_allowed %}<span class="feature-tag">🐾 Pets OK</span>{% endif %}
+        {% if rental.laundry_features %}<span class="feature-tag">🧺 {{ rental.laundry_features }}</span>{% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Schools -->
+    {% if rental.school_district or rental.elementary_school or rental.middle_school or rental.high_school %}
+    <div class="detail-section">
+      <h2 class="section-title"><span>🎓</span> Schools</h2>
+      {% if rental.school_district %}<div class="school-district-badge">{{ rental.school_district }}</div>{% endif %}
+      {% if rental.elementary_school %}<div class="school-item"><div><div class="school-name">{{ rental.elementary_school }}</div><div class="school-type">Elementary School</div></div></div>{% endif %}
+      {% if rental.middle_school %}<div class="school-item"><div><div class="school-name">{{ rental.middle_school }}</div><div class="school-type">Middle School</div></div></div>{% endif %}
+      {% if rental.high_school %}<div class="school-item"><div><div class="school-name">{{ rental.high_school }}</div><div class="school-type">High School</div></div></div>{% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Open House -->
+    {% if rental.open_house_date %}
+    <div class="detail-section">
+      <h2 class="section-title"><span>📅</span> Open House</h2>
+      <div class="open-house-card">
+        <div class="oh-icon">🏡</div>
+        <div>
+          <div class="oh-label">Open House</div>
+          <div class="oh-datetime">
+            {{ rental.open_house_date|date:"l, F j, Y" }}
+            {% if rental.open_house_start_time %} {{ rental.open_house_start_time|time:"g:i A" }}{% endif %}
+            {% if rental.open_house_end_time %} – {{ rental.open_house_end_time|time:"g:i A" }}{% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Directions -->
+    {% if rental.directions %}
+    <div class="detail-section">
+      <h2 class="section-title"><span>🗺️</span> Directions</h2>
+      <p style="font-size:14px; color:#555; line-height:1.7; margin:0;">{{ rental.directions }}</p>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       RIGHT COLUMN — sticky sidebar
+  ═══════════════════════════════════════════════════════════════════ -->
+  <div class="detail-sidebar">
+
+    <div class="agent-info">
+      <div class="agent-avatar">C</div>
+      <div>
+        <div class="agent-name">Col Realty</div>
+        <div class="agent-role">Listing Agent</div>
+        <a href="tel:5126993810" class="agent-phone">(512) 699-3810</a>
+      </div>
+    </div>
+
+    <div class="lead-form-card">
+      <div class="lead-form-price">${{ rental.rent|floatformat:0|intcomma }}<span style="font-size:14px;font-weight:400;color:#888;">/mo</span></div>
+      <div class="lead-form-address">{{ rental.street_address }}, {{ rental.city }}</div>
+
+      {% if messages %}
+        {% for message in messages %}
+          <div style="padding:10px 12px;background:#dcfce7;border-radius:8px;margin-bottom:14px;color:#15803d;font-size:13px;">
+            ✓ {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      <form method="post" action="{% url 'leads:create' %}">
+        {% csrf_token %}
+        <input type="hidden" name="source_type" value="rental">
+        <input type="hidden" name="source_id"   value="{{ rental.id }}">
+        <input type="hidden" name="page_url"     value="{{ request.build_absolute_uri }}">
+
+        <div class="form-grid-2">
+          <div class="form-field">
+            <label>Name <span style="color:red">*</span></label>
+            <input type="text" name="name" required placeholder="Your name" />
+          </div>
+          <div class="form-field">
+            <label>Phone</label>
+            <input type="tel" name="phone" placeholder="(512) 000-0000" />
+          </div>
+        </div>
+        <div class="form-field">
+          <label>Email <span style="color:red">*</span></label>
+          <input type="email" name="email" required placeholder="you@email.com" />
+        </div>
+        <div class="form-field">
+          <label>Move-in Date</label>
+          <input type="date" name="move_in_date" />
+        </div>
+        <div class="form-field">
+          <label>Message</label>
+          <textarea name="message" rows="3">Hi, I'm interested in renting {{ rental.street_address }}, {{ rental.city }}. Please contact me with more details.</textarea>
+        </div>
+        <button type="submit" class="submit-btn">Schedule a Tour</button>
+      </form>
+
+      <p style="font-size:11px;color:#aaa;text-align:center;margin-top:12px;margin-bottom:0;">
+        By submitting, you agree to be contacted by Col Realty.
       </p>
+    </div>
 
-		<form method="post" action="{% url 'leads:create' %}">
-		  {% csrf_token %}
-
-		  <input type="hidden" name="source_type" value="rental">
-		  <input type="hidden" name="source_id" value="{{ rental.id }}">
-		  <input type="hidden" name="page_url" value="{{ request.build_absolute_uri }}">
-
-		  <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-			<div>
-			  <label>Your Name</label>
-			  <input type="text" name="name" required style="width:100%;" />
-			</div>
-
-			<div>
-			  <label>Phone</label>
-			  <input type="tel" name="phone" style="width:100%;" />
-			</div>
-
-			<div>
-			  <label>Email</label>
-			  <input type="email" name="email" required style="width:100%;" />
-			</div>
-		  </div>
-
-		  <div style="margin-top:12px;">
-			<label>Message</label>
-			<textarea name="message" rows="4" style="width:100%;">Hi, I’m interested in {{ rental.street_address }}, {{ rental.city }}.</textarea>
-		  </div>
-
-		  <button type="submit" class="link-button" style="margin-top:12px;">
-			Request a Showing
-		  </button>
-		</form>
+    <div class="map-container">
+      <div id="rental-map"></div>
     </div>
 
   </div>
-
-  <!-- RIGHT: Map (fixed like list page) -->
-  <div class="map-column">
-    <div id="rental-map" style="height:100%; width:100%;"></div>
-  </div>
-
 </div>
+
+<script>
+  function toggleDesc(btn) {
+    const preview = document.getElementById('desc-preview');
+    const full = document.getElementById('desc-full');
+    if (full.style.display === 'none') {
+      preview.style.display = 'none';
+      full.style.display = 'block';
+      btn.textContent = 'Show less ↑';
+    } else {
+      preview.style.display = 'block';
+      full.style.display = 'none';
+      btn.textContent = 'Read more ↓';
+    }
+  }
+</script>
 
 {% if rental.latitude and rental.longitude %}
 <script src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&v=weekly" defer></script>
@@ -97,30 +462,21 @@
   window.addEventListener("load", () => {
     const el = document.getElementById("rental-map");
     if (!el) return;
-
     const lat = parseFloat("{{ rental.latitude }}");
     const lng = parseFloat("{{ rental.longitude }}");
     if (Number.isNaN(lat) || Number.isNaN(lng)) return;
-
     const pos = { lat, lng };
-
-    const map = new google.maps.Map(el, {
-      center: pos,
-      zoom: 14,
-    });
-
-    new google.maps.Marker({
-      map,
-      position: pos,
-      title: "{{ rental.title|escapejs }}",
-    });
+    const map = new google.maps.Map(el, { center: pos, zoom: 15 });
+    new google.maps.Marker({ map, position: pos, title: "{{ rental.title|escapejs }}" });
+  });
+</script>
+{% else %}
+<script>
+  window.addEventListener("load", () => {
+    const el = document.getElementById("rental-map");
+    if (el) el.innerHTML = "<div style='padding:20px;color:#999;text-align:center;height:100%;display:flex;align-items:center;justify-content:center;'>Map unavailable</div>";
   });
 </script>
 {% endif %}
-
-<style>
-  /* These already exist in your styles.css, but keep this if you want detail page to feel nicer */
-  .map-column { background: transparent; } /* you had grey background before */
-</style>
 
 {% endblock %}
