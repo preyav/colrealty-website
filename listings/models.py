@@ -136,5 +136,8 @@ class Listing(models.Model):
     def community_features_list(self):
         return [f.strip() for f in self.community_features.split(",") if f.strip()]
 
+    def parking_features_list(self):
+        return [f.strip() for f in self.parking_features.split(",") if f.strip()]
+
     def appliances_list(self):
         return [f.strip() for f in self.appliances.split(",") if f.strip()]
