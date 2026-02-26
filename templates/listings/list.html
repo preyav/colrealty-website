@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load humanize %}
 {% block title %}Buy | Col Realty{% endblock %}
 
 {% block content %}
@@ -9,7 +10,6 @@
     <p class="hero-text">
       Browse active homes for sale and explore them on the map. Click a pin to view details.
     </p>
-
     <div class="hero-pills">
       <span class="hero-pill">Live MLS</span>
       <span class="hero-pill">Map view</span>
@@ -17,26 +17,120 @@
     </div>
   </div>
 
+  <!-- ── Search / Filter Form ───────────────────────────────────────────── -->
   <div class="search-card">
     <div class="search-heading">
-      <h2>Quick Filters</h2>
-      <span>Next</span>
+      <h2>Search & Filter</h2>
     </div>
 
-    <div class="search-row">
-      <input class="input-field" placeholder="City (e.g., Austin)" disabled>
-      <input class="input-field" placeholder="Max price" disabled>
-      <input class="input-field" placeholder="Beds" disabled>
-    </div>
+    <form method="get" action="" id="search-form">
+      <div class="search-row">
 
-    <button class="btn-primary" disabled>Search</button>
+        <div class="search-field">
+          <label for="q">Location</label>
+          <input
+            id="q"
+            class="input-field"
+            type="text"
+            name="q"
+            placeholder="City, ZIP, or address"
+            value="{{ search_q }}"
+          >
+        </div>
+
+        <div class="search-field">
+          <label for="price_min">Min Price</label>
+          <input
+            id="price_min"
+            class="input-field"
+            type="number"
+            name="price_min"
+            placeholder="e.g. 200000"
+            min="0"
+            value="{{ search_price_min }}"
+          >
+        </div>
+
+        <div class="search-field">
+          <label for="price_max">Max Price</label>
+          <input
+            id="price_max"
+            class="input-field"
+            type="number"
+            name="price_max"
+            placeholder="e.g. 800000"
+            min="0"
+            value="{{ search_price_max }}"
+          >
+        </div>
+
+        <div class="search-field">
+          <label for="beds_min">Min Beds</label>
+          <select id="beds_min" class="input-field" name="beds_min">
+            <option value="">Any</option>
+            {% for n in "1234" %}
+              <option value="{{ n }}" {% if search_beds_min == n %}selected{% endif %}>{{ n }}+</option>
+            {% endfor %}
+            <option value="5" {% if search_beds_min == "5" %}selected{% endif %}>5+</option>
+          </select>
+        </div>
+
+        <div class="search-field">
+          <label for="baths_min">Min Baths</label>
+          <select id="baths_min" class="input-field" name="baths_min">
+            <option value="">Any</option>
+            <option value="1"   {% if search_baths_min == "1"   %}selected{% endif %}>1+</option>
+            <option value="1.5" {% if search_baths_min == "1.5" %}selected{% endif %}>1.5+</option>
+            <option value="2"   {% if search_baths_min == "2"   %}selected{% endif %}>2+</option>
+            <option value="3"   {% if search_baths_min == "3"   %}selected{% endif %}>3+</option>
+          </select>
+        </div>
+
+        <div class="search-field">
+          <label for="property_type">Property Type</label>
+          <select id="property_type" class="input-field" name="property_type">
+            <option value="">All Types</option>
+            {% for pt in PROPERTY_TYPE_CHOICES %}
+              <option value="{{ pt }}" {% if search_property_type == pt %}selected{% endif %}>{{ pt }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+      </div>
+
+      <div class="search-actions" style="display:flex; gap:10px; margin-top:12px;">
+        <button type="submit" class="btn-primary">Search</button>
+        {% if search_q or search_price_min or search_price_max or search_beds_min or search_baths_min or search_property_type %}
+          <a href="{% url 'listings:listing_list' %}" class="btn-secondary">Clear Filters</a>
+        {% endif %}
+      </div>
+    </form>
+
+    <!-- ── Active filter summary ──────────────────────────────────────── -->
+    {% if search_q or search_price_min or search_price_max or search_beds_min or search_baths_min or search_property_type %}
+      <div class="active-filters" style="margin-top:10px; font-size:0.85rem; color:#666;">
+        Filtering by:
+        {% if search_q %}<span class="filter-tag">Location: {{ search_q }}</span>{% endif %}
+        {% if search_price_min %}<span class="filter-tag">Min: ${{ search_price_min|intcomma }}</span>{% endif %}
+        {% if search_price_max %}<span class="filter-tag">Max: ${{ search_price_max|intcomma }}</span>{% endif %}
+        {% if search_beds_min %}<span class="filter-tag">Beds: {{ search_beds_min }}+</span>{% endif %}
+        {% if search_baths_min %}<span class="filter-tag">Baths: {{ search_baths_min }}+</span>{% endif %}
+        {% if search_property_type %}<span class="filter-tag">Type: {{ search_property_type }}</span>{% endif %}
+      </div>
+    {% endif %}
   </div>
 </section>
 
+
 <div class="split-view-container">
 
-  <!-- LEFT: Listings -->
+  <!-- ── LEFT: Listings ─────────────────────────────────────────────────── -->
   <div class="listings-column">
+
+    <!-- Result count -->
+    <p class="results-count" style="margin-bottom:12px; color:#555; font-size:0.9rem;">
+      {{ paginator.count }} listing{{ paginator.count|pluralize }} found
+    </p>
 
     <div class="listing-grid">
       {% for l in listings %}
@@ -45,7 +139,6 @@
             {% if l.main_image_url %}
               <img class="listing-image" src="{{ l.main_image_url }}" alt="{{ l.title }}">
             {% endif %}
-
             <div class="badge-strip">
               <span class="badge badge-status-active">{{ l.status|default:"active"|title }}</span>
               {% if l.property_type %}<span class="badge">{{ l.property_type }}</span>{% endif %}
@@ -54,66 +147,75 @@
 
           <div class="listing-body">
             <div class="listing-price">
-              <div class="price-main">${{ l.price|floatformat:0 }}</div>
+              <div class="price-main">${{ l.price|floatformat:0|intcomma }}</div>
             </div>
-
             <div class="listing-title">{{ l.title }}</div>
-
             <div class="listing-location">
               {{ l.street_address }}, {{ l.city }}, {{ l.state }} {{ l.zip_code }}
             </div>
-
             <div class="listing-meta">
               {% if l.beds %}<span class="meta-pill">{{ l.beds }} bd</span>{% endif %}
               {% if l.baths %}<span class="meta-pill">{{ l.baths }} ba</span>{% endif %}
-              {% if l.sqft %}<span class="meta-pill">{{ l.sqft }} sqft</span>{% endif %}
+              {% if l.sqft %}<span class="meta-pill">{{ l.sqft|intcomma }} sqft</span>{% endif %}
             </div>
           </div>
         </a>
       {% empty %}
-        <p>No active homes found.</p>
+        <div style="padding:24px 0; color:#888;">
+          <p>No active homes matched your filters.</p>
+          <a href="{% url 'listings:listing_list' %}">Clear all filters →</a>
+        </div>
       {% endfor %}
     </div>
 
-	{% if is_paginated %}
-	  <nav aria-label="Pagination" style="margin-top: 20px;">
-		<ul class="pagination">
+    <!-- ── Pagination (preserves search filters) ──────────────────────── -->
+    {% if is_paginated %}
+      <nav aria-label="Pagination" style="margin-top:20px;">
+        <ul class="pagination">
 
-		  {% if page_obj.has_previous %}
-			<li class="page-item">
-			  <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
-			</li>
-		  {% else %}
-			<li class="page-item disabled"><span class="page-link">Previous</span></li>
-		  {% endif %}
+          {% if page_obj.has_previous %}
+            <li class="page-item">
+              <a class="page-link"
+                 href="?{{ query_string }}&page={{ page_obj.previous_page_number }}">
+                ← Previous
+              </a>
+            </li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">← Previous</span></li>
+          {% endif %}
 
-		  <li class="page-item disabled">
-			<span class="page-link">
-			  Page {{ page_obj.number }} of {{ paginator.num_pages }}
-			</span>
-		  </li>
+          <li class="page-item disabled">
+            <span class="page-link">
+              Page {{ page_obj.number }} of {{ paginator.num_pages }}
+            </span>
+          </li>
 
-		  {% if page_obj.has_next %}
-			<li class="page-item">
-			  <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
-			</li>
-		  {% else %}
-			<li class="page-item disabled"><span class="page-link">Next</span></li>
-		  {% endif %}
+          {% if page_obj.has_next %}
+            <li class="page-item">
+              <a class="page-link"
+                 href="?{{ query_string }}&page={{ page_obj.next_page_number }}">
+                Next →
+              </a>
+            </li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">Next →</span></li>
+          {% endif %}
 
-		</ul>
-	  </nav>
-	{% endif %}
+        </ul>
+      </nav>
+    {% endif %}
 
   </div>
 
-  <!-- RIGHT: Map -->
+  <!-- ── RIGHT: Map ─────────────────────────────────────────────────────── -->
   <div class="map-column">
-    <div id="map" style="height: 100%; width: 100%;"></div>
+    <div id="map" style="height:100%; width:100%;"></div>
   </div>
 
 </div>
 
+
+<!-- ── Google Maps + Markers ──────────────────────────────────────────────── -->
 <script src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&v=weekly" defer></script>
 
 <script>
@@ -121,13 +223,13 @@
     const mapEl = document.getElementById("map");
     if (!mapEl) return;
 
-    const fallback = { lat: 30.2672, lng: -97.7431 }; // Austin
+    const fallback = { lat: 30.2672, lng: -97.7431 }; // Austin, TX
     const map = new google.maps.Map(mapEl, { center: fallback, zoom: 11 });
-
     const info = new google.maps.InfoWindow();
     const bounds = new google.maps.LatLngBounds();
 
-	fetch("{% url 'listings:markers' %}" + window.location.search)
+    // Pass all active filters through to the markers endpoint
+    fetch("{% url 'listings:markers' %}" + window.location.search)
       .then(res => res.json())
       .then(markers => {
         if (!Array.isArray(markers) || markers.length === 0) return;
@@ -136,8 +238,8 @@
 
         markers.forEach(m => {
           if (typeof m.lat !== "number" || typeof m.lng !== "number") return;
-
           hasAny = true;
+
           const pos = { lat: m.lat, lng: m.lng };
           bounds.extend(pos);
 
@@ -151,14 +253,13 @@
             const img = m.image
               ? `<img src="${m.image}" style="width:100%;max-width:220px;border-radius:10px;margin:6px 0;" />`
               : "";
-
             info.setContent(`
               <div style="max-width:240px">
-                <div style="font-weight:700;margin-bottom:6px">${m.title || ""}</div>
-                <div style="margin-bottom:6px">${m.address || ""}</div>
-                <div style="margin-bottom:10px"><b>$${m.price || ""}</b></div>
+                <div style="font-weight:700;margin-bottom:4px">${m.title || ""}</div>
+                <div style="margin-bottom:4px;color:#555;font-size:0.85rem">${m.address || ""}</div>
+                <div style="margin-bottom:8px"><b>$${Number(m.price).toLocaleString()}</b></div>
                 ${img}
-                <a href="${m.url || "#"}">View home</a>
+                <a href="${m.url || "#"}" style="color:#2563eb;">View listing →</a>
               </div>
             `);
             info.open(map, marker);

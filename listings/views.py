@@ -15,6 +15,12 @@ BUY_TYPES = {
     "Residential", "Residential Income", "Single Family", "Single Family Residence", "Townhome",
 }
 
+PROPERTY_TYPE_CHOICES = sorted(BUY_TYPES)
+
+
+# ─────────────────────────────────────────────
+# Helpers
+# ─────────────────────────────────────────────
 
 def to_decimal(val: str):
     try:
@@ -24,6 +30,57 @@ def to_decimal(val: str):
         return None
 
 
+def apply_listing_filters(qs, params: dict):
+    """
+    Apply all search/filter params to a Listing queryset.
+    Centralised here so ListingListView and listing_markers stay in sync.
+    """
+    q            = (params.get("q")             or "").strip()
+    price_min    = (params.get("price_min")     or "").strip()
+    price_max    = (params.get("price_max")     or "").strip()
+    beds_min     = (params.get("beds_min")      or "").strip()
+    baths_min    = (params.get("baths_min")     or "").strip()
+    property_type = (params.get("property_type") or "").strip()
+
+    # ── Keyword / location search ──────────────────────────────────────────
+    if q:
+        q_zip = re.sub(r"\D", "", q)
+        qs = qs.filter(
+            Q(city__icontains=q)
+            | Q(zip_code__icontains=q_zip if q_zip else q)
+            | Q(street_address__icontains=q)
+            | Q(title__icontains=q)
+            | Q(description__icontains=q)
+        )
+
+    # ── Price range ────────────────────────────────────────────────────────
+    min_v = to_decimal(price_min)
+    max_v = to_decimal(price_max)
+    if min_v is not None:
+        qs = qs.filter(price__gte=min_v)
+    if max_v is not None:
+        qs = qs.filter(price__lte=max_v)
+
+    # ── Beds / Baths (minimum) ─────────────────────────────────────────────
+    beds_v = to_decimal(beds_min)
+    if beds_v is not None:
+        qs = qs.filter(beds__gte=beds_v)
+
+    baths_v = to_decimal(baths_min)
+    if baths_v is not None:
+        qs = qs.filter(baths__gte=baths_v)
+
+    # ── Property type ──────────────────────────────────────────────────────
+    if property_type and property_type in BUY_TYPES:
+        qs = qs.filter(property_type=property_type)
+
+    return qs
+
+
+# ─────────────────────────────────────────────
+# Views
+# ─────────────────────────────────────────────
+
 class ListingListView(ListView):
     model = Listing
     template_name = "listings/list.html"
@@ -32,52 +89,28 @@ class ListingListView(ListView):
 
     def get_queryset(self):
         qs = Listing.objects.filter(status="active", property_type__in=BUY_TYPES)
-
-        q = (self.request.GET.get("q") or "").strip()
-        price_min = (self.request.GET.get("price_min") or "").strip()
-        price_max = (self.request.GET.get("price_max") or "").strip()
-
-        if q:
-            q_zip = re.sub(r"\D", "", q)
-            qs = qs.filter(
-                Q(city__icontains=q)
-                | Q(zip_code__icontains=q_zip if q_zip else q)
-                | Q(street_address__icontains=q)
-                | Q(title__icontains=q)
-                | Q(description__icontains=q)
-            )
-
-        min_v = to_decimal(price_min)
-        max_v = to_decimal(price_max)
-
-        if min_v is not None:
-            qs = qs.filter(price__gte=min_v)
-        if max_v is not None:
-            qs = qs.filter(price__lte=max_v)
-
-        return qs.order_by("-id")
+        return apply_listing_filters(qs, self.request.GET).order_by("-id")
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["GOOGLE_MAPS_API_KEY"] = settings.GOOGLE_MAPS_API_KEY
+        ctx["PROPERTY_TYPE_CHOICES"] = PROPERTY_TYPE_CHOICES
+
+        # ── Preserve query string for pagination links ──────────────────────
+        # e.g. ?q=Austin&price_max=500000&page=2  →  page link keeps filters
+        params = self.request.GET.copy()
+        params.pop("page", None)
+        ctx["query_string"] = params.urlencode()   # used in template pagination
+
+        # ── Repopulate form fields after submit ────────────────────────────
+        ctx["search_q"]             = self.request.GET.get("q", "")
+        ctx["search_price_min"]     = self.request.GET.get("price_min", "")
+        ctx["search_price_max"]     = self.request.GET.get("price_max", "")
+        ctx["search_beds_min"]      = self.request.GET.get("beds_min", "")
+        ctx["search_baths_min"]     = self.request.GET.get("baths_min", "")
+        ctx["search_property_type"] = self.request.GET.get("property_type", "")
+
         return ctx
-    
-    def force_s3_url(url: str) -> str:
-        if not url:
-            return ""
-        u = url.strip()
-
-        # If already S3, keep it
-        if "s3.amazonaws.com/mlsgrid/images/" in u:
-            return u
-
-        # If it's a tokenized MLSGrid media URL, convert it
-        if "media.mlsgrid.com" in u and "/images/" in u:
-            tail = u.split("/images/", 1)[1]  # e.g. ACT218348751/<uuid>.jpeg
-            return f"https://s3.amazonaws.com/mlsgrid/images/{tail}"
-
-        return u
-        listing.main_image_url = force_s3_url(photo_url)
 
 
 class ListingDetailView(DetailView):
@@ -90,60 +123,39 @@ class ListingDetailView(DetailView):
         ctx["GOOGLE_MAPS_API_KEY"] = settings.GOOGLE_MAPS_API_KEY
         return ctx
 
+
 @require_GET
 def listing_markers(request):
+    """Return GeoJSON-style marker data for the map — respects all active filters."""
     qs = Listing.objects.filter(
         status="active",
         property_type__in=BUY_TYPES,
         latitude__isnull=False,
         longitude__isnull=False,
     ).only(
-        "id", "title", "description", "price", "street_address", "city", "state", "zip_code",
-        "latitude", "longitude", "main_image_url"
+        "id", "title", "price", "street_address", "city", "state", "zip_code",
+        "latitude", "longitude", "main_image_url",
     )
 
-    q = (request.GET.get("q") or "").strip()
-    price_min = (request.GET.get("price_min") or "").strip()
-    price_max = (request.GET.get("price_max") or "").strip()
-
-    if q:
-        q_zip = re.sub(r"\D", "", q)
-        qs = qs.filter(
-            Q(city__icontains=q)
-            | Q(zip_code__icontains=q_zip if q_zip else q)
-            | Q(street_address__icontains=q)
-            | Q(title__icontains=q)
-            | Q(description__icontains=q)
-        )
-
-    min_v = to_decimal(price_min)
-    max_v = to_decimal(price_max)
-
-    if min_v is not None:
-        qs = qs.filter(price__gte=min_v)
-    if max_v is not None:
-        qs = qs.filter(price__lte=max_v)
-
-    qs = qs.order_by("-id")[:3000]
+    qs = apply_listing_filters(qs, request.GET).order_by("-id")[:3000]
 
     markers = []
-
-    for l in qs:
+    for listing in qs:
         try:
-            lat = float(l.latitude)
-            lng = float(l.longitude)
+            lat = float(listing.latitude)
+            lng = float(listing.longitude)
         except (TypeError, ValueError):
-            continue  # skip bad coordinates
+            continue
 
         markers.append({
-            "id": l.id,
-            "title": l.title,
-            "price": str(l.price),
-            "address": f"{l.street_address}, {l.city}, {l.state} {l.zip_code}",
-            "lat": lat,
-            "lng": lng,
-            "image": l.main_image_url,
-            "url": f"/listings/{l.id}/",
+            "id":      listing.id,
+            "title":   listing.title,
+            "price":   str(listing.price),
+            "address": f"{listing.street_address}, {listing.city}, {listing.state} {listing.zip_code}",
+            "lat":     lat,
+            "lng":     lng,
+            "image":   listing.main_image_url,
+            "url":     f"/listings/{listing.id}/",
         })
 
     return JsonResponse(markers, safe=False)
