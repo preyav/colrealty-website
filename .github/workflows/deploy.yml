@@ -1,24 +1,6 @@
 # .github/workflows/deploy.yml
 # ─────────────────────────────────────────────────────────────────────────────
 # Col Realty — CI/CD Pipeline
-#
-# Triggers on every push to `main` branch.
-#
-# Pipeline steps:
-#   1. Run Django tests
-#   2. Deploy to EC2 via AWS SSM (no SSH key needed)
-#   3. Install dependencies, migrate, collectstatic
-#   4. Restart Gunicorn + Celery
-#   5. Health check to confirm site is up
-#
-# Required GitHub Secrets:
-#   AWS_ACCESS_KEY_ID            → IAM access key
-#   AWS_SECRET_ACCESS_KEY        → IAM secret key
-#   EC2_INSTANCE_ID              → i-0xxxxxxxxxxxxxxxxx
-#   DJANGO_SECRET_KEY            → production secret key
-#   DATABASE_URL                 → postgres://... RDS connection string
-#   DJANGO_ALLOWED_HOSTS         → colrealty.com,www.colrealty.com,54.82.48.58
-#   DJANGO_CSRF_TRUSTED_ORIGINS  → https://colrealty.com,https://www.colrealty.com
 # ─────────────────────────────────────────────────────────────────────────────
 
 name: Deploy to Production
@@ -86,13 +68,16 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region:            us-east-1
 
-      - name: Deploy via AWS SSM
+      - name: Deploy and verify via AWS SSM
         run: |
+          # Send the deployment command to EC2
           COMMAND_ID=$(aws ssm send-command \
             --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
             --document-name "AWS-RunShellScript" \
             --parameters 'commands=[
               "set -e",
+              "export HOME=/home/ec2-user",
+              "git config --global --add safe.directory /home/ec2-user/colrealty",
               "echo === Col Realty Deployment Started $(date) ===",
               "cd /home/ec2-user/colrealty",
               "git pull origin main",
@@ -108,38 +93,56 @@ jobs:
             --query "Command.CommandId" \
             --output text)
 
-          echo "COMMAND_ID=$COMMAND_ID" >> $GITHUB_ENV
           echo "SSM Command ID: $COMMAND_ID"
 
-      - name: Wait for deployment to complete
-        run: |
-          aws ssm wait command-executed \
-            --command-id "$COMMAND_ID" \
-            --instance-id "${{ secrets.EC2_INSTANCE_ID }}"
+          # Wait for command to finish (max 5 minutes)
+          echo "Waiting for deployment to complete..."
+          for i in {1..30}; do
+            STATUS=$(aws ssm get-command-invocation \
+              --command-id "$COMMAND_ID" \
+              --instance-id "${{ secrets.EC2_INSTANCE_ID }}" \
+              --query "Status" \
+              --output text 2>/dev/null || echo "Pending")
 
-      - name: Show deployment output
-        run: |
-          aws ssm get-command-invocation \
-            --command-id "$COMMAND_ID" \
-            --instance-id "${{ secrets.EC2_INSTANCE_ID }}" \
-            --query "StandardOutputContent" \
-            --output text
+            echo "  [$i/30] Status: $STATUS"
 
-      - name: Check deployment status
-        run: |
-          STATUS=$(aws ssm get-command-invocation \
-            --command-id "$COMMAND_ID" \
-            --instance-id "${{ secrets.EC2_INSTANCE_ID }}" \
-            --query "Status" \
-            --output text)
+            if [ "$STATUS" = "Success" ]; then
+              echo "✅ Deployment successful!"
 
-          echo "Deployment status: $STATUS"
-          if [ "$STATUS" = "Success" ]; then
-            echo "✅ Deployment successful!"
-          else
-            echo "❌ Deployment failed: $STATUS"
-            exit 1
-          fi
+              echo "=== Deployment Output ==="
+              aws ssm get-command-invocation \
+                --command-id "$COMMAND_ID" \
+                --instance-id "${{ secrets.EC2_INSTANCE_ID }}" \
+                --query "StandardOutputContent" \
+                --output text
+              exit 0
+            fi
+
+            if [ "$STATUS" = "Failed" ] || [ "$STATUS" = "Cancelled" ] || [ "$STATUS" = "TimedOut" ]; then
+              echo "❌ Deployment failed with status: $STATUS"
+
+              echo "=== STDOUT ==="
+              aws ssm get-command-invocation \
+                --command-id "$COMMAND_ID" \
+                --instance-id "${{ secrets.EC2_INSTANCE_ID }}" \
+                --query "StandardOutputContent" \
+                --output text
+
+              echo "=== STDERR ==="
+              aws ssm get-command-invocation \
+                --command-id "$COMMAND_ID" \
+                --instance-id "${{ secrets.EC2_INSTANCE_ID }}" \
+                --query "StandardErrorContent" \
+                --output text
+
+              exit 1
+            fi
+
+            sleep 10
+          done
+
+          echo "❌ Deployment timed out after 5 minutes"
+          exit 1
 
       - name: Health check
         run: |
