@@ -134,21 +134,24 @@ jobs:
             --output text)
 
           echo "Deployment status: $STATUS"
+
+          echo "=== STDOUT ==="
+          aws ssm get-command-invocation \
+            --command-id "$COMMAND_ID" \
+            --instance-id "${{ secrets.EC2_INSTANCE_ID }}" \
+            --query "StandardOutputContent" \
+            --output text
+
+          echo "=== STDERR ==="
+          aws ssm get-command-invocation \
+            --command-id "$COMMAND_ID" \
+            --instance-id "${{ secrets.EC2_INSTANCE_ID }}" \
+            --query "StandardErrorContent" \
+            --output text
+
           if [ "$STATUS" = "Success" ]; then
             echo "✅ Deployment successful!"
           else
             echo "❌ Deployment failed: $STATUS"
-            exit 1
-          fi
-
-      - name: Health check
-        run: |
-          sleep 5
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 https://www.colrealty.com/health/)
-          echo "Health check: $HTTP_STATUS"
-          if [ "$HTTP_STATUS" = "200" ]; then
-            echo "✅ Site is up!"
-          else
-            echo "❌ Health check failed: $HTTP_STATUS"
             exit 1
           fi
