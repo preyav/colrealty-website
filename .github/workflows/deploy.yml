@@ -76,6 +76,7 @@ jobs:
             --document-name "AWS-RunShellScript" \
             --parameters 'commands=[
               "set -e",
+              "export HOME=/home/ec2-user",
               "git config --global --add safe.directory /home/ec2-user/colrealty",
               "echo === Col Realty Deployment Started $(date) ===",
               "cd /home/ec2-user/colrealty",
