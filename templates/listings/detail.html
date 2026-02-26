@@ -5,6 +5,23 @@
 
 {% block extra_head %}
 <style>
+  /* ── Override dark site theme for detail page ── */
+  body.page { background: #f0f0f0 !important; }
+  .page-main { background: #f0f0f0 !important; }
+  .detail-layout { background: #f0f0f0 !important; }
+  .detail-main, .detail-sidebar, .lead-form-card, .agent-info, .facts-grid, .fact-item, .stat-item, .stats-bar, .calc-result { background: #ffffff !important; color: #1a1a1a !important; }
+  .detail-main p, .detail-main h1, .detail-main h2, .detail-main h3, .detail-main span, .detail-main div, .detail-main label { color: #1a1a1a !important; }
+  .detail-sidebar p, .detail-sidebar h1, .detail-sidebar h2, .detail-sidebar h3, .detail-sidebar span, .detail-sidebar div, .detail-sidebar label { color: #1a1a1a !important; }
+  /* ── Override dark site theme for detail page ── */
+  body.page { background: #f0f0f0 !important; }
+  .page-main { background: #f0f0f0 !important; }
+  .detail-layout { background: #f0f0f0 !important; }
+  .detail-main, .detail-sidebar, .lead-form-card, .agent-info, .facts-grid, .fact-item, .stat-item, .stats-bar, .calc-result { background: #ffffff !important; color: #1a1a1a !important; }
+  .detail-main p, .detail-main h1, .detail-main h2, .detail-main h3, .detail-main span, .detail-main div, .detail-main label { color: #1a1a1a !important; }
+  .detail-sidebar p, .detail-sidebar h1, .detail-sidebar h2, .detail-sidebar h3, .detail-sidebar span, .detail-sidebar div, .detail-sidebar label { color: #1a1a1a !important; }
+  body, .page-main { background: #f5f5f5 !important; }
+  .page-main > .container > * { color: #1a1a1a !important; }
+
   /* ── Force light theme & break out of Bootstrap container ───── */
   .page-main > .container {
     max-width: 100% !important;
