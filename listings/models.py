@@ -91,6 +91,7 @@ class Listing(models.Model):
 
     # ── Media ─────────────────────────────────────────────────────────────
     main_image_url = models.URLField(max_length=1000, blank=True)
+    image_urls = models.JSONField(default=list, blank=True)   # all MLS photos
     virtual_tour_url = models.URLField(max_length=1000, blank=True)
 
     # ── Listing metadata ──────────────────────────────────────────────────
