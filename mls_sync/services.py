@@ -8,8 +8,10 @@ from django.db.models import Max
 from listings.models import Listing
 from .client import MLSClient
 from .mappers import map_property_to_listing_data
+from .image_cache import cache_listing_photos
 
 logger = logging.getLogger(__name__)
+
 
 def get_latest_mls_modification_timestamp() -> Optional[str]:
     """
@@ -28,7 +30,8 @@ def get_latest_mls_modification_timestamp() -> Optional[str]:
 
 def sync_mls_listings(updated_since: Optional[str] = None) -> int:
     """
-    Fetch listings from MLS Grid and upsert into the Listing model.
+    Fetch listings from MLS Grid, cache photos permanently, and upsert
+    into the Listing model.
     """
     client = MLSClient()
 
@@ -49,6 +52,19 @@ def sync_mls_listings(updated_since: Optional[str] = None) -> int:
         if not mls_id:
             logger.warning("Skipping record without ListingKey: %s", record)
             continue
+
+        # ── Cache photos permanently so MLS signed URLs don't expire ──────
+        raw_image_urls = data.get("image_urls") or []
+        if raw_image_urls:
+            try:
+                main_url, cached_urls = cache_listing_photos(mls_id, raw_image_urls)
+                data["main_image_url"] = main_url
+                data["image_urls"] = cached_urls
+            except Exception as e:
+                # Photo caching failed — keep original MLS URLs as fallback
+                # so the listing still syncs even if image download breaks
+                logger.warning("Photo cache failed for %s: %s", mls_id, e)
+        # ──────────────────────────────────────────────────────────────────
 
         with transaction.atomic():
             Listing.objects.update_or_create(

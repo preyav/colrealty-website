@@ -22,6 +22,34 @@ def join_list(items) -> str:
     return str(items)
 
 
+def safe_decimal(value, max_digits=10):
+    """Convert to Decimal, return None if value is too large or invalid."""
+    if value is None:
+        return None
+    try:
+        d = Decimal(str(value))
+        limit = Decimal(10 ** (max_digits - 2))
+        if abs(d) >= limit:
+            return None
+        return d
+    except Exception:
+        return None
+
+
+def safe_int(value, max_val=2147483647):
+    """Convert to int, return None if value is too large or invalid."""
+    if value is None:
+        return None
+    try:
+        i = int(float(str(value)))
+        if abs(i) > max_val:
+            return None
+        return i
+    except Exception:
+        return None
+
+
+
 def map_property_to_listing_data(record: Dict[str, Any]) -> Dict[str, Any]:
     price = record.get("ListPrice")
     beds = record.get("BedroomsTotal")
@@ -80,28 +108,28 @@ def map_property_to_listing_data(record: Dict[str, Any]) -> Dict[str, Any]:
 
         # Pricing
         "price": Decimal(str(price or 0)),
-        "original_list_price": Decimal(str(record.get("OriginalListPrice") or 0)) if record.get("OriginalListPrice") else None,
-        "tax_amount": record.get("TaxAnnualAmount") or None,
-        "tax_year": record.get("TaxYear") or None,
-        "hoa_fee": record.get("AssociationFee") or None,
+        "original_list_price": safe_decimal(record.get("OriginalListPrice"), 12),
+        "tax_amount": safe_decimal(record.get("TaxAnnualAmount")),
+        "tax_year": safe_int(record.get("TaxYear")),
+        "hoa_fee": safe_decimal(record.get("AssociationFee")),
         "hoa_frequency": record.get("AssociationFeeFrequency") or "",
         "buyer_agent_compensation": record.get("BuyerAgencyCompensation") or "",
 
         # Specs
         "beds": beds,
         "baths": baths,
-        "baths_full": record.get("BathroomsFull") or None,
-        "baths_half": record.get("BathroomsHalf") or None,
-        "sqft": record.get("BuildingAreaTotal") or None,
+        "baths_full": safe_int(record.get("BathroomsFull")),
+        "baths_half": safe_int(record.get("BathroomsHalf")),
+        "sqft": safe_int(record.get("BuildingAreaTotal")),
         "lot_size": record.get("LotSizeAcres") or None,
-        "lot_size_sqft": record.get("LotSizeSquareFeet") or None,
+        "lot_size_sqft": safe_int(record.get("LotSizeSquareFeet")),
 
         # Building
         "property_type": record.get("PropertyType") or "",
-        "year_built": record.get("YearBuilt") or None,
-        "stories": record.get("StoriesTotal") or None,
-        "garage_spaces": record.get("GarageSpaces") or None,
-        "parking_total": record.get("ParkingTotal") or None,
+        "year_built": safe_int(record.get("YearBuilt")),
+        "stories": safe_int(record.get("StoriesTotal")),
+        "garage_spaces": safe_int(record.get("GarageSpaces")),
+        "parking_total": safe_int(record.get("ParkingTotal")),
 
         # Features
         "interior_features": join_list(record.get("InteriorFeatures")),
@@ -151,6 +179,6 @@ def map_property_to_listing_data(record: Dict[str, Any]) -> Dict[str, Any]:
         "virtual_tour_url": record.get("VirtualTourURLUnbranded") or record.get("VirtualTourURLBranded") or "",
 
         # Metadata
-        "days_on_market": record.get("DaysOnMarket") or None,
+        "days_on_market": safe_int(record.get("DaysOnMarket")),
         "is_featured": bool(price and price > 750000),
     }

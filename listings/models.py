@@ -89,6 +89,12 @@ class Listing(models.Model):
     open_house_start_time = models.TimeField(null=True, blank=True)
     open_house_end_time = models.TimeField(null=True, blank=True)
 
+    # ── Listing Agent ─────────────────────────────────────────────────────
+    listing_agent_name = models.CharField(max_length=255, blank=True)
+    listing_agent_email = models.EmailField(max_length=255, blank=True)
+    listing_agent_phone = models.CharField(max_length=50, blank=True)
+    listing_office_name = models.CharField(max_length=255, blank=True)
+
     # ── Media ─────────────────────────────────────────────────────────────
     main_image_url = models.URLField(max_length=1000, blank=True)
     image_urls = models.JSONField(default=list, blank=True)   # all MLS photos

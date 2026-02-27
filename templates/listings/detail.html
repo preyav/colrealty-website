@@ -4,532 +4,545 @@
 {% block title %}{{ listing.street_address }}, {{ listing.city }}, {{ listing.state }} {{ listing.zip_code }} | Col Realty{% endblock %}
 
 {% block extra_head %}
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
-  /* ════════════════════════════════════════════════════
-     RESET DARK THEME
-  ════════════════════════════════════════════════════ */
-  body.page { background: #fff !important; font-family: 'DM Sans', sans-serif !important; }
-  .page-main { background: #fff !important; padding: 0 !important; }
-  .page-main > .container { max-width: 100% !important; padding: 0 !important; }
-  .site-header { background: #fff !important; border-bottom: 1px solid #ebebeb !important; box-shadow: none !important; backdrop-filter: none !important; }
-  .site-header::before, .site-header::after { display: none !important; }
-  .site-header *, .site-header a, .site-header .nav-link, .site-header .brand-name, .site-header .brand-tagline, .site-header .dropdown-link { color: #1a1a1a !important; text-shadow: none !important; }
-  .site-header .nav-link:hover { color: #555 !important; }
-  .brand-mark { background: #1a1a1a !important; color: #fff !important; border-radius: 6px !important; }
-  .dropdown-menu { background: #fff !important; border: 1px solid #e8e8e8 !important; box-shadow: 0 4px 20px rgba(0,0,0,.08) !important; }
-  footer, .site-footer, [class*="footer"] { background: #1a1a1a !important; color: #aaa !important; }
-  footer a, .site-footer a { color: #aaa !important; }
-  footer a:hover, .site-footer a:hover { color: #fff !important; }
-  footer h4, footer h5, footer h6, .site-footer h4, .site-footer h5, .site-footer h6 { color: #fff !important; }
+/* ── reset dark theme ──────────────────────────────────────── */
+body.page{background:#fff !important;font-family:'DM Sans',sans-serif !important;}
+.page-main{background:#fff !important;padding:0 !important;}
+.page-main>.container{max-width:100% !important;padding:0 !important;}
+.site-header{background:#fff !important;border-bottom:1px solid #ebebeb !important;box-shadow:none !important;backdrop-filter:none !important;}
+.site-header::before,.site-header::after{display:none !important;}
+.site-header *,.site-header a,.site-header .nav-link,.site-header .brand-name,.site-header .brand-tagline,.site-header .dropdown-link{color:#1a1a1a !important;text-shadow:none !important;}
+.brand-mark{background:#1a1a1a !important;color:#fff !important;border-radius:6px !important;}
+.dropdown-menu{background:#fff !important;border:1px solid #e8e8e8 !important;box-shadow:0 4px 20px rgba(0,0,0,.08) !important;}
+footer,.site-footer{background:#1a1a1a !important;color:#aaa !important;}
+footer a,.site-footer a{color:#aaa !important;}
+footer a:hover,.site-footer a:hover{color:#fff !important;}
+footer h4,footer h5,footer h6{color:#fff !important;}
 
-  /* ════════════════════════════════════════════════════
-     PAGE LAYOUT
-  ════════════════════════════════════════════════════ */
-  .dp-page { display: grid; grid-template-columns: 1fr 380px; max-width: 1320px; margin: 0 auto; align-items: start; font-family: 'DM Sans', sans-serif; }
-  .dp-left { min-width: 0; }
-  .dp-right { position: sticky; top: 0; max-height: 100vh; overflow-y: auto; border-left: 1px solid #ebebeb; background: #fff; scrollbar-width: thin; scrollbar-color: #e0e0e0 transparent; }
-  .dp-right::-webkit-scrollbar { width: 4px; }
-  .dp-right::-webkit-scrollbar-thumb { background: #e0e0e0; border-radius: 4px; }
-  @media (max-width: 960px) { .dp-page { grid-template-columns: 1fr; } .dp-right { position: static; max-height: none; border-left: none; border-top: 1px solid #ebebeb; } }
+/* ── THE ONE CENTERED CONTAINER ──────────────────────────── */
+.cr-wrap{
+  max-width:1100px;
+  margin:0 auto;
+  padding:0 32px;
+  box-sizing:border-box;
+  font-family:'DM Sans',sans-serif;
+}
 
-  /* ════════════════════════════════════════════════════
-     LEFT — HEADER
-  ════════════════════════════════════════════════════ */
-  .dp-header { padding: 28px 40px 20px 40px; }
-  .dp-breadcrumb { font-size: 11px; color: #999; letter-spacing: .05em; text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
-  .dp-breadcrumb a { color: #999; text-decoration: none; }
-  .dp-breadcrumb a:hover { color: #555; }
-  .dp-address { font-family: 'DM Serif Display', serif; font-size: 30px; font-weight: 400; color: #111; line-height: 1.15; margin: 0 0 4px 0; letter-spacing: -0.02em; }
-  .dp-city-line { font-size: 15px; color: #666; margin: 0 0 18px 0; }
+/* ── top bar ──────────────────────────────────────────────── */
+.cr-topbar{display:flex;align-items:center;justify-content:space-between;padding:22px 0 0;gap:20px;flex-wrap:nowrap;}
+.cr-topbar-l{flex-shrink:0;}
+.cr-address{font-family:'DM Serif Display',serif;font-size:22px;font-weight:400;color:#111;line-height:1.15;margin:0 0 2px;letter-spacing:-0.02em;white-space:nowrap;}
+.cr-cityline{font-size:12px;color:#888;margin:0;}
+.cr-topbar-r{display:flex;align-items:center;gap:0;flex-shrink:0;flex-wrap:nowrap;}
+.cr-stat{display:flex;flex-direction:column;align-items:center;padding:0 16px;border-right:1px solid #e0e0e0;}
+.cr-stat:first-child{padding-left:0;}
+.cr-stat:last-of-type{border-right:none;}
+.cr-stat-v{font-size:17px;font-weight:700;color:#111;line-height:1;white-space:nowrap;}
+.cr-stat-l{font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:.08em;margin-top:3px;white-space:nowrap;}
+.cr-actions{display:flex;gap:8px;padding-left:20px;border-left:1px solid #e0e0e0;margin-left:16px;}
+.cr-btn{display:inline-flex;align-items:center;gap:5px;padding:8px 14px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;border:1px solid #ddd;background:#fff;color:#111;transition:background .15s;}
+.cr-btn:hover{background:#f5f5f5;}
+.cr-btn-save{background:#111;color:#fff;border-color:#111;}
+.cr-btn-save:hover{background:#333;}
 
-  .dp-stats { display: flex; border: 1px solid #ebebeb; border-radius: 10px; overflow: hidden; background: #fff; }
-  .dp-stat { flex: 1; padding: 14px 0; text-align: center; border-right: 1px solid #ebebeb; }
-  .dp-stat:last-child { border-right: none; }
-  .dp-stat-val { font-size: 20px; font-weight: 700; color: #111; display: block; line-height: 1; }
-  .dp-stat-lbl { font-size: 10px; color: #aaa; text-transform: uppercase; letter-spacing: .08em; margin-top: 4px; display: block; }
+/* ── sticky section nav ───────────────────────────────────── */
+.cr-nav-wrap{position:sticky;top:0;z-index:50;background:#fff;border-bottom:1px solid #ebebeb;margin-top:18px;}
+.cr-nav{display:flex;overflow-x:auto;scrollbar-width:none;}
+.cr-nav::-webkit-scrollbar{display:none;}
+.cr-nav a{font-size:13px;font-weight:500;color:#777;text-decoration:none;padding:13px 18px 13px 0;margin-right:6px;border-bottom:2px solid transparent;white-space:nowrap;transition:color .15s,border-color .15s;}
+.cr-nav a:hover,.cr-nav a.active{color:#111;border-bottom-color:#111;}
 
-  /* ════════════════════════════════════════════════════
-     PHOTO GRID — Compass style
-  ════════════════════════════════════════════════════ */
-  .dp-photo-wrap { padding: 0 40px; }
+/* ── photo grid ───────────────────────────────────────────── */
+.cr-photos{margin-top:20px;}
+/* Compass-style: single large hero + nav arrows + thumbnail strip */
+.cr-slider{position:relative;border-radius:12px;overflow:hidden;background:#111;cursor:pointer;}
+.cr-slider-img{width:100%;height:520px;object-fit:cover;display:block;}
+.cr-slider-nav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.9);border:none;width:44px;height:44px;border-radius:50%;font-size:22px;color:#111;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;z-index:3;box-shadow:0 2px 8px rgba(0,0,0,.2);}
+.cr-slider-nav:hover{background:#fff;}
+.cr-slider-prev{left:14px;}
+.cr-slider-next{right:14px;}
+.cr-slider-count{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.55);color:#fff;font-size:13px;font-weight:600;padding:5px 14px;border-radius:20px;pointer-events:none;}
+/* Thumbnail strip */
+.cr-thumbs{display:flex;gap:6px;margin-top:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;}
+.cr-thumbs::-webkit-scrollbar{display:none;}
+.cr-thumb{flex-shrink:0;width:88px;height:60px;border-radius:6px;overflow:hidden;cursor:pointer;border:2px solid transparent;transition:border-color .15s;}
+.cr-thumb.active{border-color:#111;}
+.cr-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+/* View All button */
+.cr-viewall{display:inline-flex;align-items:center;gap:6px;margin-top:10px;background:#fff;border:1px solid #ddd;border-radius:7px;padding:8px 16px;font-size:13px;font-weight:600;color:#111;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .15s;}
+.cr-viewall:hover{background:#f5f5f5;}
+.cr-nophoto{height:320px;background:#f5f5f5;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#ccc;}
+.cr-tour{display:inline-flex;align-items:center;gap:6px;margin-top:10px;margin-left:8px;border:1px solid #111;color:#111;background:transparent;padding:8px 16px;border-radius:6px;font-size:13px;font-weight:600;text-decoration:none;font-family:'DM Sans',sans-serif;transition:background .15s,color .15s;}
+.cr-tour:hover{background:#111;color:#fff;}
 
-  /* Single photo fallback */
-  .dp-hero { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 12px; display: block; background: #f5f5f5; }
-  .dp-no-photo { width: 100%; aspect-ratio: 16/9; background: #f5f5f5; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #ccc; font-size: 14px; }
+/* ── two-column body ──────────────────────────────────────── */
+.cr-body{display:grid;grid-template-columns:1fr 340px;align-items:start;gap:0;margin-top:0;}
+.cr-main{min-width:0;padding:0 40px 80px 0;}
+.cr-side{position:sticky;top:0;max-height:100vh;overflow-y:auto;border-left:1px solid #ebebeb;scrollbar-width:thin;scrollbar-color:#e0e0e0 transparent;}
+.cr-side::-webkit-scrollbar{width:4px;}
+.cr-side::-webkit-scrollbar-thumb{background:#e0e0e0;border-radius:4px;}
 
-  /* Multi-photo grid */
-  .dp-photo-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 260px 260px;
-    gap: 4px;
-    border-radius: 12px;
-    overflow: hidden;
-    cursor: pointer;
-  }
-  .dp-photo-main {
-    grid-row: 1 / 3;
-    grid-column: 1;
-    position: relative;
-  }
-  .dp-photo-side {
-    grid-column: 2;
-    grid-row: 1 / 3;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
-    gap: 4px;
-  }
-  .dp-photo-thumb { position: relative; overflow: hidden; }
-  .dp-grid-img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.3s ease; }
-  .dp-photo-main:hover .dp-grid-img,
-  .dp-photo-thumb:hover .dp-grid-img { transform: scale(1.03); }
+/* ── sections ─────────────────────────────────────────────── */
+.cr-section{padding:28px 0;border-bottom:1px solid #f0f0f0;}
+.cr-section:last-child{border-bottom:none;padding-bottom:60px;}
+.cr-section-title{font-size:17px;font-weight:700;color:#111;margin:0 0 16px;letter-spacing:-0.01em;}
 
-  /* "View all photos" overlay on last thumb */
-  .dp-view-all-btn {
-    position: absolute;
-    bottom: 14px;
-    right: 14px;
-    background: rgba(255,255,255,0.95);
-    border: 1px solid #ddd;
-    border-radius: 7px;
-    padding: 8px 14px;
-    font-size: 13px;
-    font-weight: 600;
-    color: #111;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    backdrop-filter: blur(4px);
-    transition: background 0.15s;
-  }
-  .dp-view-all-btn:hover { background: #fff; }
+/* description */
+.cr-desc{font-size:15px;line-height:1.8;color:#444;font-weight:300;margin:0;}
+.cr-clamp{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;}
+.cr-readmore{background:none;border:none;color:#111;font-weight:600;font-size:13px;cursor:pointer;padding:10px 0 0;text-decoration:underline;font-family:'DM Sans',sans-serif;display:block;}
 
-  /* ════════════════════════════════════════════════════
-     LIGHTBOX / GALLERY MODAL
-  ════════════════════════════════════════════════════ */
-  .dp-gallery-modal {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.95);
-    z-index: 9999;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-  .dp-gallery-modal.open { display: flex; }
-  .dp-gallery-close {
-    position: absolute;
-    top: 20px; right: 24px;
-    color: #fff; font-size: 28px; cursor: pointer;
-    background: none; border: none; line-height: 1;
-    opacity: 0.7;
-  }
-  .dp-gallery-close:hover { opacity: 1; }
-  .dp-gallery-img-wrap { position: relative; max-width: 90vw; max-height: 80vh; }
-  .dp-gallery-img-wrap img { max-width: 90vw; max-height: 80vh; object-fit: contain; display: block; border-radius: 8px; }
-  .dp-gallery-nav {
-    position: absolute; top: 50%; transform: translateY(-50%);
-    background: rgba(255,255,255,0.15); border: none; color: #fff;
-    width: 44px; height: 44px; border-radius: 50%; font-size: 18px;
-    cursor: pointer; display: flex; align-items: center; justify-content: center;
-    transition: background 0.15s; backdrop-filter: blur(4px);
-  }
-  .dp-gallery-nav:hover { background: rgba(255,255,255,0.3); }
-  .dp-gallery-prev { left: -56px; }
-  .dp-gallery-next { right: -56px; }
-  .dp-gallery-counter { color: #fff; opacity: 0.6; font-size: 13px; margin-top: 16px; }
-  .dp-gallery-strip {
-    display: flex; gap: 8px; margin-top: 16px;
-    max-width: 90vw; overflow-x: auto; padding-bottom: 4px;
-  }
-  .dp-gallery-strip img {
-    height: 56px; width: 80px; object-fit: cover;
-    border-radius: 5px; cursor: pointer; opacity: 0.5;
-    border: 2px solid transparent; flex-shrink: 0;
-    transition: opacity 0.15s;
-  }
-  .dp-gallery-strip img.active { opacity: 1; border-color: #fff; }
+/* agent card */
+.cr-agent-card{display:flex;align-items:center;gap:14px;margin-bottom:14px;}
+.cr-agent-av{width:48px;height:48px;border-radius:50%;background:#111;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:700;flex-shrink:0;}
+.cr-agent-name{font-size:15px;font-weight:700;color:#111;}
+.cr-agent-co{font-size:12px;color:#999;margin:2px 0;}
+.cr-agent-ph{font-size:13px;color:#555;margin-bottom:10px;}
+.cr-agent-btns{display:flex;gap:8px;flex-wrap:wrap;}
+.cr-agent-btn{padding:8px 14px;border-radius:6px;font-size:13px;font-weight:600;text-decoration:none;border:1px solid #ddd;color:#111;background:#fff;font-family:'DM Sans',sans-serif;transition:background .15s;}
+.cr-agent-btn:hover{background:#f5f5f5;}
 
-  /* ════════════════════════════════════════════════════
-     CONTENT SECTIONS
-  ════════════════════════════════════════════════════ */
-  .dp-tour-wrap { padding: 14px 40px 0; }
-  .dp-tour-btn { display: inline-flex; align-items: center; gap: 8px; border: 1px solid #111; color: #111; background: transparent; padding: 9px 18px; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none; transition: background .15s, color .15s; font-family: 'DM Sans', sans-serif; }
-  .dp-tour-btn:hover { background: #111; color: #fff; }
+/* details table */
+.cr-tbl{width:100%;border:1px solid #ebebeb;border-radius:10px;overflow:hidden;border-collapse:collapse;}
+.cr-tbl tr{border-bottom:1px solid #f5f5f5;}
+.cr-tbl tr:last-child{border-bottom:none;}
+.cr-tbl td{padding:11px 16px;font-size:14px;}
+.cr-tbl td:first-child{color:#888;width:44%;font-size:13px;}
+.cr-tbl td:last-child{color:#111;font-weight:600;}
 
-  .dp-content { padding: 0 40px; }
-  .dp-section { padding: 28px 0; border-bottom: 1px solid #f0f0f0; }
-  .dp-section:last-child { border-bottom: none; padding-bottom: 60px; }
-  .dp-section-title { font-size: 17px; font-weight: 700; color: #111; margin: 0 0 16px 0; letter-spacing: -0.01em; }
+/* features */
+.cr-feat-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;}
+.cr-feat-lbl{font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.08em;margin:0 0 8px;}
+.cr-tags{display:flex;flex-wrap:wrap;gap:6px;}
+.cr-tag{background:#f8f8f8;border:1px solid #ebebeb;border-radius:5px;padding:4px 10px;font-size:12px;color:#444;}
 
-  .dp-desc { font-size: 15px; line-height: 1.8; color: #444; font-weight: 300; white-space: pre-line; margin: 0; }
-  .dp-desc-clamp { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
-  .dp-read-more { background: none; border: none; color: #111; font-weight: 600; font-size: 13px; cursor: pointer; padding: 10px 0 0; text-decoration: underline; font-family: 'DM Sans', sans-serif; display: block; }
+/* map */
+.cr-map{width:100%;height:360px;border-radius:12px;overflow:hidden;border:1px solid #ebebeb;}
+#listing-map{height:100%;width:100%;display:block;}
 
-  .dp-facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(175px, 1fr)); gap: 1px; background: #ebebeb; border: 1px solid #ebebeb; border-radius: 10px; overflow: hidden; }
-  .dp-fact { background: #fff; padding: 14px 16px; }
-  .dp-fact-lbl { font-size: 10px; color: #aaa; text-transform: uppercase; letter-spacing: .08em; display: block; margin-bottom: 4px; }
-  .dp-fact-val { font-size: 14px; font-weight: 600; color: #111; display: block; }
+/* history table */
+.cr-hist{width:100%;border-collapse:collapse;}
+.cr-hist th{font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:.06em;padding:0 0 10px;text-align:left;font-weight:600;}
+.cr-hist th:last-child{text-align:right;}
+.cr-hist td{padding:12px 0;font-size:14px;border-top:1px solid #f5f5f5;color:#444;}
+.cr-hist td:last-child{text-align:right;font-weight:600;color:#111;}
 
-  .dp-map-full { width: 100%; height: 360px; border-radius: 12px; overflow: hidden; border: 1px solid #ebebeb; }
-  #listing-map { height: 100%; width: 100%; display: block; }
+/* public records */
+.cr-rec-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#ebebeb;border:1px solid #ebebeb;border-radius:10px;overflow:hidden;margin-bottom:16px;}
+.cr-rec-cell{background:#fff;padding:14px 16px;}
+.cr-rec-lbl{font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:4px;}
+.cr-rec-val{font-size:17px;font-weight:700;color:#111;}
 
-  .dp-feat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-  .dp-feat-lbl { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: .08em; margin: 0 0 10px; }
-  .dp-tags { display: flex; flex-wrap: wrap; gap: 6px; }
-  .dp-tag { background: #f8f8f8; border: 1px solid #ebebeb; border-radius: 5px; padding: 4px 10px; font-size: 12px; color: #444; }
+/* schools */
+.cr-dist-badge{font-size:12px;font-weight:600;color:#3b5bdb;background:#eef2ff;border-radius:5px;padding:4px 10px;display:inline-block;margin-bottom:14px;}
+.cr-school{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid #f5f5f5;}
+.cr-school:last-of-type{border-bottom:none;}
+.cr-school-rtg{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700;flex-shrink:0;}
+.cr-school-name{font-size:14px;font-weight:600;color:#111;}
+.cr-school-meta{font-size:12px;color:#999;margin-top:2px;}
 
-  .dp-district { font-size: 12px; font-weight: 600; color: #3b5bdb; background: #eef2ff; border-radius: 5px; padding: 4px 10px; display: inline-block; margin-bottom: 14px; }
-  .dp-school { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f5f5f5; }
-  .dp-school:last-child { border-bottom: none; }
-  .dp-school-name { font-size: 14px; font-weight: 600; color: #111; }
-  .dp-school-type { font-size: 12px; color: #999; margin-top: 2px; }
+/* open house */
+.cr-oh{display:flex;align-items:center;gap:16px;background:#111;color:#fff;border-radius:10px;padding:20px 24px;}
+.cr-oh-lbl{font-size:10px;opacity:.6;text-transform:uppercase;letter-spacing:.08em;}
+.cr-oh-time{font-size:17px;font-weight:700;margin-top:3px;}
 
-  .dp-oh { display: flex; align-items: center; gap: 16px; background: #111; color: #fff; border-radius: 10px; padding: 20px 24px; }
-  .dp-oh-lbl { font-size: 10px; opacity: .6; text-transform: uppercase; letter-spacing: .08em; }
-  .dp-oh-time { font-size: 17px; font-weight: 700; margin-top: 3px; }
+/* ── sidebar ──────────────────────────────────────────────── */
+.cr-cta-price{font-size:26px;font-weight:800;color:#111;letter-spacing:-0.02em;padding:20px 24px 4px;}
+.cr-cta-addr{font-size:13px;color:#999;padding:0 24px 16px;}
+.cr-form-wrap{padding:0 24px 20px;border-bottom:1px solid #ebebeb;}
+.cr-field{margin-bottom:10px;}
+.cr-field label{display:block;font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;}
+.cr-field input,.cr-field textarea{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #e0e0e0;border-radius:7px;font-size:14px;color:#111;background:#fff;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .15s;}
+.cr-field input:focus,.cr-field textarea:focus{border-color:#111;}
+.cr-row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.cr-submit{width:100%;background:#111;color:#fff;border:none;border-radius:7px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;margin-top:6px;font-family:'DM Sans',sans-serif;transition:background .15s;}
+.cr-submit:hover{background:#333;}
+.cr-fine{font-size:11px;color:#bbb;text-align:center;margin-top:10px;}
+.cr-calc-wrap{padding:20px 24px;}
+.cr-calc-title{font-size:13px;font-weight:700;color:#111;margin:0 0 12px;}
+.cr-calc-mo{font-size:26px;font-weight:800;color:#111;letter-spacing:-0.02em;}
+.cr-calc-sub{font-size:12px;color:#999;margin:2px 0 10px;}
+.cr-calc-line{display:flex;justify-content:space-between;font-size:13px;color:#666;padding:5px 0;border-top:1px solid #f0f0f0;}
+.cr-calc-inputs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;}
+.cr-calc-inputs label{font-size:10px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px;}
+.cr-calc-inputs input{width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #e0e0e0;border-radius:6px;font-size:13px;font-family:'DM Sans',sans-serif;color:#111;}
+.cr-calc-note{font-size:11px;color:#ccc;margin-top:10px;line-height:1.5;}
 
-  /* ════════════════════════════════════════════════════
-     RIGHT SIDEBAR
-  ════════════════════════════════════════════════════ */
-  .dp-agent { display: flex; align-items: center; gap: 12px; padding: 20px 24px; border-bottom: 1px solid #ebebeb; }
-  .dp-avatar { width: 42px; height: 42px; background: #111; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 15px; flex-shrink: 0; }
-  .dp-agent-name { font-size: 14px; font-weight: 700; color: #111; }
-  .dp-agent-role { font-size: 12px; color: #999; }
-  .dp-agent-phone { font-size: 13px; color: #111; font-weight: 600; text-decoration: none; display: block; margin-top: 2px; }
+/* ── lightbox ─────────────────────────────────────────────── */
+.cr-lb{display:none;position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:9999;flex-direction:column;align-items:center;justify-content:center;}
+.cr-lb.open{display:flex;}
+.cr-lb-close{position:absolute;top:20px;right:24px;color:#fff;font-size:28px;cursor:pointer;background:none;border:none;opacity:.7;line-height:1;}
+.cr-lb-close:hover{opacity:1;}
+.cr-lb-wrap{position:relative;}
+.cr-lb-wrap img{max-width:90vw;max-height:78vh;object-fit:contain;display:block;border-radius:8px;}
+.cr-lb-nav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.15);border:none;color:#fff;width:44px;height:44px;border-radius:50%;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;}
+.cr-lb-nav:hover{background:rgba(255,255,255,.3);}
+.cr-lb-prev{left:-56px;}
+.cr-lb-next{right:-56px;}
+.cr-lb-count{color:rgba(255,255,255,.6);font-size:13px;margin-top:12px;}
+.cr-lb-strip{display:flex;gap:6px;margin-top:10px;max-width:90vw;overflow-x:auto;padding-bottom:4px;}
+.cr-lb-strip img{height:52px;width:72px;object-fit:cover;border-radius:4px;cursor:pointer;opacity:.45;border:2px solid transparent;flex-shrink:0;transition:opacity .15s;}
+.cr-lb-strip img.active{opacity:1;border-color:#fff;}
 
-  .dp-form-wrap { padding: 20px 24px; border-bottom: 1px solid #ebebeb; }
-  .dp-form-price { font-size: 26px; font-weight: 800; color: #111; letter-spacing: -0.02em; }
-  .dp-form-addr { font-size: 13px; color: #999; margin: 2px 0 18px; }
-
-  .dp-field { margin-bottom: 10px; }
-  .dp-field label { display: block; font-size: 10px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 5px; }
-  .dp-field input, .dp-field textarea { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid #e0e0e0; border-radius: 7px; font-size: 14px; color: #111; background: #fff; font-family: 'DM Sans', sans-serif; transition: border-color .15s; outline: none; }
-  .dp-field input:focus, .dp-field textarea:focus { border-color: #111; }
-  .dp-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .dp-submit { width: 100%; background: #111; color: #fff; border: none; border-radius: 7px; padding: 13px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 6px; font-family: 'DM Sans', sans-serif; transition: background .15s; }
-  .dp-submit:hover { background: #333; }
-  .dp-fine { font-size: 11px; color: #bbb; text-align: center; margin-top: 10px; }
-
-  .dp-calc { padding: 20px 24px; }
-  .dp-calc-title { font-size: 13px; font-weight: 700; color: #111; margin: 0 0 14px; }
-  .dp-calc-result { background: #f8f8f8; border-radius: 8px; padding: 14px 16px; margin-bottom: 14px; }
-  .dp-calc-mo { font-size: 26px; font-weight: 800; color: #111; letter-spacing: -0.02em; }
-  .dp-calc-sub { font-size: 12px; color: #999; margin-top: 2px; }
-  .dp-calc-lines { margin-top: 10px; }
-  .dp-calc-line { display: flex; justify-content: space-between; font-size: 12px; color: #666; padding: 3px 0; }
-  .dp-calc-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .dp-calc-inputs label { font-size: 10px; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: .08em; display: block; margin-bottom: 4px; }
-  .dp-calc-inputs input { width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 13px; font-family: 'DM Sans', sans-serif; color: #111; background: #fff; }
-  .dp-calc-note { font-size: 10px; color: #ccc; margin-top: 10px; line-height: 1.5; }
+/* ── responsive ───────────────────────────────────────────── */
+@media(max-width:960px){
+  .cr-wrap{padding:0 16px;}
+  .cr-body{grid-template-columns:1fr;}
+  .cr-side{position:static;max-height:none;border-left:none;border-top:1px solid #ebebeb;}
+  .cr-main{padding:0 0 40px;}
+  .cr-topbar-r{flex-wrap:wrap;gap:8px;}
+  .cr-slider-img{height:280px;} .cr-thumb{width:68px;height:48px;}
+}
 </style>
 {% endblock %}
 
 {% block content %}
 
-<!-- ── Lightbox gallery modal ────────────────────────────────── -->
-{% if listing.image_urls %}
-<div class="dp-gallery-modal" id="gallery-modal">
-  <button class="dp-gallery-close" onclick="closeGallery()">✕</button>
-  <div class="dp-gallery-img-wrap">
-    <button class="dp-gallery-nav dp-gallery-prev" onclick="galleryNav(-1)">‹</button>
-    <img id="gallery-main-img" src="" alt="" />
-    <button class="dp-gallery-nav dp-gallery-next" onclick="galleryNav(1)">›</button>
+<!-- Lightbox -->
+<div class="cr-lb" id="cr-lb">
+  <button class="cr-lb-close" onclick="lbClose()">✕</button>
+  <div class="cr-lb-wrap">
+    <button class="cr-lb-nav cr-lb-prev" onclick="lbNav(-1)">‹</button>
+    <img id="cr-lb-img" src="" alt="" />
+    <button class="cr-lb-nav cr-lb-next" onclick="lbNav(1)">›</button>
   </div>
-  <div class="dp-gallery-counter" id="gallery-counter"></div>
-  <div class="dp-gallery-strip" id="gallery-strip"></div>
+  <div class="cr-lb-count" id="cr-lb-count"></div>
+  <div class="cr-lb-strip" id="cr-lb-strip"></div>
 </div>
-{% endif %}
 
-<div class="dp-page">
+<!-- ══ EVERYTHING inside ONE centered wrapper ══ -->
+<div class="cr-wrap">
 
-  <!-- ══════════════════════════════════════════════
-       LEFT
-  ══════════════════════════════════════════════ -->
-  <div class="dp-left">
-
-    <div class="dp-header">
-      <p class="dp-breadcrumb">
-        <a href="/listings/">Buy</a><span>›</span>{{ listing.city }}, {{ listing.state }}{% if listing.zip_code %}<span>›</span>{{ listing.zip_code }}{% endif %}
-      </p>
-      <h1 class="dp-address">{{ listing.street_address }}</h1>
-      <p class="dp-city-line">{{ listing.city }}, {{ listing.state }} {{ listing.zip_code }}{% if listing.county %} &middot; {{ listing.county }} County{% endif %}</p>
-
-      <div class="dp-stats">
-        <div class="dp-stat"><span class="dp-stat-val">${{ listing.price|floatformat:0|intcomma }}</span><span class="dp-stat-lbl">Price</span></div>
-        {% if listing.beds %}<div class="dp-stat"><span class="dp-stat-val">{{ listing.beds|floatformat:0 }}</span><span class="dp-stat-lbl">Beds</span></div>{% endif %}
-        {% if listing.baths %}<div class="dp-stat"><span class="dp-stat-val">{{ listing.baths|floatformat:0 }}</span><span class="dp-stat-lbl">Baths</span></div>{% endif %}
-        {% if listing.sqft %}<div class="dp-stat"><span class="dp-stat-val">{{ listing.sqft|intcomma }}</span><span class="dp-stat-lbl">Sq. Ft.</span></div>{% endif %}
-        {% if listing.price_per_sqft %}<div class="dp-stat"><span class="dp-stat-val">${{ listing.price_per_sqft }}</span><span class="dp-stat-lbl">/ Sq. Ft.</span></div>{% endif %}
+  <!-- top bar: address left | stats + save/share right — all one line -->
+  <div class="cr-topbar">
+    <div class="cr-topbar-l">
+      <h1 class="cr-address">{{ listing.street_address }}</h1>
+      <p class="cr-cityline">{{ listing.city }}, {{ listing.state }} {{ listing.zip_code }}{% if listing.county %} &middot; {{ listing.county }} County{% endif %}</p>
+    </div>
+    <div style="display:flex;align-items:center;gap:0;flex-shrink:0;">
+      <div class="cr-stat"><span class="cr-stat-v">${{ listing.price|floatformat:0|intcomma }}</span><span class="cr-stat-l">Price</span></div>
+      {% if listing.beds %}<div class="cr-stat"><span class="cr-stat-v">{{ listing.beds|floatformat:0 }}</span><span class="cr-stat-l">Beds</span></div>{% endif %}
+      {% if listing.baths %}<div class="cr-stat"><span class="cr-stat-v">{{ listing.baths|floatformat:0 }}</span><span class="cr-stat-l">Baths</span></div>{% endif %}
+      {% if listing.sqft %}<div class="cr-stat"><span class="cr-stat-v">{{ listing.sqft|intcomma }}</span><span class="cr-stat-l">Sq. Ft.</span></div>{% endif %}
+      {% if listing.price_per_sqft %}<div class="cr-stat"><span class="cr-stat-v">${{ listing.price_per_sqft }}</span><span class="cr-stat-l">/ Sq. Ft.</span></div>{% endif %}
+      <div class="cr-actions">
+        <button class="cr-btn cr-btn-save" onclick="alert('Saved!')">&#9733; Save</button>
+        <button class="cr-btn" onclick="navigator.share?navigator.share({title:document.title,url:location.href}):navigator.clipboard.writeText(location.href).then(()=>alert('Link copied!'))">&#8599; Share</button>
       </div>
     </div>
+  </div>
 
-    <!-- Photo grid -->
-    <div class="dp-photo-wrap">
-      {% if listing.image_urls and listing.image_urls|length > 1 %}
-        <div class="dp-photo-grid">
-          <div class="dp-photo-main" onclick="openGallery(0)" style="position:relative;overflow:hidden;">
-            <img src="{{ listing.image_urls.0 }}" alt="{{ listing.street_address }}" class="dp-grid-img" style="height:100%;" />
-          </div>
-          <div class="dp-photo-side">
-            {% for img in listing.image_urls %}{% if forloop.counter > 1 and forloop.counter <= 5 %}
-              <div class="dp-photo-thumb" onclick="openGallery({{ forloop.counter0 }})" style="position:relative;overflow:hidden;">
-                <img src="{{ img }}" alt="Photo {{ forloop.counter }}" class="dp-grid-img" />
-                {% if forloop.counter == 5 %}
-                  <button class="dp-view-all-btn">
-                    🖼 View all {{ listing.image_urls|length }} photos
-                  </button>
-                {% endif %}
-              </div>
-            {% endif %}{% endfor %}
-          </div>
-        </div>
-      {% elif listing.main_image_url %}
-        <img src="{{ listing.main_image_url }}" alt="{{ listing.street_address }}" class="dp-hero" onclick="openGallery(0)" style="cursor:pointer;" />
-      {% else %}
-        <div class="dp-no-photo">📷 No photos available</div>
-      {% endif %}
-    </div>
+  <!-- section nav -->
+  <div class="cr-nav-wrap">
+    <nav class="cr-nav">
+      <a href="#overview" class="active">Overview</a>
+      <a href="#location">Location</a>
+      <a href="#propertyInfo">Property Info</a>
+      <a href="#propertyHistory">Property History</a>
+      <a href="#publicFacts">Public Records</a>
+      {% if listing.school_district or listing.elementary_school or listing.middle_school or listing.high_school %}<a href="#schools">Schools</a>{% endif %}
+    </nav>
+  </div>
 
-    {% if listing.virtual_tour_url %}
-    <div class="dp-tour-wrap">
-      <a href="{{ listing.virtual_tour_url }}" target="_blank" class="dp-tour-btn">▶ Virtual Tour</a>
-    </div>
+  <!-- photos: Compass-style slider + thumbnail strip -->
+  <div class="cr-photos">
+    {% if listing.image_urls and listing.image_urls|length > 0 %}
+      <div class="cr-slider" onclick="lbOpen(sliderIdx)">
+        <img id="cr-slider-img" class="cr-slider-img" src="{{ listing.image_urls.0 }}" alt="{{ listing.street_address }}" />
+        <button class="cr-slider-nav cr-slider-prev" onclick="event.stopPropagation();sliderNav(-1)">&#8249;</button>
+        <button class="cr-slider-nav cr-slider-next" onclick="event.stopPropagation();sliderNav(1)">&#8250;</button>
+        <div class="cr-slider-count" id="cr-slider-count">1 / {{ listing.image_urls|length }}</div>
+      </div>
+      <div class="cr-thumbs" id="cr-thumbs">
+        {% for img in listing.image_urls %}
+          <div class="cr-thumb{% if forloop.first %} active{% endif %}" onclick="sliderGo({{ forloop.counter0 }})">
+            <img src="{{ img }}" alt="Photo {{ forloop.counter }}" />
+          </div>
+        {% endfor %}
+      </div>
+      <div style="display:flex;align-items:center;gap:0;">
+        <button class="cr-viewall" onclick="lbOpen(sliderIdx)">🖼 View all {{ listing.image_urls|length }} photos</button>
+        {% if listing.virtual_tour_url %}<a href="{{ listing.virtual_tour_url }}" target="_blank" class="cr-tour">▶ Virtual Tour</a>{% endif %}
+      </div>
+
+    {% elif listing.main_image_url %}
+      <div class="cr-slider" onclick="lbOpen(0)">
+        <img class="cr-slider-img" src="{{ listing.main_image_url }}" alt="{{ listing.street_address }}" />
+      </div>
+    {% else %}
+      <div class="cr-nophoto">📷 No photos available</div>
     {% endif %}
+  </div>
 
-    <div class="dp-content">
+  <!-- two-column body -->
+  <div class="cr-body">
 
-      {% if listing.description %}
-      <div class="dp-section">
-        <h2 class="dp-section-title">Description</h2>
-        <p id="desc-short" class="dp-desc dp-desc-clamp">{{ listing.description }}</p>
-        <p id="desc-full" class="dp-desc" style="display:none;">{{ listing.description }}</p>
-        <button class="dp-read-more" onclick="var s=document.getElementById('desc-short'),f=document.getElementById('desc-full');if(f.style.display==='none'){s.style.display='none';f.style.display='block';this.textContent='Show less';}else{s.style.display='block';f.style.display='none';this.textContent='Continue Reading';}">Continue Reading</button>
-      </div>
-      {% endif %}
+    <!-- LEFT: content -->
+    <div class="cr-main">
 
-      <div class="dp-section">
-        <h2 class="dp-section-title">Property Details</h2>
-        <div class="dp-facts">
-          {% if listing.status %}<div class="dp-fact"><span class="dp-fact-lbl">Status</span><span class="dp-fact-val">{{ listing.status|title }}</span></div>{% endif %}
-          {% if listing.property_type %}<div class="dp-fact"><span class="dp-fact-lbl">Type</span><span class="dp-fact-val">{{ listing.property_type }}</span></div>{% endif %}
-          {% if listing.year_built %}<div class="dp-fact"><span class="dp-fact-lbl">Year Built</span><span class="dp-fact-val">{{ listing.year_built }}</span></div>{% endif %}
-          {% if listing.stories %}<div class="dp-fact"><span class="dp-fact-lbl">Stories</span><span class="dp-fact-val">{{ listing.stories }}</span></div>{% endif %}
-          {% if listing.sqft %}<div class="dp-fact"><span class="dp-fact-lbl">Living Area</span><span class="dp-fact-val">{{ listing.sqft|intcomma }} sqft</span></div>{% endif %}
-          {% if listing.lot_size %}<div class="dp-fact"><span class="dp-fact-lbl">Lot Size</span><span class="dp-fact-val">{{ listing.lot_size }} AC{% if listing.lot_size_sqft %} / {{ listing.lot_size_sqft|intcomma }} SF{% endif %}</span></div>{% endif %}
-          {% if listing.garage_spaces %}<div class="dp-fact"><span class="dp-fact-lbl">Garage</span><span class="dp-fact-val">{{ listing.garage_spaces }} spaces</span></div>{% endif %}
-          {% if listing.county %}<div class="dp-fact"><span class="dp-fact-lbl">County</span><span class="dp-fact-val">{{ listing.county }}</span></div>{% endif %}
-          {% if listing.subdivision %}<div class="dp-fact"><span class="dp-fact-lbl">Subdivision</span><span class="dp-fact-val">{{ listing.subdivision }}</span></div>{% endif %}
-          {% if listing.tax_amount %}<div class="dp-fact"><span class="dp-fact-lbl">Taxes{% if listing.tax_year %} ({{ listing.tax_year }}){% endif %}</span><span class="dp-fact-val">${{ listing.tax_amount|floatformat:0|intcomma }}/yr</span></div>{% endif %}
-          {% if listing.hoa_fee %}<div class="dp-fact"><span class="dp-fact-lbl">HOA</span><span class="dp-fact-val">${{ listing.hoa_fee|floatformat:0 }}{% if listing.hoa_frequency %}/{{ listing.hoa_frequency }}{% endif %}</span></div>{% endif %}
-          {% if listing.days_on_market is not None %}<div class="dp-fact"><span class="dp-fact-lbl">Days on Market</span><span class="dp-fact-val">{{ listing.days_on_market }}</span></div>{% endif %}
-          {% if listing.mls_id %}<div class="dp-fact"><span class="dp-fact-lbl">MLS #</span><span class="dp-fact-val">{{ listing.mls_id }}</span></div>{% endif %}
-          {% if listing.buyer_agent_compensation %}<div class="dp-fact"><span class="dp-fact-lbl">Buyer's Agent</span><span class="dp-fact-val">{{ listing.buyer_agent_compensation }}</span></div>{% endif %}
+      <div id="overview">
+        {% if listing.description %}
+        <div class="cr-section">
+          <h2 class="cr-section-title">Description</h2>
+          <p id="ds" class="cr-desc cr-clamp">{{ listing.description }}</p>
+          <p id="df" class="cr-desc" style="display:none;">{{ listing.description }}</p>
+          <button class="cr-readmore" onclick="var s=document.getElementById('ds'),f=document.getElementById('df');if(f.style.display==='none'){s.style.display='none';f.style.display='block';this.textContent='Show less';}else{s.style.display='block';f.style.display='none';this.textContent='Continue Reading';}">Continue Reading</button>
+        </div>
+        {% endif %}
+
+        <div class="cr-section">
+          <h2 class="cr-section-title">Contact Agent</h2>
+          <div class="cr-agent-card">
+            <div class="cr-agent-av">C</div>
+            <div>
+              <div class="cr-agent-name">Col Realty</div>
+              <div class="cr-agent-co">Col Realty</div>
+              <div class="cr-agent-ph">(512) 699-3810</div>
+            </div>
+          </div>
+          <div class="cr-agent-btns">
+            <a href="tel:5126993810" class="cr-agent-btn">📞 Call</a>
+            <a href="sms:5126993810" class="cr-agent-btn">💬 Text</a>
+            <a href="mailto:info@colrealty.com" class="cr-agent-btn">✉️ Email</a>
+          </div>
         </div>
       </div>
 
-      <div class="dp-section">
-        <h2 class="dp-section-title">Location</h2>
-        <div class="dp-map-full"><div id="listing-map"></div></div>
-        {% if listing.directions %}<p style="font-size:13px;color:#666;margin:14px 0 0;line-height:1.7;">{{ listing.directions }}</p>{% endif %}
-      </div>
-
-      {% if listing.interior_features or listing.exterior_features or listing.appliances or listing.community_features or listing.parking_features %}
-      <div class="dp-section">
-        <h2 class="dp-section-title">Features & Amenities</h2>
-        <div class="dp-feat-grid">
-          {% if listing.interior_features %}<div><p class="dp-feat-lbl">Interior</p><div class="dp-tags">{% for f in listing.interior_features_list %}<span class="dp-tag">{{ f }}</span>{% endfor %}</div></div>{% endif %}
-          {% if listing.exterior_features %}<div><p class="dp-feat-lbl">Exterior</p><div class="dp-tags">{% for f in listing.exterior_features_list %}<span class="dp-tag">{{ f }}</span>{% endfor %}</div></div>{% endif %}
-          {% if listing.appliances %}<div><p class="dp-feat-lbl">Appliances</p><div class="dp-tags">{% for f in listing.appliances_list %}<span class="dp-tag">{{ f }}</span>{% endfor %}</div></div>{% endif %}
-          {% if listing.community_features %}<div><p class="dp-feat-lbl">Community</p><div class="dp-tags">{% for f in listing.community_features_list %}<span class="dp-tag">{{ f }}</span>{% endfor %}</div></div>{% endif %}
-          {% if listing.parking_features %}<div><p class="dp-feat-lbl">Parking</p><div class="dp-tags">{% for f in listing.parking_features_list %}<span class="dp-tag">{{ f }}</span>{% endfor %}</div></div>{% endif %}
-          {% if listing.flooring or listing.heating or listing.cooling %}<div><p class="dp-feat-lbl">Utilities & Construction</p><div class="dp-tags">{% if listing.heating %}<span class="dp-tag">Heat: {{ listing.heating }}</span>{% endif %}{% if listing.cooling %}<span class="dp-tag">AC: {{ listing.cooling }}</span>{% endif %}{% if listing.flooring %}<span class="dp-tag">{{ listing.flooring }}</span>{% endif %}{% if listing.roof %}<span class="dp-tag">Roof: {{ listing.roof }}</span>{% endif %}{% if listing.foundation %}<span class="dp-tag">Foundation: {{ listing.foundation }}</span>{% endif %}</div></div>{% endif %}
+      <div id="propertyInfo">
+        <div class="cr-section">
+          <h2 class="cr-section-title">Property Details</h2>
+          <table class="cr-tbl">
+            {% if listing.status %}<tr><td>Status</td><td>{{ listing.status|title }}</td></tr>{% endif %}
+            {% if listing.mls_id %}<tr><td>MLS #</td><td>{{ listing.mls_id }}</td></tr>{% endif %}
+            {% if listing.days_on_market is not None %}<tr><td>Days on Market</td><td>{{ listing.days_on_market }}</td></tr>{% endif %}
+            {% if listing.tax_amount %}<tr><td>Taxes</td><td>${{ listing.tax_amount|floatformat:0|intcomma }}{% if listing.tax_year %} ({{ listing.tax_year }}){% endif %} / year</td></tr>{% endif %}
+            {% if listing.hoa_fee %}<tr><td>HOA Fees</td><td>${{ listing.hoa_fee|floatformat:0 }}{% if listing.hoa_frequency %} / {{ listing.hoa_frequency }}{% endif %}</td></tr>{% endif %}
+            {% if listing.property_type %}<tr><td>Type</td><td>{{ listing.property_type }}</td></tr>{% endif %}
+            {% if listing.year_built %}<tr><td>Year Built</td><td>{{ listing.year_built }}</td></tr>{% endif %}
+            {% if listing.stories %}<tr><td>Stories</td><td>{{ listing.stories }}</td></tr>{% endif %}
+            {% if listing.sqft %}<tr><td>Living Area</td><td>{{ listing.sqft|intcomma }} Sq. Ft.</td></tr>{% endif %}
+            {% if listing.lot_size %}<tr><td>Lot Size</td><td>{{ listing.lot_size }} AC{% if listing.lot_size_sqft %} / {{ listing.lot_size_sqft|intcomma }} SF{% endif %}</td></tr>{% endif %}
+            {% if listing.county %}<tr><td>County</td><td>{{ listing.county }}</td></tr>{% endif %}
+            {% if listing.subdivision %}<tr><td>Subdivision</td><td>{{ listing.subdivision }}</td></tr>{% endif %}
+            {% if listing.garage_spaces %}<tr><td>Garage Spaces</td><td>{{ listing.garage_spaces }}</td></tr>{% endif %}
+            {% if listing.buyer_agent_compensation %}<tr><td>Buyer's Agent</td><td>{{ listing.buyer_agent_compensation }}</td></tr>{% endif %}
+          </table>
         </div>
-        {% if listing.has_fireplace or listing.has_pool or listing.has_garage or listing.is_waterfront or listing.is_new_construction %}
-        <div style="margin-top:16px;" class="dp-tags">
-          {% if listing.has_fireplace %}<span class="dp-tag">🔥 Fireplace</span>{% endif %}
-          {% if listing.has_pool %}<span class="dp-tag">🏊 Pool</span>{% endif %}
-          {% if listing.has_garage %}<span class="dp-tag">🚗 Garage</span>{% endif %}
-          {% if listing.is_waterfront %}<span class="dp-tag">🌊 Waterfront</span>{% endif %}
-          {% if listing.is_new_construction %}<span class="dp-tag">🏗 New Construction</span>{% endif %}
+
+        {% if listing.interior_features or listing.exterior_features or listing.appliances or listing.community_features or listing.parking_features %}
+        <div class="cr-section">
+          <h2 class="cr-section-title">Property Information</h2>
+          <div class="cr-feat-grid">
+            {% if listing.interior_features %}<div><p class="cr-feat-lbl">Interior</p><div class="cr-tags">{% for f in listing.interior_features_list %}<span class="cr-tag">{{ f }}</span>{% endfor %}</div></div>{% endif %}
+            {% if listing.exterior_features %}<div><p class="cr-feat-lbl">Exterior</p><div class="cr-tags">{% for f in listing.exterior_features_list %}<span class="cr-tag">{{ f }}</span>{% endfor %}</div></div>{% endif %}
+            {% if listing.appliances %}<div><p class="cr-feat-lbl">Appliances</p><div class="cr-tags">{% for f in listing.appliances_list %}<span class="cr-tag">{{ f }}</span>{% endfor %}</div></div>{% endif %}
+            {% if listing.community_features %}<div><p class="cr-feat-lbl">Community</p><div class="cr-tags">{% for f in listing.community_features_list %}<span class="cr-tag">{{ f }}</span>{% endfor %}</div></div>{% endif %}
+            {% if listing.parking_features %}<div><p class="cr-feat-lbl">Parking</p><div class="cr-tags">{% for f in listing.parking_features_list %}<span class="cr-tag">{{ f }}</span>{% endfor %}</div></div>{% endif %}
+            {% if listing.flooring or listing.heating or listing.cooling %}<div><p class="cr-feat-lbl">Utilities & Construction</p><div class="cr-tags">{% if listing.heating %}<span class="cr-tag">Heat: {{ listing.heating }}</span>{% endif %}{% if listing.cooling %}<span class="cr-tag">AC: {{ listing.cooling }}</span>{% endif %}{% if listing.flooring %}<span class="cr-tag">{{ listing.flooring }}</span>{% endif %}{% if listing.roof %}<span class="cr-tag">Roof: {{ listing.roof }}</span>{% endif %}{% if listing.foundation %}<span class="cr-tag">Foundation: {{ listing.foundation }}</span>{% endif %}</div></div>{% endif %}
+          </div>
+          {% if listing.has_fireplace or listing.has_pool or listing.has_garage or listing.is_waterfront or listing.is_new_construction %}
+          <div style="margin-top:16px;" class="cr-tags">
+            {% if listing.has_fireplace %}<span class="cr-tag">🔥 Fireplace</span>{% endif %}
+            {% if listing.has_pool %}<span class="cr-tag">🏊 Pool</span>{% endif %}
+            {% if listing.has_garage %}<span class="cr-tag">🚗 Garage</span>{% endif %}
+            {% if listing.is_waterfront %}<span class="cr-tag">🌊 Waterfront</span>{% endif %}
+            {% if listing.is_new_construction %}<span class="cr-tag">🏗 New Construction</span>{% endif %}
+          </div>
+          {% endif %}
+          {% if listing.directions %}<p style="margin-top:18px;font-size:13px;color:#666;line-height:1.7;"><strong>Directions:</strong> {{ listing.directions }}</p>{% endif %}
         </div>
         {% endif %}
       </div>
-      {% endif %}
+
+      <div id="location" class="cr-section">
+        <h2 class="cr-section-title">Location</h2>
+        <div class="cr-map"><div id="listing-map"></div></div>
+      </div>
+
+      <div id="propertyHistory" class="cr-section">
+        <h2 class="cr-section-title">Property History</h2>
+        <table class="cr-hist">
+          <thead><tr><th>Date</th><th>Event</th><th>Price</th></tr></thead>
+          <tbody>
+            {% if listing.created_at %}
+            <tr>
+              <td>{{ listing.created_at|date:"M j, Y" }}</td>
+              <td>Listed (Active){% if listing.mls_id %} · MLS# {{ listing.mls_id }}{% endif %}</td>
+              <td>${{ listing.price|floatformat:0|intcomma }}</td>
+            </tr>
+            {% endif %}
+            {% if listing.original_list_price and listing.original_list_price != listing.price %}
+            <tr>
+              <td>—</td>
+              <td>Original List Price</td>
+              <td>${{ listing.original_list_price|floatformat:0|intcomma }}</td>
+            </tr>
+            {% endif %}
+          </tbody>
+        </table>
+        <p style="font-size:11px;color:#bbb;margin-top:12px;line-height:1.6;">Full transaction history may not be available. Data sourced from ACTRIS MLS.</p>
+      </div>
+
+      <div id="publicFacts" class="cr-section">
+        <h2 class="cr-section-title">Public Records</h2>
+        {% if listing.tax_amount or listing.sqft or listing.year_built %}
+        <div class="cr-rec-grid">
+          {% if listing.tax_amount %}<div class="cr-rec-cell"><span class="cr-rec-lbl">Tax Record{% if listing.tax_year %} {{ listing.tax_year }}{% endif %}</span><span class="cr-rec-val">${{ listing.tax_amount|floatformat:0|intcomma }}</span></div>{% endif %}
+          {% if listing.sqft %}<div class="cr-rec-cell"><span class="cr-rec-lbl">Total Sq. Ft.</span><span class="cr-rec-val">{{ listing.sqft|intcomma }}</span></div>{% endif %}
+          {% if listing.year_built %}<div class="cr-rec-cell"><span class="cr-rec-lbl">Year Built</span><span class="cr-rec-val">{{ listing.year_built }}</span></div>{% endif %}
+        </div>
+        {% endif %}
+        <table class="cr-tbl">
+          {% if listing.beds %}<tr><td>Beds</td><td>{{ listing.beds|floatformat:0 }}</td></tr>{% endif %}
+          {% if listing.baths %}<tr><td>Baths</td><td>{{ listing.baths|floatformat:0 }}</td></tr>{% endif %}
+          {% if listing.sqft %}<tr><td>Total Sq. Ft.</td><td>{{ listing.sqft|intcomma }}</td></tr>{% endif %}
+          {% if listing.stories %}<tr><td>Stories</td><td>{{ listing.stories }}</td></tr>{% endif %}
+          {% if listing.lot_size_sqft %}<tr><td>Lot Size</td><td>{{ listing.lot_size_sqft|intcomma }} Sq. Ft.</td></tr>{% endif %}
+          {% if listing.property_type %}<tr><td>Style</td><td>{{ listing.property_type }}</td></tr>{% endif %}
+          {% if listing.county %}<tr><td>County</td><td>{{ listing.county|upper }}</td></tr>{% endif %}
+          {% if listing.mls_id %}<tr><td>MLS #</td><td>{{ listing.mls_id }}</td></tr>{% endif %}
+          {% if listing.has_fireplace %}<tr><td>Fireplace</td><td>Yes</td></tr>{% endif %}
+        </table>
+      </div>
 
       {% if listing.school_district or listing.elementary_school or listing.middle_school or listing.high_school %}
-      <div class="dp-section">
-        <h2 class="dp-section-title">Schools</h2>
-        {% if listing.school_district %}<span class="dp-district">{{ listing.school_district }}</span>{% endif %}
-        {% if listing.elementary_school %}<div class="dp-school"><div><div class="dp-school-name">{{ listing.elementary_school }}</div><div class="dp-school-type">Elementary · Public</div></div></div>{% endif %}
-        {% if listing.middle_school %}<div class="dp-school"><div><div class="dp-school-name">{{ listing.middle_school }}</div><div class="dp-school-type">Middle School · Public</div></div></div>{% endif %}
-        {% if listing.high_school %}<div class="dp-school"><div><div class="dp-school-name">{{ listing.high_school }}</div><div class="dp-school-type">High School · Public</div></div></div>{% endif %}
+      <div id="schools" class="cr-section">
+        <h2 class="cr-section-title">Schools</h2>
+        {% if listing.school_district %}<p style="font-size:13px;color:#555;margin-bottom:12px;">This home is within <span class="cr-dist-badge">{{ listing.school_district }}</span></p>{% endif %}
+        {% if listing.elementary_school %}<div class="cr-school"><div class="cr-school-rtg" style="background:#15803d;">E</div><div><div class="cr-school-name">{{ listing.elementary_school }}</div><div class="cr-school-meta">Public · Elementary · Serves this home</div></div></div>{% endif %}
+        {% if listing.middle_school %}<div class="cr-school"><div class="cr-school-rtg" style="background:#b45309;">M</div><div><div class="cr-school-name">{{ listing.middle_school }}</div><div class="cr-school-meta">Public · Middle School · Serves this home</div></div></div>{% endif %}
+        {% if listing.high_school %}<div class="cr-school"><div class="cr-school-rtg" style="background:#1d4ed8;">H</div><div><div class="cr-school-name">{{ listing.high_school }}</div><div class="cr-school-meta">Public · High School · Serves this home</div></div></div>{% endif %}
+        <p style="font-size:11px;color:#bbb;margin-top:14px;line-height:1.6;">Please verify enrollment eligibility directly with schools.</p>
       </div>
       {% endif %}
 
       {% if listing.open_house_date %}
-      <div class="dp-section">
-        <h2 class="dp-section-title">Open House</h2>
-        <div class="dp-oh">
+      <div class="cr-section">
+        <div class="cr-oh">
           <div style="font-size:28px;">🏡</div>
           <div>
-            <div class="dp-oh-lbl">Open House</div>
-            <div class="dp-oh-time">{{ listing.open_house_date|date:"l, F j, Y" }}{% if listing.open_house_start_time %} · {{ listing.open_house_start_time|time:"g:i A" }}{% endif %}{% if listing.open_house_end_time %} – {{ listing.open_house_end_time|time:"g:i A" }}{% endif %}</div>
+            <div class="cr-oh-lbl">Open House</div>
+            <div class="cr-oh-time">{{ listing.open_house_date|date:"l, F j, Y" }}{% if listing.open_house_start_time %} · {{ listing.open_house_start_time|time:"g:i A" }}{% endif %}{% if listing.open_house_end_time %} – {{ listing.open_house_end_time|time:"g:i A" }}{% endif %}</div>
           </div>
         </div>
       </div>
       {% endif %}
 
-    </div>
-  </div>
+    </div><!-- /cr-main -->
 
-  <!-- ══════════════════════════════════════════════
-       RIGHT SIDEBAR
-  ══════════════════════════════════════════════ -->
-  <div class="dp-right">
-    <div class="dp-agent">
-      <div class="dp-avatar">C</div>
-      <div>
-        <div class="dp-agent-name">Col Realty</div>
-        <div class="dp-agent-role">Listing Agent</div>
-        <a href="tel:5126993810" class="dp-agent-phone">(512) 699-3810</a>
+    <!-- RIGHT: sticky sidebar -->
+    <div class="cr-side">
+      <div class="cr-cta-price">${{ listing.price|floatformat:0|intcomma }}</div>
+      <div class="cr-cta-addr">{{ listing.street_address }}, {{ listing.city }}, {{ listing.state }}</div>
+      <div class="cr-form-wrap">
+        {% if messages %}{% for message in messages %}<div style="background:#f0fdf4;border-radius:6px;padding:10px 12px;margin-bottom:12px;font-size:13px;color:#15803d;">✓ {{ message }}</div>{% endfor %}{% endif %}
+        <form method="post" action="{% url 'leads:create' %}">
+          {% csrf_token %}
+          <input type="hidden" name="source_type" value="listing">
+          <input type="hidden" name="source_id" value="{{ listing.id }}">
+          <input type="hidden" name="page_url" value="{{ request.build_absolute_uri }}">
+          <div class="cr-row2">
+            <div class="cr-field"><label>Name *</label><input type="text" name="name" required placeholder="Your name" /></div>
+            <div class="cr-field"><label>Phone</label><input type="tel" name="phone" placeholder="(512) 000-0000" /></div>
+          </div>
+          <div class="cr-field"><label>Email *</label><input type="email" name="email" required placeholder="you@email.com" /></div>
+          <div class="cr-field"><label>Message</label><textarea name="message" rows="3">Hi, I'm interested in {{ listing.street_address }}. Please contact me with more details.</textarea></div>
+          <button type="submit" class="cr-submit">Request a Showing</button>
+        </form>
+        <p class="cr-fine">By submitting, you agree to be contacted by Col Realty.</p>
       </div>
-    </div>
-
-    <div class="dp-form-wrap">
-      <div class="dp-form-price">${{ listing.price|floatformat:0|intcomma }}</div>
-      <div class="dp-form-addr">{{ listing.street_address }}, {{ listing.city }}</div>
-      {% if messages %}{% for message in messages %}<div style="background:#f0fdf4;border-radius:6px;padding:10px 12px;margin-bottom:12px;font-size:13px;color:#15803d;">✓ {{ message }}</div>{% endfor %}{% endif %}
-      <form method="post" action="{% url 'leads:create' %}">
-        {% csrf_token %}
-        <input type="hidden" name="source_type" value="listing">
-        <input type="hidden" name="source_id" value="{{ listing.id }}">
-        <input type="hidden" name="page_url" value="{{ request.build_absolute_uri }}">
-        <div class="dp-row2">
-          <div class="dp-field"><label>Name *</label><input type="text" name="name" required placeholder="Your name" /></div>
-          <div class="dp-field"><label>Phone</label><input type="tel" name="phone" placeholder="(512) 000-0000" /></div>
+      {% if listing.price %}
+      <div class="cr-calc-wrap">
+        <p class="cr-calc-title">Payment Estimate</p>
+        <div class="cr-calc-mo" id="calc-monthly">—</div>
+        <div class="cr-calc-sub">Estimated monthly payment</div>
+        <div class="cr-calc-line"><span>Principal & Interest</span><span id="calc-pi">—</span></div>
+        {% if listing.tax_amount %}<div class="cr-calc-line"><span>Property Taxes</span><span id="calc-tax">—</span></div>{% endif %}
+        {% if listing.hoa_fee %}<div class="cr-calc-line"><span>HOA Dues</span><span>${{ listing.hoa_fee|floatformat:0 }}/mo</span></div>{% endif %}
+        <div class="cr-calc-inputs">
+          <div><label>Down %</label><input type="number" id="calc-down" value="20" min="0" max="100" oninput="calcPayment()" /></div>
+          <div><label>Rate %</label><input type="number" id="calc-rate" value="6.5" step="0.1" oninput="calcPayment()" /></div>
         </div>
-        <div class="dp-field"><label>Email *</label><input type="email" name="email" required placeholder="you@email.com" /></div>
-        <div class="dp-field"><label>Message</label><textarea name="message" rows="3">Hi, I'm interested in {{ listing.street_address }}, {{ listing.city }}. Please contact me with more details.</textarea></div>
-        <button type="submit" class="dp-submit">Request a Showing</button>
-      </form>
-      <p class="dp-fine">By submitting, you agree to be contacted by Col Realty.</p>
+        <p class="cr-calc-note">For illustrative purposes only. Contact a lender for accurate figures.</p>
+      </div>
+      {% endif %}
     </div>
 
-    {% if listing.price %}
-    <div class="dp-calc">
-      <p class="dp-calc-title">Payment Estimate</p>
-      <div class="dp-calc-result">
-        <div class="dp-calc-mo" id="calc-monthly">—</div>
-        <div class="dp-calc-sub">Estimated monthly payment</div>
-        <div class="dp-calc-lines">
-          <div class="dp-calc-line"><span>Principal & Interest</span><span id="calc-pi">—</span></div>
-          {% if listing.tax_amount %}<div class="dp-calc-line"><span>Property Taxes</span><span id="calc-tax">—</span></div>{% endif %}
-          {% if listing.hoa_fee %}<div class="dp-calc-line"><span>HOA</span><span>${{ listing.hoa_fee|floatformat:0 }}/{% if listing.hoa_frequency %}{{ listing.hoa_frequency }}{% else %}mo{% endif %}</span></div>{% endif %}
-        </div>
-      </div>
-      <div class="dp-calc-inputs">
-        <div><label>Down Payment %</label><input type="number" id="calc-down" value="20" min="0" max="100" oninput="calcPayment()" /></div>
-        <div><label>Interest Rate %</label><input type="number" id="calc-rate" value="6.5" min="0" max="20" step="0.1" oninput="calcPayment()" /></div>
-      </div>
-      <p class="dp-calc-note">For illustrative purposes only. Contact a lender for accurate figures.</p>
-    </div>
-    {% endif %}
-  </div>
-
-</div>
+  </div><!-- /cr-body -->
+</div><!-- /cr-wrap -->
 
 <script>
-  // ── Payment calculator ──────────────────────────────────────
-  const PRICE = {{ listing.price|floatformat:0 }};
-  {% if listing.tax_amount %}const TAX_ANNUAL = {{ listing.tax_amount|floatformat:0 }};{% else %}const TAX_ANNUAL = 0;{% endif %}
-  function calcPayment() {
-    const down = parseFloat(document.getElementById('calc-down').value)/100;
-    const rate = parseFloat(document.getElementById('calc-rate').value)/100/12;
-    const p = PRICE*(1-down), n=360;
-    const pi = rate>0 ? p*(rate*Math.pow(1+rate,n))/(Math.pow(1+rate,n)-1) : p/n;
-    const tax = TAX_ANNUAL/12;
-    document.getElementById('calc-monthly').textContent = '$'+Math.round(pi+tax).toLocaleString()+'/mo';
-    document.getElementById('calc-pi').textContent = '$'+Math.round(pi).toLocaleString();
-    if(document.getElementById('calc-tax')) document.getElementById('calc-tax').textContent = '$'+Math.round(tax).toLocaleString()+'/mo';
-  }
-  calcPayment();
+const PRICE={{ listing.price|floatformat:0 }};
+{% if listing.tax_amount %}const TAX={{ listing.tax_amount|floatformat:0 }};{% else %}const TAX=0;{% endif %}
+function calcPayment(){
+  const down=parseFloat(document.getElementById('calc-down').value)/100;
+  const rate=parseFloat(document.getElementById('calc-rate').value)/100/12;
+  const p=PRICE*(1-down),n=360;
+  const pi=rate>0?p*(rate*Math.pow(1+rate,n))/(Math.pow(1+rate,n)-1):p/n;
+  const tax=TAX/12;
+  document.getElementById('calc-monthly').textContent='$'+Math.round(pi+tax).toLocaleString()+'/mo';
+  document.getElementById('calc-pi').textContent='$'+Math.round(pi).toLocaleString();
+  if(document.getElementById('calc-tax'))document.getElementById('calc-tax').textContent='$'+Math.round(tax).toLocaleString()+'/mo';
+}
+calcPayment();
 
-  // ── Gallery / lightbox ─────────────────────────────────────
-  const PHOTOS = [
-    {% if listing.image_urls %}{% for img in listing.image_urls %}"{{ img }}"{% if not forloop.last %},{% endif %}{% endfor %}
-    {% elif listing.main_image_url %}"{{ listing.main_image_url }}"{% endif %}
-  ];
-  let currentPhoto = 0;
+const PHOTOS=[{% if listing.image_urls %}{% for img in listing.image_urls %}"{{ img }}"{% if not forloop.last %},{% endif %}{% endfor %}{% elif listing.main_image_url %}"{{ listing.main_image_url }}"{% endif %}];
+let lbIdx=0,stripBuilt=false;
 
-  function openGallery(idx) {
-    if (!PHOTOS.length) return;
-    currentPhoto = idx;
-    document.getElementById('gallery-modal').classList.add('open');
-    document.body.style.overflow = 'hidden';
-    renderGallery();
-  }
-  function closeGallery() {
-    document.getElementById('gallery-modal').classList.remove('open');
-    document.body.style.overflow = '';
-  }
-  function galleryNav(dir) {
-    currentPhoto = (currentPhoto + dir + PHOTOS.length) % PHOTOS.length;
-    renderGallery();
-  }
-  function renderGallery() {
-    document.getElementById('gallery-main-img').src = PHOTOS[currentPhoto];
-    document.getElementById('gallery-counter').textContent = (currentPhoto+1) + ' / ' + PHOTOS.length;
-    const strip = document.getElementById('gallery-strip');
-    if (strip && strip.children.length === 0) {
-      PHOTOS.forEach((url, i) => {
-        const img = document.createElement('img');
-        img.src = url;
-        img.onclick = () => { currentPhoto = i; renderGallery(); };
-        strip.appendChild(img);
-      });
-    }
-    if (strip) {
-      Array.from(strip.children).forEach((img, i) => img.classList.toggle('active', i === currentPhoto));
-    }
-  }
-  document.addEventListener('keydown', e => {
-    if (!document.getElementById('gallery-modal').classList.contains('open')) return;
-    if (e.key === 'ArrowRight') galleryNav(1);
-    if (e.key === 'ArrowLeft') galleryNav(-1);
-    if (e.key === 'Escape') closeGallery();
-  });
+// ── Slider ──────────────────────────────────────────────────────────
+let sliderIdx=0;
+function sliderGo(i){
+  sliderIdx=i;
+  const img=document.getElementById('cr-slider-img');
+  if(img) img.src=PHOTOS[i];
+  const cnt=document.getElementById('cr-slider-count');
+  if(cnt) cnt.textContent=(i+1)+' / '+PHOTOS.length;
+  document.querySelectorAll('.cr-thumb').forEach((t,j)=>t.classList.toggle('active',j===i));
+  // scroll thumb into view
+  const thumbs=document.getElementById('cr-thumbs');
+  if(thumbs) thumbs.children[i]?.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+}
+function sliderNav(d){
+  sliderGo((sliderIdx+d+PHOTOS.length)%PHOTOS.length);
+}
+function lbOpen(i){if(!PHOTOS.length)return;lbIdx=i;document.getElementById('cr-lb').classList.add('open');document.body.style.overflow='hidden';lbRender();}
+function lbClose(){document.getElementById('cr-lb').classList.remove('open');document.body.style.overflow='';}
+function lbNav(d){lbIdx=(lbIdx+d+PHOTOS.length)%PHOTOS.length;lbRender();}
+function lbRender(){
+  document.getElementById('cr-lb-img').src=PHOTOS[lbIdx];
+  document.getElementById('cr-lb-count').textContent=(lbIdx+1)+' / '+PHOTOS.length;
+  if(!stripBuilt){const s=document.getElementById('cr-lb-strip');PHOTOS.forEach((u,i)=>{const img=document.createElement('img');img.src=u;img.onclick=()=>{lbIdx=i;lbRender();};s.appendChild(img);});stripBuilt=true;}
+  Array.from(document.getElementById('cr-lb-strip').children).forEach((img,i)=>img.classList.toggle('active',i===lbIdx));
+}
+document.addEventListener('keydown',e=>{if(!document.getElementById('cr-lb').classList.contains('open'))return;if(e.key==='ArrowRight')lbNav(1);if(e.key==='ArrowLeft')lbNav(-1);if(e.key==='Escape')lbClose();});
+
+const SEC=['overview','location','propertyInfo','propertyHistory','publicFacts','schools'];
+window.addEventListener('scroll',()=>{
+  let cur='overview';
+  SEC.forEach(id=>{const el=document.getElementById(id);if(el&&window.scrollY>=el.offsetTop-120)cur=id;});
+  document.querySelectorAll('.cr-nav a').forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+cur));
+});
 </script>
 
 {% if listing.latitude and listing.longitude %}
 <script src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&v=weekly" defer></script>
 <script>
-  window.addEventListener("load", () => {
-    const el = document.getElementById("listing-map");
-    if (!el) return;
-    const lat = parseFloat("{{ listing.latitude }}"), lng = parseFloat("{{ listing.longitude }}");
-    if (isNaN(lat)||isNaN(lng)) return;
-    const map = new google.maps.Map(el, { center:{lat,lng}, zoom:15, styles:[
-      {featureType:"water",elementType:"geometry",stylers:[{color:"#c9e8f0"}]},
-      {featureType:"road",elementType:"geometry",stylers:[{color:"#fff"}]},
-      {featureType:"road",elementType:"geometry.stroke",stylers:[{color:"#e8e8e8"}]},
-      {featureType:"landscape",elementType:"geometry",stylers:[{color:"#f5f5f0"}]},
-      {featureType:"poi",elementType:"geometry",stylers:[{color:"#dae8d0"}]},
-      {featureType:"all",elementType:"labels.text.fill",stylers:[{color:"#444"}]}
-    ]});
-    new google.maps.Marker({map, position:{lat,lng}, title:"{{ listing.title|escapejs }}"});
-  });
+window.addEventListener("load",()=>{
+  const el=document.getElementById("listing-map");if(!el)return;
+  const lat=parseFloat("{{ listing.latitude }}"),lng=parseFloat("{{ listing.longitude }}");if(isNaN(lat)||isNaN(lng))return;
+  const map=new google.maps.Map(el,{center:{lat,lng},zoom:15,styles:[
+    {featureType:"water",elementType:"geometry",stylers:[{color:"#c9e8f0"}]},
+    {featureType:"road",elementType:"geometry",stylers:[{color:"#fff"}]},
+    {featureType:"road",elementType:"geometry.stroke",stylers:[{color:"#e8e8e8"}]},
+    {featureType:"landscape",elementType:"geometry",stylers:[{color:"#f5f5f0"}]},
+    {featureType:"poi",elementType:"geometry",stylers:[{color:"#dae8d0"}]},
+    {featureType:"all",elementType:"labels.text.fill",stylers:[{color:"#444"}]}
+  ]});
+  new google.maps.Marker({map,position:{lat,lng},title:"{{ listing.title|escapejs }}"});
+});
 </script>
 {% else %}
-<script>
-  window.addEventListener("load",()=>{
-    const el=document.getElementById("listing-map");
-    if(el) el.innerHTML="<div style='height:100%;display:flex;align-items:center;justify-content:center;font-size:13px;color:#bbb;background:#f8f8f8;'>Map unavailable</div>";
-  });
-</script>
+<script>window.addEventListener("load",()=>{const el=document.getElementById("listing-map");if(el)el.innerHTML="<div style='height:100%;display:flex;align-items:center;justify-content:center;font-size:13px;color:#bbb;background:#f8f8f8;'>Map unavailable</div>";});</script>
 {% endif %}
 {% endblock %}
