@@ -232,6 +232,9 @@ if AWS_STORAGE_BUCKET_NAME:
     STATIC_URL = f"{_base_url}/static/"
     MEDIA_URL  = f"{_base_url}/media/"
 
+    STATIC_ROOT      = BASE_DIR / "staticfiles"
+    STATICFILES_DIRS = [BASE_DIR / "static"]
+
     STORAGES = {
         # Media files → media/ prefix in S3
         "default": {
@@ -239,8 +242,9 @@ if AWS_STORAGE_BUCKET_NAME:
             "OPTIONS": {
                 "bucket_name": AWS_STORAGE_BUCKET_NAME,
                 "region_name": AWS_S3_REGION_NAME,
-                "location": "media",        # all media files go under media/
+                "location": "media",
                 "file_overwrite": False,
+                "querystring_auth": False,
             },
         },
         # Static files → static/ prefix in S3
@@ -249,8 +253,9 @@ if AWS_STORAGE_BUCKET_NAME:
             "OPTIONS": {
                 "bucket_name": AWS_STORAGE_BUCKET_NAME,
                 "region_name": AWS_S3_REGION_NAME,
-                "location": "static",       # all static files go under static/
+                "location": "static",
                 "file_overwrite": True,
+                "querystring_auth": False,
             },
         },
     }
