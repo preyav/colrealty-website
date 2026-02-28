@@ -282,8 +282,10 @@ if AWS_STORAGE_BUCKET_NAME:
         STATIC_URL = f"https://{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/{STATIC_LOCATION}/"
         MEDIA_URL  = f"https://{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/{MEDIA_LOCATION}/"
 
-    DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
-    STATICFILES_STORAGE  = "storages.backends.s3boto3.S3StaticStorage"
+    STORAGES = {
+        "default":     {"BACKEND": "storages.backends.s3boto3.S3Boto3Storage"},
+        "staticfiles": {"BACKEND": "storages.backends.s3boto3.S3StaticStorage"},
+    }
 
 else:
     # ── WhiteNoise local mode ─────────────────────────────────────────────
