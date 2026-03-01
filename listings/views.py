@@ -35,11 +35,11 @@ def apply_listing_filters(qs, params: dict):
     Apply all search/filter params to a Listing queryset.
     Centralised here so ListingListView and listing_markers stay in sync.
     """
-    q            = (params.get("q")             or "").strip()
-    price_min    = (params.get("price_min")     or "").strip()
-    price_max    = (params.get("price_max")     or "").strip()
-    beds_min     = (params.get("beds_min")      or "").strip()
-    baths_min    = (params.get("baths_min")     or "").strip()
+    q = (params.get("q") or "").strip()
+    price_min = (params.get("price_min") or "").strip()
+    price_max = (params.get("price_max") or "").strip()
+    beds_min = (params.get("beds_min") or "").strip()
+    baths_min = (params.get("baths_min") or "").strip()
     property_type = (params.get("property_type") or "").strip()
 
     # ── Keyword / location search ──────────────────────────────────────────
@@ -85,10 +85,11 @@ class ListingListView(ListView):
     model = Listing
     template_name = "listings/list.html"
     context_object_name = "listings"
-    paginate_by = 12
+    paginate_by = 42
 
     def get_queryset(self):
-        qs = Listing.objects.filter(status="active", property_type__in=BUY_TYPES)
+        qs = Listing.objects.filter(
+            status="active", property_type__in=BUY_TYPES)
         return apply_listing_filters(qs, self.request.GET).order_by("-id")
 
     def get_context_data(self, **kwargs):
@@ -100,14 +101,15 @@ class ListingListView(ListView):
         # e.g. ?q=Austin&price_max=500000&page=2  →  page link keeps filters
         params = self.request.GET.copy()
         params.pop("page", None)
-        ctx["query_string"] = params.urlencode()   # used in template pagination
+        # used in template pagination
+        ctx["query_string"] = params.urlencode()
 
         # ── Repopulate form fields after submit ────────────────────────────
-        ctx["search_q"]             = self.request.GET.get("q", "")
-        ctx["search_price_min"]     = self.request.GET.get("price_min", "")
-        ctx["search_price_max"]     = self.request.GET.get("price_max", "")
-        ctx["search_beds_min"]      = self.request.GET.get("beds_min", "")
-        ctx["search_baths_min"]     = self.request.GET.get("baths_min", "")
+        ctx["search_q"] = self.request.GET.get("q", "")
+        ctx["search_price_min"] = self.request.GET.get("price_min", "")
+        ctx["search_price_max"] = self.request.GET.get("price_max", "")
+        ctx["search_beds_min"] = self.request.GET.get("beds_min", "")
+        ctx["search_baths_min"] = self.request.GET.get("baths_min", "")
         ctx["search_property_type"] = self.request.GET.get("property_type", "")
 
         return ctx
