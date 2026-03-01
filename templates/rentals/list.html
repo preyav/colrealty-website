@@ -4,133 +4,86 @@
 
 {% block content %}
 
-<section class="listings-hero">
-  <div>
-    <h1 class="hero-title">Homes for Rent in Central Texas</h1>
-    <p class="hero-text">
-      Browse active rental listings and explore them on the map. Click a pin to view details.
-    </p>
-    <div class="hero-pills">
-      <span class="hero-pill">Live Rentals</span>
-      <span class="hero-pill">Map view</span>
-      <span class="hero-pill">Schedule tours</span>
-    </div>
-  </div>
-
-  <!-- ── Search / Filter Form ───────────────────────────────────────────── -->
-  <div class="search-card">
-    <div class="search-heading">
-      <h2>Search & Filter</h2>
-    </div>
-
-    <form method="get" action="" id="rental-search-form">
-      <div class="search-row">
-
-        <div class="search-field">
-          <label for="q">Location</label>
-          <input
-            id="q"
-            class="input-field"
-            type="text"
-            name="q"
-            placeholder="City, ZIP, or address"
-            value="{{ search_q }}"
-          >
-        </div>
-
-        <div class="search-field">
-          <label for="rent_min">Min Rent /mo</label>
-          <input
-            id="rent_min"
-            class="input-field"
-            type="number"
-            name="rent_min"
-            placeholder="e.g. 1000"
-            min="0"
-            value="{{ search_rent_min }}"
-          >
-        </div>
-
-        <div class="search-field">
-          <label for="rent_max">Max Rent /mo</label>
-          <input
-            id="rent_max"
-            class="input-field"
-            type="number"
-            name="rent_max"
-            placeholder="e.g. 3500"
-            min="0"
-            value="{{ search_rent_max }}"
-          >
-        </div>
-
-        <div class="search-field">
-          <label for="beds_min">Min Beds</label>
-          <select id="beds_min" class="input-field" name="beds_min">
-            <option value="">Any</option>
-            {% for n in "1234" %}
-              <option value="{{ n }}" {% if search_beds_min == n %}selected{% endif %}>{{ n }}+</option>
-            {% endfor %}
-            <option value="5" {% if search_beds_min == "5" %}selected{% endif %}>5+</option>
-          </select>
-        </div>
-
-        <div class="search-field">
-          <label for="baths_min">Min Baths</label>
-          <select id="baths_min" class="input-field" name="baths_min">
-            <option value="">Any</option>
-            <option value="1"   {% if search_baths_min == "1"   %}selected{% endif %}>1+</option>
-            <option value="1.5" {% if search_baths_min == "1.5" %}selected{% endif %}>1.5+</option>
-            <option value="2"   {% if search_baths_min == "2"   %}selected{% endif %}>2+</option>
-            <option value="3"   {% if search_baths_min == "3"   %}selected{% endif %}>3+</option>
-          </select>
-        </div>
-
-        <div class="search-field">
-          <label for="property_type">Property Type</label>
-          <select id="property_type" class="input-field" name="property_type">
-            <option value="">All Types</option>
-            {% for pt in PROPERTY_TYPE_CHOICES %}
-              <option value="{{ pt }}" {% if search_property_type == pt %}selected{% endif %}>{{ pt }}</option>
-            {% endfor %}
-          </select>
-        </div>
-
-      </div>
-
-      <div class="search-actions" style="display:flex; gap:10px; margin-top:12px;">
-        <button type="submit" class="btn-primary">Search</button>
-        {% if search_q or search_rent_min or search_rent_max or search_beds_min or search_baths_min or search_property_type %}
-          <a href="{% url 'rentals:list' %}" class="btn-secondary">Clear Filters</a>
-        {% endif %}
-      </div>
-    </form>
-
-    <!-- ── Active filter summary ──────────────────────────────────────── -->
-    {% if search_q or search_rent_min or search_rent_max or search_beds_min or search_baths_min or search_property_type %}
-      <div class="active-filters" style="margin-top:10px; font-size:0.85rem; color:#666;">
-        Filtering by:
-        {% if search_q %}<span class="filter-tag">Location: {{ search_q }}</span>{% endif %}
-        {% if search_rent_min %}<span class="filter-tag">Min: ${{ search_rent_min|intcomma }}/mo</span>{% endif %}
-        {% if search_rent_max %}<span class="filter-tag">Max: ${{ search_rent_max|intcomma }}/mo</span>{% endif %}
-        {% if search_beds_min %}<span class="filter-tag">Beds: {{ search_beds_min }}+</span>{% endif %}
-        {% if search_baths_min %}<span class="filter-tag">Baths: {{ search_baths_min }}+</span>{% endif %}
-        {% if search_property_type %}<span class="filter-tag">Type: {{ search_property_type }}</span>{% endif %}
-      </div>
-    {% endif %}
-  </div>
-</section>
-
-
 <div class="split-view-container">
 
-  <!-- ── LEFT: Rental Listings ──────────────────────────────────────────── -->
+  <!-- ── LEFT: Search + Listings ────────────────────────────────────────── -->
   <div class="listings-column">
 
-    <p class="results-count" style="margin-bottom:12px; color:#555; font-size:0.9rem;">
-      {{ paginator.count }} rental{{ paginator.count|pluralize }} found
-    </p>
+    <!-- ── Hero + Search stacked at top ─────────────────────────────────── -->
+    <div class="listings-top">
+      <div class="listings-top-header">
+        <h1 class="hero-title">Homes for Rent in Central Texas</h1>
+        <p class="hero-text">Browse active rentals. Click a pin on the map to view details.</p>
+      </div>
 
+      <form method="get" action="" id="rental-search-form" class="inline-search-form">
+        <div class="inline-search-row">
+
+          <div class="inline-search-field">
+            <input class="input-field" type="text" name="q" placeholder="City, ZIP, or address" value="{{ search_q }}">
+          </div>
+
+          <div class="inline-search-field">
+            <input class="input-field" type="number" name="rent_min" placeholder="Min Rent /mo" min="0" value="{{ search_rent_min }}">
+          </div>
+
+          <div class="inline-search-field">
+            <input class="input-field" type="number" name="rent_max" placeholder="Max Rent /mo" min="0" value="{{ search_rent_max }}">
+          </div>
+
+          <div class="inline-search-field">
+            <select class="input-field" name="beds_min">
+              <option value="">Beds</option>
+              {% for n in "1234" %}
+                <option value="{{ n }}" {% if search_beds_min == n %}selected{% endif %}>{{ n }}+ bd</option>
+              {% endfor %}
+              <option value="5" {% if search_beds_min == "5" %}selected{% endif %}>5+ bd</option>
+            </select>
+          </div>
+
+          <div class="inline-search-field">
+            <select class="input-field" name="baths_min">
+              <option value="">Baths</option>
+              <option value="1"   {% if search_baths_min == "1"   %}selected{% endif %}>1+</option>
+              <option value="1.5" {% if search_baths_min == "1.5" %}selected{% endif %}>1.5+</option>
+              <option value="2"   {% if search_baths_min == "2"   %}selected{% endif %}>2+</option>
+              <option value="3"   {% if search_baths_min == "3"   %}selected{% endif %}>3+</option>
+            </select>
+          </div>
+
+          <div class="inline-search-field">
+            <select class="input-field" name="property_type">
+              <option value="">All Types</option>
+              {% for pt in PROPERTY_TYPE_CHOICES %}
+                <option value="{{ pt }}" {% if search_property_type == pt %}selected{% endif %}>{{ pt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <button type="submit" class="btn-primary">Search</button>
+          {% if search_q or search_rent_min or search_rent_max or search_beds_min or search_baths_min or search_property_type %}
+            <a href="{% url 'rentals:list' %}" class="btn-secondary">Clear</a>
+          {% endif %}
+
+        </div>
+
+        {% if search_q or search_rent_min or search_rent_max or search_beds_min or search_baths_min or search_property_type %}
+          <div style="margin-top:8px; font-size:0.82rem;">
+            {% if search_q %}<span class="filter-tag">{{ search_q }}</span>{% endif %}
+            {% if search_rent_min %}<span class="filter-tag">Min ${{ search_rent_min|intcomma }}/mo</span>{% endif %}
+            {% if search_rent_max %}<span class="filter-tag">Max ${{ search_rent_max|intcomma }}/mo</span>{% endif %}
+            {% if search_beds_min %}<span class="filter-tag">{{ search_beds_min }}+ bd</span>{% endif %}
+            {% if search_baths_min %}<span class="filter-tag">{{ search_baths_min }}+ ba</span>{% endif %}
+            {% if search_property_type %}<span class="filter-tag">{{ search_property_type }}</span>{% endif %}
+          </div>
+        {% endif %}
+      </form>
+    </div>
+
+    <!-- Result count -->
+    <p class="results-count">{{ paginator.count }} rental{{ paginator.count|pluralize }} found</p>
+
+    <!-- Listing Grid -->
     <div class="listing-grid">
       {% for r in rentals %}
         <a class="listing-card" href="{% url 'rentals:detail' r.id %}">
@@ -143,7 +96,6 @@
               {% if r.property_type %}<span class="badge">{{ r.property_type }}</span>{% endif %}
             </div>
           </div>
-
           <div class="listing-body">
             <div class="listing-price">
               <div class="price-main">${{ r.price|floatformat:0|intcomma }}<span style="font-size:0.75rem;font-weight:400;">/mo</span></div>
@@ -165,31 +117,21 @@
       {% endfor %}
     </div>
 
-    <!-- ── Pagination (preserves search filters) ──────────────────────── -->
+    <!-- Pagination -->
     {% if is_paginated %}
       <nav aria-label="Pagination" style="margin-top:20px;">
         <ul class="pagination">
-
           {% if page_obj.has_previous %}
-            <li class="page-item">
-              <a class="page-link" href="?{{ query_string }}&page={{ page_obj.previous_page_number }}">← Previous</a>
-            </li>
+            <li class="page-item"><a class="page-link" href="?{{ query_string }}&page={{ page_obj.previous_page_number }}">← Previous</a></li>
           {% else %}
             <li class="page-item disabled"><span class="page-link">← Previous</span></li>
           {% endif %}
-
-          <li class="page-item disabled">
-            <span class="page-link">Page {{ page_obj.number }} of {{ paginator.num_pages }}</span>
-          </li>
-
+          <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ paginator.num_pages }}</span></li>
           {% if page_obj.has_next %}
-            <li class="page-item">
-              <a class="page-link" href="?{{ query_string }}&page={{ page_obj.next_page_number }}">Next →</a>
-            </li>
+            <li class="page-item"><a class="page-link" href="?{{ query_string }}&page={{ page_obj.next_page_number }}">Next →</a></li>
           {% else %}
             <li class="page-item disabled"><span class="page-link">Next →</span></li>
           {% endif %}
-
         </ul>
       </nav>
     {% endif %}
@@ -203,61 +145,38 @@
 
 </div>
 
-
-<!-- ── Google Maps + Markers ──────────────────────────────────────────────── -->
 <script src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&v=weekly" defer></script>
-
 <script>
   window.addEventListener("load", () => {
     const mapEl = document.getElementById("map");
     if (!mapEl) return;
-
-    const fallback = { lat: 30.2672, lng: -97.7431 }; // Austin, TX
+    const fallback = { lat: 30.2672, lng: -97.7431 };
     const map = new google.maps.Map(mapEl, { center: fallback, zoom: 11 });
     const info = new google.maps.InfoWindow();
     const bounds = new google.maps.LatLngBounds();
-
     fetch("{% url 'rentals:markers' %}" + window.location.search)
       .then(res => res.json())
       .then(markers => {
         if (!Array.isArray(markers) || markers.length === 0) return;
-
         let hasAny = false;
-
         markers.forEach(m => {
           if (typeof m.lat !== "number" || typeof m.lng !== "number") return;
           hasAny = true;
-
           const pos = { lat: m.lat, lng: m.lng };
           bounds.extend(pos);
-
           const marker = new google.maps.Marker({ map, position: pos, title: m.title || "" });
-
           marker.addListener("click", () => {
-            const img = m.image
-              ? `<img src="${m.image}" style="width:100%;max-width:220px;border-radius:10px;margin:6px 0;" />`
-              : "";
-            info.setContent(`
-              <div style="max-width:240px">
-                <div style="font-weight:700;margin-bottom:4px">${m.title || ""}</div>
-                <div style="margin-bottom:4px;color:#555;font-size:0.85rem">${m.address || ""}</div>
-                <div style="margin-bottom:8px"><b>$${Number(m.price).toLocaleString()}/mo</b></div>
-                ${img}
-                <a href="${m.url || "#"}" style="color:#2563eb;">View rental →</a>
-              </div>
-            `);
+            const img = m.image ? `<img src="${m.image}" style="width:100%;max-width:220px;border-radius:10px;margin:6px 0;" />` : "";
+            info.setContent(`<div style="max-width:240px"><div style="font-weight:700;margin-bottom:4px">${m.title || ""}</div><div style="margin-bottom:4px;color:#555;font-size:0.85rem">${m.address || ""}</div><div style="margin-bottom:8px"><b>$${Number(m.price).toLocaleString()}/mo</b></div>${img}<a href="${m.url || "#"}" style="color:#2563eb;">View rental →</a></div>`);
             info.open(map, marker);
           });
         });
-
         if (hasAny) {
           map.fitBounds(bounds);
-          google.maps.event.addListenerOnce(map, "bounds_changed", () => {
-            if (map.getZoom() > 16) map.setZoom(16);
-          });
+          google.maps.event.addListenerOnce(map, "bounds_changed", () => { if (map.getZoom() > 16) map.setZoom(16); });
         }
       })
-      .catch(err => console.error("Failed to load rental markers:", err));
+      .catch(err => console.error("Failed to load markers:", err));
   });
 </script>
 
