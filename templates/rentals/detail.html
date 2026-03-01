@@ -1,952 +1,386 @@
 {% extends "base.html" %}
 {% load humanize %}
 
-{% block title %}{{ rental.title }} | Rent | Col Realty{% endblock %}
+{% block title %}{{ rental.street_address }}, {{ rental.city }}, {{ rental.state }} | Rent | Col Realty{% endblock %}
 
 {% block extra_head %}
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
-  /* Break out of Bootstrap container */
-  .page-main>.container {
-    max-width: 100% !important;
-    padding: 0 !important;
-  }
-
-  /* ── Detail page layout ─────────────────────────────────────── */
-  .detail-layout {
-    display: grid;
-    grid-template-columns: 1fr 420px;
-    gap: 0;
-    max-width: 1400px;
-    margin: 0 auto;
-    align-items: start;
-  }
-
-  .detail-main {
-    padding: 32px 32px 60px 32px;
-    min-width: 0;
-  }
-
-  .detail-sidebar {
-    position: sticky;
-    top: 72px;
-    height: calc(100vh - 72px);
-    overflow-y: auto;
-    border-left: 1px solid #e8e8e8;
-  }
-
-  @media (max-width: 900px) {
-    .detail-layout {
-      grid-template-columns: 1fr;
-    }
-
-    .detail-sidebar {
-      position: static;
-      height: 400px;
-      border-left: none;
-      border-top: 1px solid #e8e8e8;
-    }
-  }
-
-  .hero-address {
-    font-size: 13px;
-    color: #888;
-    margin-bottom: 4px;
-    letter-spacing: 0.02em;
-  }
-
-  .hero-title {
-    font-size: 26px;
-    font-weight: 700;
-    color: #1a1a1a;
-    margin: 0 0 16px 0;
-    line-height: 1.3;
-  }
-
-  .stats-bar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0;
-    border: 1px solid #e8e8e8;
-    border-radius: 12px;
-    overflow: hidden;
-    margin-bottom: 20px;
-  }
-
-  .stat-item {
-    flex: 1;
-    min-width: 100px;
-    padding: 14px 20px;
-    border-right: 1px solid #e8e8e8;
-    text-align: center;
-  }
-
-  .stat-item:last-child {
-    border-right: none;
-  }
-
-  .stat-value {
-    font-size: 20px;
-    font-weight: 700;
-    color: #1a1a1a;
-  }
-
-  .stat-label {
-    font-size: 11px;
-    color: #999;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    margin-top: 2px;
-  }
-
-  .status-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 16px;
-    flex-wrap: wrap;
-  }
-
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 5px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
-  }
-
-  .badge-active {
-    background: #dcfce7;
-    color: #15803d;
-  }
-
-  .badge-leased {
-    background: #e0e7ff;
-    color: #3730a3;
-  }
-
-  .badge-inactive {
-    background: #f5f5f5;
-    color: #777;
-  }
-
-  .badge-mls {
-    background: #f0f4ff;
-    color: #3b5bdb;
-  }
-
-  .badge-dom {
-    background: #f5f5f5;
-    color: #555;
-  }
-
-  .main-photo {
-    width: 100%;
-    max-height: 500px;
-    object-fit: cover;
-    border-radius: 16px;
-    margin-bottom: 28px;
-    display: block;
-  }
-
-  .no-photo {
-    width: 100%;
-    height: 300px;
-    background: #f5f5f5;
-    border-radius: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #bbb;
-    font-size: 15px;
-    margin-bottom: 28px;
-  }
-
-  .detail-section {
-    margin-bottom: 36px;
-    border-bottom: 1px solid #f0f0f0;
-    padding-bottom: 36px;
-  }
-
-  .detail-section:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
-  }
-
-  .section-title {
-    font-size: 18px;
-    font-weight: 700;
-    color: #1a1a1a;
-    margin: 0 0 16px 0;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .description-text {
-    font-size: 15px;
-    line-height: 1.75;
-    color: #444;
-    white-space: pre-line;
-  }
-
-  .description-preview {
-    max-height: 120px;
-    overflow: hidden;
-    position: relative;
-  }
-
-  .description-preview::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 60px;
-    background: linear-gradient(transparent, white);
-  }
-
-  .read-more-btn {
-    background: none;
-    border: none;
-    color: #2d6a4f;
-    font-weight: 600;
-    font-size: 14px;
-    cursor: pointer;
-    padding: 8px 0 0 0;
-    display: block;
-  }
-
-  .read-more-btn:hover {
-    text-decoration: underline;
-  }
-
-  .facts-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 1px;
-    background: #e8e8e8;
-    border: 1px solid #e8e8e8;
-    border-radius: 12px;
-    overflow: hidden;
-  }
-
-  .fact-item {
-    background: #fff;
-    padding: 14px 18px;
-  }
-
-  .fact-label {
-    font-size: 11px;
-    color: #999;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    margin-bottom: 4px;
-  }
-
-  .fact-value {
-    font-size: 14px;
-    font-weight: 600;
-    color: #1a1a1a;
-  }
-
-  .features-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 24px;
-  }
-
-  .feature-group-title {
-    font-size: 13px;
-    font-weight: 700;
-    color: #555;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    margin: 0 0 10px 0;
-  }
-
-  .feature-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  .feature-tag {
-    background: #f5f5f5;
-    border: 1px solid #e8e8e8;
-    border-radius: 6px;
-    padding: 5px 10px;
-    font-size: 13px;
-    color: #444;
-  }
-
-  .school-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 0;
-    border-bottom: 1px solid #f5f5f5;
-  }
-
-  .school-item:last-child {
-    border-bottom: none;
-  }
-
-  .school-name {
-    font-size: 14px;
-    font-weight: 600;
-    color: #1a1a1a;
-  }
-
-  .school-type {
-    font-size: 12px;
-    color: #888;
-    margin-top: 2px;
-  }
-
-  .school-district-badge {
-    display: inline-block;
-    background: #f0f4ff;
-    color: #3b5bdb;
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 600;
-    margin-bottom: 14px;
-  }
-
-  .open-house-card {
-    background: linear-gradient(135deg, #2d6a4f 0%, #40916c 100%);
-    color: white;
-    border-radius: 12px;
-    padding: 20px 24px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-
-  .oh-icon {
-    font-size: 28px;
-  }
-
-  .oh-label {
-    font-size: 11px;
-    opacity: 0.8;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-  }
-
-  .oh-datetime {
-    font-size: 17px;
-    font-weight: 700;
-    margin-top: 2px;
-  }
-
-  .virtual-tour-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: #1a1a1a;
-    color: white;
-    padding: 10px 20px;
-    border-radius: 8px;
-    text-decoration: none;
-    font-size: 14px;
-    font-weight: 600;
-    transition: background 0.2s;
-  }
-
-  .virtual-tour-btn:hover {
-    background: #333;
-  }
-
-  /* Rental-specific highlights */
-  .rental-highlights {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 12px;
-    margin-bottom: 20px;
-  }
-
-  .highlight-card {
-    background: #f9f9f9;
-    border: 1px solid #e8e8e8;
-    border-radius: 10px;
-    padding: 14px;
-    text-align: center;
-  }
-
-  .highlight-icon {
-    font-size: 22px;
-    margin-bottom: 6px;
-  }
-
-  .highlight-value {
-    font-size: 15px;
-    font-weight: 700;
-    color: #1a1a1a;
-  }
-
-  .highlight-label {
-    font-size: 11px;
-    color: #999;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    margin-top: 2px;
-  }
-
-  /* Sidebar */
-  .lead-form-card {
-    background: white;
-    padding: 24px;
-    border-bottom: 1px solid #e8e8e8;
-  }
-
-  .lead-form-price {
-    font-size: 24px;
-    font-weight: 700;
-    color: #1a1a1a;
-    margin-bottom: 4px;
-  }
-
-  .lead-form-address {
-    font-size: 13px;
-    color: #888;
-    margin-bottom: 20px;
-  }
-
-  .form-field {
-    margin-bottom: 12px;
-  }
-
-  .form-field label {
-    display: block;
-    font-size: 12px;
-    font-weight: 600;
-    color: #555;
-    margin-bottom: 4px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-
-  .form-field input,
-  .form-field textarea {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 10px 12px;
-    border: 1px solid #e8e8e8;
-    border-radius: 8px;
-    font-size: 14px;
-    color: #1a1a1a;
-    transition: border-color 0.2s;
-    font-family: inherit;
-  }
-
-  .form-field input:focus,
-  .form-field textarea:focus {
-    outline: none;
-    border-color: #2d6a4f;
-  }
-
-  .form-grid-2 {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-  }
-
-  .submit-btn {
-    width: 100%;
-    background: #2d6a4f;
-    color: white;
-    border: none;
-    padding: 13px;
-    border-radius: 8px;
-    font-size: 15px;
-    font-weight: 700;
-    cursor: pointer;
-    margin-top: 4px;
-    transition: background 0.2s;
-    font-family: inherit;
-  }
-
-  .submit-btn:hover {
-    background: #1b4332;
-  }
-
-  .agent-info {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 16px 24px;
-    border-bottom: 1px solid #e8e8e8;
-  }
-
-  .agent-avatar {
-    width: 40px;
-    height: 40px;
-    background: #2d6a4f;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: 700;
-    font-size: 16px;
-    flex-shrink: 0;
-  }
-
-  .agent-name {
-    font-size: 14px;
-    font-weight: 600;
-    color: #1a1a1a;
-  }
-
-  .agent-role {
-    font-size: 12px;
-    color: #888;
-  }
-
-  .agent-phone {
-    font-size: 13px;
-    color: #2d6a4f;
-    font-weight: 600;
-    text-decoration: none;
-    margin-top: 2px;
-    display: block;
-  }
-
-  .map-container {
-    height: 300px;
-  }
-
-  #rental-map {
-    height: 100%;
-    width: 100%;
-  }
+body.page{background:#fff !important;font-family:'DM Sans',sans-serif !important;}
+.page-main{background:#fff !important;padding:0 !important;}
+.page-main>.container{max-width:100% !important;padding:0 !important;}
+.site-header{background:#fff !important;border-bottom:1px solid #ebebeb !important;box-shadow:none !important;backdrop-filter:none !important;}
+.site-header *,.site-header a,.site-header .nav-link,.site-header .brand-name,.site-header .brand-tagline,.site-header .dropdown-link{color:#1a1a1a !important;text-shadow:none !important;}
+.brand-mark{background:#1a1a1a !important;color:#fff !important;border-radius:6px !important;}
+.dropdown-menu{background:#fff !important;border:1px solid #e8e8e8 !important;box-shadow:0 4px 20px rgba(0,0,0,.08) !important;}
+footer,.site-footer{background:#1a1a1a !important;color:#aaa !important;}
+footer a,.site-footer a{color:#aaa !important;}
+footer a:hover,.site-footer a:hover{color:#fff !important;}
+
+.cr-wrap{max-width:1100px;margin:0 auto;padding:0 32px;box-sizing:border-box;font-family:'DM Sans',sans-serif;}
+
+.cr-topbar{display:flex;align-items:center;justify-content:space-between;padding:22px 0 0;gap:20px;flex-wrap:nowrap;}
+.cr-topbar-l{flex-shrink:0;}
+.cr-address{font-family:'DM Serif Display',serif;font-size:22px;font-weight:400;color:#111;line-height:1.15;margin:0 0 2px;letter-spacing:-0.02em;white-space:nowrap;}
+.cr-cityline{font-size:12px;color:#888;margin:0;}
+.cr-stat{display:flex;flex-direction:column;align-items:center;padding:0 16px;border-right:1px solid #e0e0e0;}
+.cr-stat:first-child{padding-left:0;}
+.cr-stat:last-of-type{border-right:none;}
+.cr-stat-v{font-size:17px;font-weight:700;color:#111;line-height:1;white-space:nowrap;}
+.cr-stat-l{font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:.08em;margin-top:3px;white-space:nowrap;}
+.cr-actions{display:flex;gap:8px;padding-left:20px;border-left:1px solid #e0e0e0;margin-left:16px;}
+.cr-btn{display:inline-flex;align-items:center;gap:5px;padding:8px 14px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;border:1px solid #ddd;background:#fff;color:#111;transition:background .15s;}
+.cr-btn:hover{background:#f5f5f5;}
+.cr-btn-save{background:#111;color:#fff;border-color:#111;}
+.cr-btn-save:hover{background:#333;}
+
+.cr-nav-wrap{position:sticky;top:0;z-index:50;background:#fff;border-bottom:1px solid #ebebeb;margin-top:18px;}
+.cr-nav{display:flex;overflow-x:auto;scrollbar-width:none;}
+.cr-nav::-webkit-scrollbar{display:none;}
+.cr-nav a{font-size:13px;font-weight:500;color:#777;text-decoration:none;padding:13px 18px 13px 0;margin-right:6px;border-bottom:2px solid transparent;white-space:nowrap;transition:color .15s,border-color .15s;}
+.cr-nav a:hover,.cr-nav a.active{color:#111;border-bottom-color:#111;}
+
+.cr-photos{margin-top:20px;}
+.cr-slider{position:relative;border-radius:12px;overflow:hidden;background:#111;cursor:pointer;}
+.cr-slider-img{width:100%;height:520px;object-fit:cover;display:block;}
+.cr-slider-nav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.9);border:none;width:44px;height:44px;border-radius:50%;font-size:22px;color:#111;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;z-index:3;box-shadow:0 2px 8px rgba(0,0,0,.2);}
+.cr-slider-nav:hover{background:#fff;}
+.cr-slider-prev{left:14px;}
+.cr-slider-next{right:14px;}
+.cr-slider-count{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.55);color:#fff;font-size:13px;font-weight:600;padding:5px 14px;border-radius:20px;pointer-events:none;}
+.cr-thumbs{display:flex;gap:6px;margin-top:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;}
+.cr-thumbs::-webkit-scrollbar{display:none;}
+.cr-thumb{flex-shrink:0;width:88px;height:60px;border-radius:6px;overflow:hidden;cursor:pointer;border:2px solid transparent;transition:border-color .15s;}
+.cr-thumb.active{border-color:#111;}
+.cr-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.cr-viewall{display:inline-flex;align-items:center;gap:6px;margin-top:10px;background:#fff;border:1px solid #ddd;border-radius:7px;padding:8px 16px;font-size:13px;font-weight:600;color:#111;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .15s;}
+.cr-viewall:hover{background:#f5f5f5;}
+.cr-nophoto{height:320px;background:#f5f5f5;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#ccc;}
+
+.cr-body{display:grid;grid-template-columns:1fr 340px;align-items:start;gap:0;margin-top:0;}
+.cr-main{min-width:0;padding:0 40px 80px 0;}
+.cr-side{position:sticky;top:0;max-height:100vh;overflow-y:auto;border-left:1px solid #ebebeb;scrollbar-width:thin;scrollbar-color:#e0e0e0 transparent;}
+.cr-side::-webkit-scrollbar{width:4px;}
+.cr-side::-webkit-scrollbar-thumb{background:#e0e0e0;border-radius:4px;}
+
+.cr-section{padding:28px 0;border-bottom:1px solid #f0f0f0;}
+.cr-section:last-child{border-bottom:none;padding-bottom:60px;}
+.cr-section-title{font-size:17px;font-weight:700;color:#111;margin:0 0 16px;letter-spacing:-0.01em;}
+
+.cr-desc{font-size:15px;line-height:1.8;color:#444;font-weight:300;margin:0;}
+.cr-clamp{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;}
+.cr-readmore{background:none;border:none;color:#111;font-weight:600;font-size:13px;cursor:pointer;padding:10px 0 0;text-decoration:underline;font-family:'DM Sans',sans-serif;display:block;}
+
+.cr-tbl{width:100%;border:1px solid #ebebeb;border-radius:10px;overflow:hidden;border-collapse:collapse;}
+.cr-tbl tr{border-bottom:1px solid #f5f5f5;}
+.cr-tbl tr:last-child{border-bottom:none;}
+.cr-tbl td{padding:11px 16px;font-size:14px;}
+.cr-tbl td:first-child{color:#888;width:44%;font-size:13px;}
+.cr-tbl td:last-child{color:#111;font-weight:600;}
+
+.cr-feat-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;}
+.cr-feat-lbl{font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.08em;margin:0 0 8px;}
+.cr-tags{display:flex;flex-wrap:wrap;gap:6px;}
+.cr-tag{background:#f8f8f8;border:1px solid #ebebeb;border-radius:5px;padding:4px 10px;font-size:12px;color:#444;}
+
+.cr-map{width:100%;height:360px;border-radius:12px;overflow:hidden;border:1px solid #ebebeb;}
+#rental-map{height:100%;width:100%;display:block;}
+
+.cr-school{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid #f5f5f5;}
+.cr-school:last-of-type{border-bottom:none;}
+.cr-school-rtg{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700;flex-shrink:0;}
+.cr-school-name{font-size:14px;font-weight:600;color:#111;}
+.cr-school-meta{font-size:12px;color:#999;margin-top:2px;}
+.cr-dist-badge{font-size:12px;font-weight:600;color:#3b5bdb;background:#eef2ff;border-radius:5px;padding:4px 10px;display:inline-block;margin-bottom:14px;}
+
+.cr-oh{display:flex;align-items:center;gap:16px;background:#111;color:#fff;border-radius:10px;padding:20px 24px;}
+.cr-oh-lbl{font-size:10px;opacity:.6;text-transform:uppercase;letter-spacing:.08em;}
+.cr-oh-time{font-size:17px;font-weight:700;margin-top:3px;}
+
+.cr-cta-price{font-size:26px;font-weight:800;color:#111;letter-spacing:-0.02em;padding:20px 24px 4px;}
+.cr-cta-addr{font-size:13px;color:#999;padding:0 24px 16px;}
+.cr-form-wrap{padding:0 24px 20px;}
+.cr-field{margin-bottom:10px;}
+.cr-field label{display:block;font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;}
+.cr-field input,.cr-field textarea{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #e0e0e0;border-radius:7px;font-size:14px;color:#111;background:#fff;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .15s;}
+.cr-field input:focus,.cr-field textarea:focus{border-color:#111;}
+.cr-row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.cr-submit{width:100%;background:#111;color:#fff;border:none;border-radius:7px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;margin-top:6px;font-family:'DM Sans',sans-serif;transition:background .15s;}
+.cr-submit:hover{background:#333;}
+.cr-fine{font-size:11px;color:#bbb;text-align:center;margin-top:10px;}
+
+.cr-lb{display:none;position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:9999;flex-direction:column;align-items:center;justify-content:center;}
+.cr-lb.open{display:flex;}
+.cr-lb-close{position:absolute;top:20px;right:24px;color:#fff;font-size:28px;cursor:pointer;background:none;border:none;opacity:.7;line-height:1;}
+.cr-lb-close:hover{opacity:1;}
+.cr-lb-wrap{position:relative;}
+.cr-lb-wrap img{max-width:90vw;max-height:78vh;object-fit:contain;display:block;border-radius:8px;}
+.cr-lb-nav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.15);border:none;color:#fff;width:44px;height:44px;border-radius:50%;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;}
+.cr-lb-nav:hover{background:rgba(255,255,255,.3);}
+.cr-lb-prev{left:-56px;}
+.cr-lb-next{right:-56px;}
+.cr-lb-count{color:rgba(255,255,255,.6);font-size:13px;margin-top:12px;}
+.cr-lb-strip{display:flex;gap:6px;margin-top:10px;max-width:90vw;overflow-x:auto;padding-bottom:4px;}
+.cr-lb-strip img{height:52px;width:72px;object-fit:cover;border-radius:4px;cursor:pointer;opacity:.45;border:2px solid transparent;flex-shrink:0;transition:opacity .15s;}
+.cr-lb-strip img.active{opacity:1;border-color:#fff;}
+
+@media(max-width:960px){
+  .cr-wrap{padding:0 16px;}
+  .cr-body{grid-template-columns:1fr;}
+  .cr-side{position:static;max-height:none;border-left:none;border-top:1px solid #ebebeb;}
+  .cr-main{padding:0 0 40px;}
+  .cr-topbar-r{flex-wrap:wrap;gap:8px;}
+  .cr-slider-img{height:280px;} .cr-thumb{width:68px;height:48px;}
+}
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="detail-layout">
 
-  <!-- ═══════════════════════════════════════════════════════════════
-       LEFT COLUMN
-  ═══════════════════════════════════════════════════════════════════ -->
-  <div class="detail-main">
+<!-- Lightbox -->
+<div class="cr-lb" id="cr-lb">
+  <button class="cr-lb-close" onclick="lbClose()">✕</button>
+  <div class="cr-lb-wrap">
+    <button class="cr-lb-nav cr-lb-prev" onclick="lbNav(-1)">‹</button>
+    <img id="cr-lb-img" src="" alt="" />
+    <button class="cr-lb-nav cr-lb-next" onclick="lbNav(1)">›</button>
+  </div>
+  <div class="cr-lb-count" id="cr-lb-count"></div>
+  <div class="cr-lb-strip" id="cr-lb-strip"></div>
+</div>
 
-    <!-- Hero -->
-    <p class="hero-address">
-      {{ rental.street_address }}, {{ rental.city }}, {{ rental.state }} {{ rental.zip_code }}
-      {% if rental.county %} &middot; {{ rental.county }} County{% endif %}
-    </p>
-    <h1 class="hero-title">{{ rental.title }}</h1>
+<div class="cr-wrap">
 
-    <div class="status-row">
-      <span class="badge badge-{{ rental.status }}">
-        {% if rental.status == 'active' %}● {% elif rental.status == 'leased' %}✓ {% else %}○ {% endif %}
-        {{ rental.status|title }}
-      </span>
-      {% if rental.mls_id %}
-      <span class="badge badge-mls">MLS# {{ rental.mls_id }}</span>
-      {% endif %}
-      {% if rental.days_on_market is not None %}
-      <span class="badge badge-dom">{{ rental.days_on_market }} days listed</span>
-      {% endif %}
-      {% if rental.available_date %}
-      <span class="badge" style="background:#f0fdf4;color:#15803d;">
-        ✓ Available {{ rental.available_date|date:"M j, Y" }}
-      </span>
-      {% endif %}
-      {% if rental.open_house_date %}
-      <span class="badge" style="background:#fff4e6;color:#c05c00;">
-        🏠 Open {{ rental.open_house_date|date:"D, M j" }}
-        {% if rental.open_house_start_time %} {{ rental.open_house_start_time|time:"g:i A" }}{% endif %}
-        {% if rental.open_house_end_time %} – {{ rental.open_house_end_time|time:"g:i A" }}{% endif %}
-      </span>
-      {% endif %}
+  <!-- Top bar -->
+  <div class="cr-topbar">
+    <div class="cr-topbar-l">
+      <h1 class="cr-address">{{ rental.street_address }}</h1>
+      <p class="cr-cityline">{{ rental.city }}, {{ rental.state }} {{ rental.zip_code }}{% if rental.county %} &middot; {{ rental.county }} County{% endif %}</p>
     </div>
-
-    <!-- Stats bar -->
-    <div class="stats-bar">
-      <div class="stat-item">
-        <div class="stat-value">${{ rental.price|floatformat:0|intcomma }}<span
-            style="font-size:13px;font-weight:400;">/mo</span></div>
-        <div class="stat-label">Rent</div>
-      </div>
-      {% if rental.beds %}
-      <div class="stat-item">
-        <div class="stat-value">{{ rental.beds|floatformat:0 }}</div>
-        <div class="stat-label">Beds</div>
-      </div>
-      {% endif %}
-      {% if rental.baths %}
-      <div class="stat-item">
-        <div class="stat-value">{{ rental.baths|floatformat:0 }}</div>
-        <div class="stat-label">Baths</div>
-      </div>
-      {% endif %}
-      {% if rental.sqft %}
-      <div class="stat-item">
-        <div class="stat-value">{{ rental.sqft|intcomma }}</div>
-        <div class="stat-label">Sq. Ft.</div>
-      </div>
-      {% endif %}
-      {% if rental.deposit %}
-      <div class="stat-item">
-        <div class="stat-value">${{ rental.deposit|floatformat:0|intcomma }}</div>
-        <div class="stat-label">Deposit</div>
-      </div>
-      {% endif %}
-    </div>
-
-    <!-- Photo -->
-    {% if rental.main_image_url %}
-    <img src="{{ rental.main_image_url }}" alt="{{ rental.title }}" class="main-photo" />
-    {% else %}
-    <div class="no-photo">📷 No photo available</div>
-    {% endif %}
-
-    {% if rental.virtual_tour_url %}
-    <div style="margin-bottom:24px;">
-      <a href="{{ rental.virtual_tour_url }}" target="_blank" class="virtual-tour-btn">🎥 Virtual Tour</a>
-    </div>
-    {% endif %}
-
-    <!-- Rental highlights -->
-    <div class="rental-highlights">
-      {% if rental.lease_term %}
-      <div class="highlight-card">
-        <div class="highlight-icon">📋</div>
-        <div class="highlight-value">{{ rental.lease_term }}</div>
-        <div class="highlight-label">Lease Term</div>
-      </div>
-      {% endif %}
-      {% if rental.pets_allowed is not None %}
-      <div class="highlight-card">
-        <div class="highlight-icon">{% if rental.pets_allowed %}🐾{% else %}🚫{% endif %}</div>
-        <div class="highlight-value">{% if rental.pets_allowed %}Yes{% else %}No{% endif %}</div>
-        <div class="highlight-label">Pets Allowed</div>
-      </div>
-      {% endif %}
-      {% if rental.has_garage %}
-      <div class="highlight-card">
-        <div class="highlight-icon">🚗</div>
-        <div class="highlight-value">{% if rental.garage_spaces %}{{ rental.garage_spaces }}{% else %}Yes{% endif %}
-        </div>
-        <div class="highlight-label">Garage</div>
-      </div>
-      {% endif %}
-      {% if rental.has_pool %}
-      <div class="highlight-card">
-        <div class="highlight-icon">🏊</div>
-        <div class="highlight-value">Yes</div>
-        <div class="highlight-label">Pool</div>
-      </div>
-      {% endif %}
-      {% if rental.utilities_included %}
-      <div class="highlight-card">
-        <div class="highlight-icon">⚡</div>
-        <div class="highlight-value">Included</div>
-        <div class="highlight-label">{{ rental.utilities_included }}</div>
-      </div>
-      {% endif %}
-    </div>
-
-    <!-- Description -->
-    {% if rental.description %}
-    <div class="detail-section">
-      <h2 class="section-title"><span>📝</span> Description</h2>
-      <div id="desc-preview" class="description-text description-preview">{{ rental.description }}</div>
-      <div id="desc-full" class="description-text" style="display:none;">{{ rental.description }}</div>
-      <button class="read-more-btn" onclick="toggleDesc(this)">Read more ↓</button>
-    </div>
-    {% endif %}
-
-    <!-- Property Details -->
-    <div class="detail-section">
-      <h2 class="section-title"><span>🏠</span> Property Details</h2>
-      <div class="facts-grid">
-        {% if rental.status %}<div class="fact-item">
-          <div class="fact-label">Status</div>
-          <div class="fact-value">{{ rental.status|title }}</div>
-        </div>{% endif %}
-        {% if rental.property_type %}<div class="fact-item">
-          <div class="fact-label">Type</div>
-          <div class="fact-value">{{ rental.property_type }}</div>
-        </div>{% endif %}
-        {% if rental.year_built %}<div class="fact-item">
-          <div class="fact-label">Year Built</div>
-          <div class="fact-value">{{ rental.year_built }}</div>
-        </div>{% endif %}
-        {% if rental.stories %}<div class="fact-item">
-          <div class="fact-label">Stories</div>
-          <div class="fact-value">{{ rental.stories }}</div>
-        </div>{% endif %}
-        {% if rental.sqft %}<div class="fact-item">
-          <div class="fact-label">Living Area</div>
-          <div class="fact-value">{{ rental.sqft|intcomma }} sqft</div>
-        </div>{% endif %}
-        {% if rental.lot_size %}<div class="fact-item">
-          <div class="fact-label">Lot Size</div>
-          <div class="fact-value">{{ rental.lot_size }} AC</div>
-        </div>{% endif %}
-        {% if rental.garage_spaces %}<div class="fact-item">
-          <div class="fact-label">Garage</div>
-          <div class="fact-value">{{ rental.garage_spaces }} spaces</div>
-        </div>{% endif %}
-        {% if rental.county %}<div class="fact-item">
-          <div class="fact-label">County</div>
-          <div class="fact-value">{{ rental.county }}</div>
-        </div>{% endif %}
-        {% if rental.subdivision %}<div class="fact-item">
-          <div class="fact-label">Subdivision</div>
-          <div class="fact-value">{{ rental.subdivision }}</div>
-        </div>{% endif %}
-        {% if rental.lease_term %}<div class="fact-item">
-          <div class="fact-label">Lease Term</div>
-          <div class="fact-value">{{ rental.lease_term }}</div>
-        </div>{% endif %}
-        {% if rental.deposit %}<div class="fact-item">
-          <div class="fact-label">Deposit</div>
-          <div class="fact-value">${{ rental.deposit|floatformat:0|intcomma }}</div>
-        </div>{% endif %}
-        {% if rental.available_date %}<div class="fact-item">
-          <div class="fact-label">Available</div>
-          <div class="fact-value">{{ rental.available_date|date:"M j, Y" }}</div>
-        </div>{% endif %}
-        {% if rental.mls_id %}<div class="fact-item">
-          <div class="fact-label">MLS #</div>
-          <div class="fact-value">{{ rental.mls_id }}</div>
-        </div>{% endif %}
-        {% if rental.days_on_market is not None %}<div class="fact-item">
-          <div class="fact-label">Days Listed</div>
-          <div class="fact-value">{{ rental.days_on_market }}</div>
-        </div>{% endif %}
+    <div style="display:flex;align-items:center;gap:0;flex-shrink:0;">
+      <div class="cr-stat"><span class="cr-stat-v">${{ rental.price|floatformat:0|intcomma }}/mo</span><span class="cr-stat-l">Rent</span></div>
+      {% if rental.beds %}<div class="cr-stat"><span class="cr-stat-v">{{ rental.beds|floatformat:0 }}</span><span class="cr-stat-l">Beds</span></div>{% endif %}
+      {% if rental.baths %}<div class="cr-stat"><span class="cr-stat-v">{{ rental.baths|floatformat:0 }}</span><span class="cr-stat-l">Baths</span></div>{% endif %}
+      {% if rental.sqft %}<div class="cr-stat"><span class="cr-stat-v">{{ rental.sqft|intcomma }}</span><span class="cr-stat-l">Sq Ft</span></div>{% endif %}
+      <div class="cr-actions">
+        <button class="cr-btn cr-btn-save">★ Save</button>
+        <button class="cr-btn">↗ Share</button>
       </div>
     </div>
-
-    <!-- Features -->
-    {% if rental.interior_features or rental.exterior_features or rental.appliances or rental.community_features %}
-    <div class="detail-section">
-      <h2 class="section-title"><span>✨</span> Features & Amenities</h2>
-      <div class="features-grid">
-        {% if rental.interior_features %}
-        <div>
-          <p class="feature-group-title">Interior</p>
-          <div class="feature-tags">
-            {% for feature in rental.interior_features_list %}<span class="feature-tag">{{ feature }}</span>{% endfor %}
-          </div>
-        </div>
-        {% endif %}
-        {% if rental.exterior_features %}
-        <div>
-          <p class="feature-group-title">Exterior</p>
-          <div class="feature-tags">
-            {% for feature in rental.exterior_features_list %}<span class="feature-tag">{{ feature }}</span>{% endfor %}
-          </div>
-        </div>
-        {% endif %}
-        {% if rental.appliances %}
-        <div>
-          <p class="feature-group-title">Appliances</p>
-          <div class="feature-tags">
-            {% for appliance in rental.appliances_list %}<span class="feature-tag">{{ appliance }}</span>{% endfor %}
-          </div>
-        </div>
-        {% endif %}
-        {% if rental.community_features %}
-        <div>
-          <p class="feature-group-title">Community</p>
-          <div class="feature-tags">
-            {% for feature in rental.community_features_list %}<span class="feature-tag">{{ feature }}</span>{% endfor %}
-          </div>
-        </div>
-        {% endif %}
-        {% if rental.heating or rental.cooling or rental.flooring %}
-        <div>
-          <p class="feature-group-title">Utilities & Finishes</p>
-          <div class="feature-tags">
-            {% if rental.heating %}<span class="feature-tag">Heat: {{ rental.heating }}</span>{% endif %}
-            {% if rental.cooling %}<span class="feature-tag">AC: {{ rental.cooling }}</span>{% endif %}
-            {% if rental.flooring %}<span class="feature-tag">{{ rental.flooring }}</span>{% endif %}
-          </div>
-        </div>
-        {% endif %}
-      </div>
-      <div style="margin-top:20px; display:flex; flex-wrap:wrap; gap:8px;">
-        {% if rental.has_fireplace %}<span class="feature-tag">🔥 Fireplace</span>{% endif %}
-        {% if rental.has_pool %}<span class="feature-tag">🏊 Pool</span>{% endif %}
-        {% if rental.has_garage %}<span class="feature-tag">🚗 Garage</span>{% endif %}
-        {% if rental.pets_allowed %}<span class="feature-tag">🐾 Pets OK</span>{% endif %}
-        {% if rental.laundry_features %}<span class="feature-tag">🧺 {{ rental.laundry_features }}</span>{% endif %}
-      </div>
-    </div>
-    {% endif %}
-
-    <!-- Schools -->
-    {% if rental.school_district or rental.elementary_school or rental.middle_school or rental.high_school %}
-    <div class="detail-section">
-      <h2 class="section-title"><span>🎓</span> Schools</h2>
-      {% if rental.school_district %}<div class="school-district-badge">{{ rental.school_district }}</div>{% endif %}
-      {% if rental.elementary_school %}<div class="school-item">
-        <div>
-          <div class="school-name">{{ rental.elementary_school }}</div>
-          <div class="school-type">Elementary School</div>
-        </div>
-      </div>{% endif %}
-      {% if rental.middle_school %}<div class="school-item">
-        <div>
-          <div class="school-name">{{ rental.middle_school }}</div>
-          <div class="school-type">Middle School</div>
-        </div>
-      </div>{% endif %}
-      {% if rental.high_school %}<div class="school-item">
-        <div>
-          <div class="school-name">{{ rental.high_school }}</div>
-          <div class="school-type">High School</div>
-        </div>
-      </div>{% endif %}
-    </div>
-    {% endif %}
-
-    <!-- Open House -->
-    {% if rental.open_house_date %}
-    <div class="detail-section">
-      <h2 class="section-title"><span>📅</span> Open House</h2>
-      <div class="open-house-card">
-        <div class="oh-icon">🏡</div>
-        <div>
-          <div class="oh-label">Open House</div>
-          <div class="oh-datetime">
-            {{ rental.open_house_date|date:"l, F j, Y" }}
-            {% if rental.open_house_start_time %} {{ rental.open_house_start_time|time:"g:i A" }}{% endif %}
-            {% if rental.open_house_end_time %} – {{ rental.open_house_end_time|time:"g:i A" }}{% endif %}
-          </div>
-        </div>
-      </div>
-    </div>
-    {% endif %}
-
-    <!-- Directions -->
-    {% if rental.directions %}
-    <div class="detail-section">
-      <h2 class="section-title"><span>🗺️</span> Directions</h2>
-      <p style="font-size:14px; color:#555; line-height:1.7; margin:0;">{{ rental.directions }}</p>
-    </div>
-    {% endif %}
-
   </div>
 
-  <!-- ═══════════════════════════════════════════════════════════════
-       RIGHT COLUMN — sticky sidebar
-  ═══════════════════════════════════════════════════════════════════ -->
-  <div class="detail-sidebar">
-
-    <div class="agent-info">
-      <div class="agent-avatar">C</div>
-      <div>
-        <div class="agent-name">Col Realty</div>
-        <div class="agent-role">Listing Agent</div>
-        <a href="tel:5126993810" class="agent-phone">(512) 699-3810</a>
-      </div>
+  <!-- Section nav -->
+  <div class="cr-nav-wrap">
+    <div class="cr-nav cr-wrap">
+      <a href="#overview" class="active">Overview</a>
+      <a href="#location">Location</a>
+      <a href="#propertyInfo">Property Info</a>
+      {% if rental.school_district or rental.elementary_school or rental.middle_school or rental.high_school %}<a href="#schools">Schools</a>{% endif %}
     </div>
+  </div>
 
-    <div class="lead-form-card">
-      <div class="lead-form-price">${{ rental.price|floatformat:0|intcomma }}<span
-          style="font-size:14px;font-weight:400;color:#888;">/mo</span></div>
-      <div class="lead-form-address">{{ rental.street_address }}, {{ rental.city }}</div>
-
-      {% if messages %}
-      {% for message in messages %}
-      <div
-        style="padding:10px 12px;background:#dcfce7;border-radius:8px;margin-bottom:14px;color:#15803d;font-size:13px;">
-        ✓ {{ message }}
+  <!-- Photos -->
+  <div class="cr-photos">
+    {% if rental.main_image_url %}
+      <div class="cr-slider" onclick="lbOpen(sliderIdx)">
+        <img class="cr-slider-img" id="cr-slider-img" src="{{ rental.main_image_url }}" alt="{{ rental.street_address }}">
+        <button class="cr-slider-nav cr-slider-prev" onclick="event.stopPropagation();sliderNav(-1)">‹</button>
+        <button class="cr-slider-nav cr-slider-next" onclick="event.stopPropagation();sliderNav(1)">›</button>
+        <div class="cr-slider-count" id="cr-slider-count">1 / 1</div>
       </div>
-      {% endfor %}
+      <div class="cr-thumbs" id="cr-thumbs"></div>
+      <div>
+        <button class="cr-viewall" onclick="lbOpen(0)">⊞ View all photos</button>
+      </div>
+    {% else %}
+      <div class="cr-nophoto">No photos available</div>
+    {% endif %}
+  </div>
+
+  <!-- Body -->
+  <div class="cr-body">
+    <div class="cr-main">
+
+      <div id="overview" class="cr-section">
+        {% if rental.status %}<span style="display:inline-block;background:#dcfce7;color:#15803d;border-radius:5px;padding:3px 10px;font-size:12px;font-weight:600;margin-bottom:12px;">{{ rental.status|title }}</span>{% endif %}
+        {% if rental.property_type %}<span style="display:inline-block;background:#f0f4ff;color:#3b5bdb;border-radius:5px;padding:3px 10px;font-size:12px;font-weight:600;margin-bottom:12px;margin-left:6px;">{{ rental.property_type }}</span>{% endif %}
+
+        {% if rental.description %}
+        <p class="cr-desc cr-clamp" id="desc-clamp">{{ rental.description }}</p>
+        <p class="cr-desc" id="desc-full" style="display:none;">{{ rental.description }}</p>
+        <button class="cr-readmore" onclick="toggleDesc(this)">Read more ↓</button>
+        {% endif %}
+
+        <div style="margin-top:20px;">
+          <div class="cr-agent-card" style="display:flex;align-items:center;gap:14px;margin-bottom:8px;">
+            <div style="width:48px;height:48px;border-radius:50%;background:#111;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:700;flex-shrink:0;">C</div>
+            <div>
+              <div style="font-size:15px;font-weight:700;color:#111;">Col Realty</div>
+              <div style="font-size:12px;color:#999;margin:2px 0;">Listing Agent</div>
+              <a href="tel:5126993810" style="font-size:13px;color:#555;">(512) 699-3810</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="propertyInfo" class="cr-section">
+        <h2 class="cr-section-title">Property Details</h2>
+        <table class="cr-tbl">
+          {% if rental.property_type %}<tr><td>Type</td><td>{{ rental.property_type }}</td></tr>{% endif %}
+          {% if rental.year_built %}<tr><td>Year Built</td><td>{{ rental.year_built }}</td></tr>{% endif %}
+          {% if rental.stories %}<tr><td>Stories</td><td>{{ rental.stories }}</td></tr>{% endif %}
+          {% if rental.sqft %}<tr><td>Living Area</td><td>{{ rental.sqft|intcomma }} Sq. Ft.</td></tr>{% endif %}
+          {% if rental.lot_size %}<tr><td>Lot Size</td><td>{{ rental.lot_size }} AC</td></tr>{% endif %}
+          {% if rental.county %}<tr><td>County</td><td>{{ rental.county }}</td></tr>{% endif %}
+          {% if rental.subdivision %}<tr><td>Subdivision</td><td>{{ rental.subdivision }}</td></tr>{% endif %}
+          {% if rental.garage_spaces %}<tr><td>Garage Spaces</td><td>{{ rental.garage_spaces }}</td></tr>{% endif %}
+          {% if rental.mls_id %}<tr><td>MLS #</td><td>{{ rental.mls_id }}</td></tr>{% endif %}
+          {% if rental.days_on_market is not None %}<tr><td>Days Listed</td><td>{{ rental.days_on_market }}</td></tr>{% endif %}
+        </table>
+      </div>
+
+      {% if rental.interior_features or rental.exterior_features or rental.appliances or rental.community_features or rental.parking_features %}
+      <div class="cr-section">
+        <h2 class="cr-section-title">Property Information</h2>
+        <div class="cr-feat-grid">
+          {% if rental.interior_features %}<div><p class="cr-feat-lbl">Interior</p><div class="cr-tags">{% for f in rental.interior_features_list %}<span class="cr-tag">{{ f }}</span>{% endfor %}</div></div>{% endif %}
+          {% if rental.exterior_features %}<div><p class="cr-feat-lbl">Exterior</p><div class="cr-tags">{% for f in rental.exterior_features_list %}<span class="cr-tag">{{ f }}</span>{% endfor %}</div></div>{% endif %}
+          {% if rental.appliances %}<div><p class="cr-feat-lbl">Appliances</p><div class="cr-tags">{% for f in rental.appliances_list %}<span class="cr-tag">{{ f }}</span>{% endfor %}</div></div>{% endif %}
+          {% if rental.community_features %}<div><p class="cr-feat-lbl">Community</p><div class="cr-tags">{% for f in rental.community_features_list %}<span class="cr-tag">{{ f }}</span>{% endfor %}</div></div>{% endif %}
+          {% if rental.parking_features %}<div><p class="cr-feat-lbl">Parking</p><div class="cr-tags">{% for f in rental.parking_features_list %}<span class="cr-tag">{{ f }}</span>{% endfor %}</div></div>{% endif %}
+          {% if rental.flooring or rental.heating or rental.cooling %}<div><p class="cr-feat-lbl">Utilities & Finishes</p><div class="cr-tags">{% if rental.heating %}<span class="cr-tag">Heat: {{ rental.heating }}</span>{% endif %}{% if rental.cooling %}<span class="cr-tag">AC: {{ rental.cooling }}</span>{% endif %}{% if rental.flooring %}<span class="cr-tag">{{ rental.flooring }}</span>{% endif %}</div></div>{% endif %}
+        </div>
+        {% if rental.has_fireplace or rental.has_pool or rental.has_garage %}
+        <div style="margin-top:16px;" class="cr-tags">
+          {% if rental.has_fireplace %}<span class="cr-tag">🔥 Fireplace</span>{% endif %}
+          {% if rental.has_pool %}<span class="cr-tag">🏊 Pool</span>{% endif %}
+          {% if rental.has_garage %}<span class="cr-tag">🚗 Garage</span>{% endif %}
+        </div>
+        {% endif %}
+      </div>
       {% endif %}
 
-      <form method="post" action="{% url 'leads:create' %}">
-        {% csrf_token %}
-        <input type="hidden" name="source_type" value="rental">
-        <input type="hidden" name="source_id" value="{{ rental.id }}">
-        <input type="hidden" name="page_url" value="{{ request.build_absolute_uri }}">
+      <div id="location" class="cr-section">
+        <h2 class="cr-section-title">Location</h2>
+        <div class="cr-map"><div id="rental-map"></div></div>
+      </div>
 
-        <div class="form-grid-2">
-          <div class="form-field">
-            <label>Name <span style="color:red">*</span></label>
-            <input type="text" name="name" required placeholder="Your name" />
-          </div>
-          <div class="form-field">
-            <label>Phone</label>
-            <input type="tel" name="phone" placeholder="(512) 000-0000" />
-          </div>
-        </div>
-        <div class="form-field">
-          <label>Email <span style="color:red">*</span></label>
-          <input type="email" name="email" required placeholder="you@email.com" />
-        </div>
-        <div class="form-field">
-          <label>Move-in Date</label>
-          <input type="date" name="move_in_date" />
-        </div>
-        <div class="form-field">
-          <label>Message</label>
-          <textarea name="message"
-            rows="3">Hi, I'm interested in renting {{ rental.street_address }}, {{ rental.city }}. Please contact me with more details.</textarea>
-        </div>
-        <button type="submit" class="submit-btn">Schedule a Tour</button>
-      </form>
+      {% if rental.school_district or rental.elementary_school or rental.middle_school or rental.high_school %}
+      <div id="schools" class="cr-section">
+        <h2 class="cr-section-title">Schools</h2>
+        {% if rental.school_district %}<p style="font-size:13px;color:#555;margin-bottom:12px;">This home is within <span class="cr-dist-badge">{{ rental.school_district }}</span></p>{% endif %}
+        {% if rental.elementary_school %}<div class="cr-school"><div class="cr-school-rtg" style="background:#15803d;">E</div><div><div class="cr-school-name">{{ rental.elementary_school }}</div><div class="cr-school-meta">Public · Elementary · Serves this home</div></div></div>{% endif %}
+        {% if rental.middle_school %}<div class="cr-school"><div class="cr-school-rtg" style="background:#b45309;">M</div><div><div class="cr-school-name">{{ rental.middle_school }}</div><div class="cr-school-meta">Public · Middle School · Serves this home</div></div></div>{% endif %}
+        {% if rental.high_school %}<div class="cr-school"><div class="cr-school-rtg" style="background:#1d4ed8;">H</div><div><div class="cr-school-name">{{ rental.high_school }}</div><div class="cr-school-meta">Public · High School · Serves this home</div></div></div>{% endif %}
+      </div>
+      {% endif %}
 
-      <p style="font-size:11px;color:#aaa;text-align:center;margin-top:12px;margin-bottom:0;">
-        By submitting, you agree to be contacted by Col Realty.
-      </p>
+      {% if rental.open_house_date %}
+      <div class="cr-section">
+        <div class="cr-oh">
+          <div style="font-size:28px;">🏡</div>
+          <div>
+            <div class="cr-oh-lbl">Open House</div>
+            <div class="cr-oh-time">{{ rental.open_house_date|date:"l, F j, Y" }}{% if rental.open_house_start_time %} · {{ rental.open_house_start_time|time:"g:i A" }}{% endif %}{% if rental.open_house_end_time %} – {{ rental.open_house_end_time|time:"g:i A" }}{% endif %}</div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
     </div>
 
-    <div class="map-container">
-      <div id="rental-map"></div>
+    <!-- Sidebar -->
+    <div class="cr-side">
+      <div class="cr-cta-price">${{ rental.price|floatformat:0|intcomma }}<span style="font-size:14px;font-weight:400;color:#888;">/mo</span></div>
+      <div class="cr-cta-addr">{{ rental.street_address }}, {{ rental.city }}, {{ rental.state }}</div>
+      <div class="cr-form-wrap">
+        {% if messages %}{% for message in messages %}<div style="background:#f0fdf4;border-radius:6px;padding:10px 12px;margin-bottom:12px;font-size:13px;color:#15803d;">✓ {{ message }}</div>{% endfor %}{% endif %}
+        <form method="post" action="{% url 'leads:create' %}">
+          {% csrf_token %}
+          <input type="hidden" name="source_type" value="rental">
+          <input type="hidden" name="source_id" value="{{ rental.id }}">
+          <input type="hidden" name="page_url" value="{{ request.build_absolute_uri }}">
+          <div class="cr-row2">
+            <div class="cr-field"><label>Name *</label><input type="text" name="name" required placeholder="Your name" /></div>
+            <div class="cr-field"><label>Phone</label><input type="tel" name="phone" placeholder="(512) 000-0000" /></div>
+          </div>
+          <div class="cr-field"><label>Email *</label><input type="email" name="email" required placeholder="you@email.com" /></div>
+          <div class="cr-field"><label>Move-in Date</label><input type="date" name="move_in_date" /></div>
+          <div class="cr-field"><label>Message</label><textarea name="message" rows="3">Hi, I'm interested in renting {{ rental.street_address }}, {{ rental.city }}. Please contact me with more details.</textarea></div>
+          <button type="submit" class="cr-submit">Schedule a Tour</button>
+        </form>
+        <p class="cr-fine">By submitting, you agree to be contacted by Col Realty.</p>
+      </div>
     </div>
 
   </div>
 </div>
 
 <script>
-  function toggleDesc(btn) {
-    const preview = document.getElementById('desc-preview');
-    const full = document.getElementById('desc-full');
-    if (full.style.display === 'none') {
-      preview.style.display = 'none';
-      full.style.display = 'block';
-      btn.textContent = 'Show less ↑';
-    } else {
-      preview.style.display = 'block';
-      full.style.display = 'none';
-      btn.textContent = 'Read more ↓';
-    }
+const PHOTOS=[{% if rental.image_urls %}{% for img in rental.image_urls %}"{{ img }}"{% if not forloop.last %},{% endif %}{% endfor %}{% elif rental.main_image_url %}"{{ rental.main_image_url }}"{% endif %}];
+let lbIdx=0,stripBuilt=false,sliderIdx=0;
+
+function sliderGo(i){
+  sliderIdx=i;
+  const img=document.getElementById('cr-slider-img');if(img)img.src=PHOTOS[i];
+  const cnt=document.getElementById('cr-slider-count');if(cnt)cnt.textContent=(i+1)+' / '+PHOTOS.length;
+  document.querySelectorAll('.cr-thumb').forEach((t,j)=>t.classList.toggle('active',j===i));
+  const thumbs=document.getElementById('cr-thumbs');if(thumbs)thumbs.children[i]?.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+}
+function sliderNav(d){sliderGo((sliderIdx+d+PHOTOS.length)%PHOTOS.length);}
+
+// Build thumbnails
+window.addEventListener('DOMContentLoaded',()=>{
+  const strip=document.getElementById('cr-thumbs');
+  if(strip&&PHOTOS.length>1){
+    PHOTOS.forEach((u,i)=>{const d=document.createElement('div');d.className='cr-thumb'+(i===0?' active':'');d.innerHTML=`<img src="${u}" alt="">`;d.onclick=()=>sliderGo(i);strip.appendChild(d);});
   }
+  const cnt=document.getElementById('cr-slider-count');if(cnt)cnt.textContent='1 / '+PHOTOS.length;
+});
+
+function lbOpen(i){if(!PHOTOS.length)return;lbIdx=i;document.getElementById('cr-lb').classList.add('open');document.body.style.overflow='hidden';lbRender();}
+function lbClose(){document.getElementById('cr-lb').classList.remove('open');document.body.style.overflow='';}
+function lbNav(d){lbIdx=(lbIdx+d+PHOTOS.length)%PHOTOS.length;lbRender();}
+function lbRender(){
+  document.getElementById('cr-lb-img').src=PHOTOS[lbIdx];
+  document.getElementById('cr-lb-count').textContent=(lbIdx+1)+' / '+PHOTOS.length;
+  if(!stripBuilt){const s=document.getElementById('cr-lb-strip');PHOTOS.forEach((u,i)=>{const img=document.createElement('img');img.src=u;img.onclick=()=>{lbIdx=i;lbRender();};s.appendChild(img);});stripBuilt=true;}
+  Array.from(document.getElementById('cr-lb-strip').children).forEach((img,i)=>img.classList.toggle('active',i===lbIdx));
+}
+document.addEventListener('keydown',e=>{if(!document.getElementById('cr-lb').classList.contains('open'))return;if(e.key==='ArrowRight')lbNav(1);if(e.key==='ArrowLeft')lbNav(-1);if(e.key==='Escape')lbClose();});
+
+function toggleDesc(btn){
+  const c=document.getElementById('desc-clamp'),f=document.getElementById('desc-full');
+  if(f.style.display==='none'){c.style.display='none';f.style.display='block';btn.textContent='Show less ↑';}
+  else{c.style.display='-webkit-box';f.style.display='none';btn.textContent='Read more ↓';}
+}
+
+const SEC=['overview','location','propertyInfo','schools'];
+window.addEventListener('scroll',()=>{
+  let cur='overview';
+  SEC.forEach(id=>{const el=document.getElementById(id);if(el&&window.scrollY>=el.offsetTop-120)cur=id;});
+  document.querySelectorAll('.cr-nav a').forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+cur));
+});
 </script>
 
 {% if rental.latitude and rental.longitude %}
 <script src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&v=weekly" defer></script>
 <script>
-  window.addEventListener("load", () => {
-    const el = document.getElementById("rental-map");
-    if (!el) return;
-    const lat = parseFloat("{{ rental.latitude }}");
-    const lng = parseFloat("{{ rental.longitude }}");
-    if (Number.isNaN(lat) || Number.isNaN(lng)) return;
-    const pos = { lat, lng };
-    const map = new google.maps.Map(el, { center: pos, zoom: 15 });
-    new google.maps.Marker({ map, position: pos, title: "{{ rental.title|escapejs }}" });
-  });
+window.addEventListener("load",()=>{
+  const el=document.getElementById("rental-map");if(!el)return;
+  const lat=parseFloat("{{ rental.latitude }}"),lng=parseFloat("{{ rental.longitude }}");if(isNaN(lat)||isNaN(lng))return;
+  const map=new google.maps.Map(el,{center:{lat,lng},zoom:15,styles:[
+    {featureType:"water",elementType:"geometry",stylers:[{color:"#c9e8f0"}]},
+    {featureType:"road",elementType:"geometry",stylers:[{color:"#fff"}]},
+    {featureType:"road",elementType:"geometry.stroke",stylers:[{color:"#e8e8e8"}]},
+    {featureType:"landscape",elementType:"geometry",stylers:[{color:"#f5f5f0"}]},
+    {featureType:"poi",elementType:"geometry",stylers:[{color:"#dae8d0"}]},
+    {featureType:"all",elementType:"labels.text.fill",stylers:[{color:"#444"}]}
+  ]});
+  new google.maps.Marker({map,position:{lat,lng},title:"{{ rental.title|escapejs }}"});
+});
 </script>
 {% else %}
-<script>
-  window.addEventListener("load", () => {
-    const el = document.getElementById("rental-map");
-    if (el) el.innerHTML = "<div style='padding:20px;color:#999;text-align:center;height:100%;display:flex;align-items:center;justify-content:center;'>Map unavailable</div>";
-  });
-</script>
+<script>window.addEventListener("load",()=>{const el=document.getElementById("rental-map");if(el)el.innerHTML="<div style='height:100%;display:flex;align-items:center;justify-content:center;font-size:13px;color:#bbb;background:#f8f8f8;'>Map unavailable</div>";});</script>
 {% endif %}
-
 {% endblock %}
