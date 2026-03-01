@@ -146,10 +146,10 @@
 
           <div class="listing-body">
             <div class="listing-price">
-              <div class="price-main">${{ r.rent|floatformat:0|intcomma }}<span style="font-size:0.75rem;font-weight:400;">/mo</span></div>
+              <div class="price-main">${{ r.price|floatformat:0|intcomma }}<span style="font-size:0.75rem;font-weight:400;">/mo</span></div>
             </div>
             <div class="listing-title">{{ r.title }}</div>
-            <div class="listing-location">{{ r.full_address }}</div>
+            <div class="listing-location">{{ r.street_address }}, {{ r.city }}, {{ r.state }} {{ r.zip_code }}</div>
             <div class="listing-meta">
               {% if r.beds %}<span class="meta-pill">{{ r.beds }} bd</span>{% endif %}
               {% if r.baths %}<span class="meta-pill">{{ r.baths }} ba</span>{% endif %}

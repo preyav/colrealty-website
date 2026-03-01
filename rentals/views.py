@@ -9,17 +9,14 @@ from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.views.decorators.http import require_GET
 
-from .models import Rental
+from listings.models import Listing
 
+# Lease property types to show on the rentals page
+LEASE_TYPES = ["Residential Lease", "Commercial Lease"]
 
 RENTAL_PROPERTY_TYPE_CHOICES = [
-    "Commercial Lease",
-    "Condo",
-    "Multi-Family",
-    "Residential",
     "Residential Lease",
-    "Single Family",
-    "Townhome",
+    "Commercial Lease",
 ]
 
 
@@ -36,10 +33,6 @@ def _to_decimal(val: str):
 
 
 def apply_rental_filters(qs, params: dict):
-    """
-    Apply all search/filter params to a Rental queryset.
-    Mirrors apply_listing_filters() in listings/views.py for consistency.
-    """
     q             = (params.get("q")             or "").strip()
     rent_min      = (params.get("rent_min")      or "").strip()
     rent_max      = (params.get("rent_max")      or "").strip()
@@ -47,7 +40,6 @@ def apply_rental_filters(qs, params: dict):
     baths_min     = (params.get("baths_min")     or "").strip()
     property_type = (params.get("property_type") or "").strip()
 
-    # ── Keyword / location search ──────────────────────────────────────────
     if q:
         q_zip = re.sub(r"\D", "", q)
         qs = qs.filter(
@@ -58,15 +50,14 @@ def apply_rental_filters(qs, params: dict):
             | Q(description__icontains=q)
         )
 
-    # ── Rent range ─────────────────────────────────────────────────────────
+    # Listing model uses `price` not `rent`
     min_v = _to_decimal(rent_min)
     max_v = _to_decimal(rent_max)
     if min_v is not None:
-        qs = qs.filter(rent__gte=min_v)
+        qs = qs.filter(price__gte=min_v)
     if max_v is not None:
-        qs = qs.filter(rent__lte=max_v)
+        qs = qs.filter(price__lte=max_v)
 
-    # ── Beds / Baths (minimum) ─────────────────────────────────────────────
     beds_v = _to_decimal(beds_min)
     if beds_v is not None:
         qs = qs.filter(beds__gte=beds_v)
@@ -75,7 +66,6 @@ def apply_rental_filters(qs, params: dict):
     if baths_v is not None:
         qs = qs.filter(baths__gte=baths_v)
 
-    # ── Property type ──────────────────────────────────────────────────────
     if property_type and property_type in RENTAL_PROPERTY_TYPE_CHOICES:
         qs = qs.filter(property_type=property_type)
 
@@ -87,37 +77,34 @@ def apply_rental_filters(qs, params: dict):
 # ─────────────────────────────────────────────
 
 def rental_list(request):
-    qs = Rental.objects.filter(status="active").order_by("-id")
+    qs = Listing.objects.filter(status="active", property_type__in=LEASE_TYPES).order_by("-id")
     qs = apply_rental_filters(qs, request.GET)
 
     paginator = Paginator(qs, 12)
     page_obj  = paginator.get_page(request.GET.get("page"))
 
-    # Preserve filters across pagination
     params = request.GET.copy()
     params.pop("page", None)
 
     return render(request, "rentals/list.html", {
-        "rentals":              page_obj,
-        "page_obj":             page_obj,
-        "paginator":            paginator,
-        "is_paginated":         paginator.num_pages > 1,
-        "query_string":         params.urlencode(),
-        "GOOGLE_MAPS_API_KEY":  settings.GOOGLE_MAPS_API_KEY,
+        "rentals":               page_obj,
+        "page_obj":              page_obj,
+        "paginator":             paginator,
+        "is_paginated":          paginator.num_pages > 1,
+        "query_string":          params.urlencode(),
+        "GOOGLE_MAPS_API_KEY":   settings.GOOGLE_MAPS_API_KEY,
         "PROPERTY_TYPE_CHOICES": RENTAL_PROPERTY_TYPE_CHOICES,
-
-        # Repopulate form fields
-        "search_q":             request.GET.get("q", ""),
-        "search_rent_min":      request.GET.get("rent_min", ""),
-        "search_rent_max":      request.GET.get("rent_max", ""),
-        "search_beds_min":      request.GET.get("beds_min", ""),
-        "search_baths_min":     request.GET.get("baths_min", ""),
-        "search_property_type": request.GET.get("property_type", ""),
+        "search_q":              request.GET.get("q", ""),
+        "search_rent_min":       request.GET.get("rent_min", ""),
+        "search_rent_max":       request.GET.get("rent_max", ""),
+        "search_beds_min":       request.GET.get("beds_min", ""),
+        "search_baths_min":      request.GET.get("baths_min", ""),
+        "search_property_type":  request.GET.get("property_type", ""),
     })
 
 
 def rental_detail(request, pk):
-    rental = get_object_or_404(Rental, pk=pk, status="active")
+    rental = get_object_or_404(Listing, pk=pk, status="active", property_type__in=LEASE_TYPES)
     return render(request, "rentals/detail.html", {
         "rental":              rental,
         "GOOGLE_MAPS_API_KEY": settings.GOOGLE_MAPS_API_KEY,
@@ -126,9 +113,9 @@ def rental_detail(request, pk):
 
 @require_GET
 def rental_markers(request):
-    """Return marker data for the rentals map — respects all active filters."""
-    qs = Rental.objects.filter(
+    qs = Listing.objects.filter(
         status="active",
+        property_type__in=LEASE_TYPES,
         latitude__isnull=False,
         longitude__isnull=False,
     )
@@ -145,8 +132,8 @@ def rental_markers(request):
         markers.append({
             "id":      r.id,
             "title":   r.title,
-            "price":   str(r.rent),         # Rental model uses `rent`, not `price`
-            "address": r.full_address(),
+            "price":   str(r.price),
+            "address": f"{r.street_address}, {r.city}, {r.state} {r.zip_code}",
             "lat":     lat,
             "lng":     lng,
             "image":   r.main_image_url or "",
