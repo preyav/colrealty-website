@@ -2,6 +2,23 @@
 {% load humanize %}
 {% block title %}Buy | Col Realty{% endblock %}
 
+{% block extra_head %}
+<style>
+  .page-main>.container {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+
+  .listings-top {
+    margin: 16px;
+  }
+
+  .results-count {
+    padding: 0 16px;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 
 <div class="split-view-container">
@@ -24,30 +41,32 @@
           </div>
 
           <div class="inline-search-field">
-            <input class="input-field" type="number" name="price_min" placeholder="Min Price" min="0" value="{{ search_price_min }}">
+            <input class="input-field" type="number" name="price_min" placeholder="Min Price" min="0"
+              value="{{ search_price_min }}">
           </div>
 
           <div class="inline-search-field">
-            <input class="input-field" type="number" name="price_max" placeholder="Max Price" min="0" value="{{ search_price_max }}">
+            <input class="input-field" type="number" name="price_max" placeholder="Max Price" min="0"
+              value="{{ search_price_max }}">
           </div>
 
           <div class="inline-search-field">
             <select class="input-field" name="beds_min">
               <option value="">Beds</option>
               {% for n in "1234" %}
-                <option value="{{ n }}" {% if search_beds_min == n %}selected{% endif %}>{{ n }}+ bd</option>
+              <option value="{{ n }}" {% if search_beds_min==n %}selected{% endif %}>{{ n }}+ bd</option>
               {% endfor %}
-              <option value="5" {% if search_beds_min == "5" %}selected{% endif %}>5+ bd</option>
+              <option value="5" {% if search_beds_min=="5" %}selected{% endif %}>5+ bd</option>
             </select>
           </div>
 
           <div class="inline-search-field">
             <select class="input-field" name="baths_min">
               <option value="">Baths</option>
-              <option value="1"   {% if search_baths_min == "1"   %}selected{% endif %}>1+</option>
-              <option value="1.5" {% if search_baths_min == "1.5" %}selected{% endif %}>1.5+</option>
-              <option value="2"   {% if search_baths_min == "2"   %}selected{% endif %}>2+</option>
-              <option value="3"   {% if search_baths_min == "3"   %}selected{% endif %}>3+</option>
+              <option value="1" {% if search_baths_min=="1" %}selected{% endif %}>1+</option>
+              <option value="1.5" {% if search_baths_min=="1.5" %}selected{% endif %}>1.5+</option>
+              <option value="2" {% if search_baths_min=="2" %}selected{% endif %}>2+</option>
+              <option value="3" {% if search_baths_min=="3" %}selected{% endif %}>3+</option>
             </select>
           </div>
 
@@ -55,27 +74,29 @@
             <select class="input-field" name="property_type">
               <option value="">All Types</option>
               {% for pt in PROPERTY_TYPE_CHOICES %}
-                <option value="{{ pt }}" {% if search_property_type == pt %}selected{% endif %}>{{ pt }}</option>
+              <option value="{{ pt }}" {% if search_property_type==pt %}selected{% endif %}>{{ pt }}</option>
               {% endfor %}
             </select>
           </div>
 
           <button type="submit" class="btn-primary">Search</button>
-          {% if search_q or search_price_min or search_price_max or search_beds_min or search_baths_min or search_property_type %}
-            <a href="{% url 'listings:listing_list' %}" class="btn-secondary">Clear</a>
+          {% if search_q or search_price_min or search_price_max or search_beds_min or search_baths_min or
+          search_property_type %}
+          <a href="{% url 'listings:listing_list' %}" class="btn-secondary">Clear</a>
           {% endif %}
 
         </div>
 
-        {% if search_q or search_price_min or search_price_max or search_beds_min or search_baths_min or search_property_type %}
-          <div style="margin-top:8px; font-size:0.82rem;">
-            {% if search_q %}<span class="filter-tag">{{ search_q }}</span>{% endif %}
-            {% if search_price_min %}<span class="filter-tag">Min ${{ search_price_min|intcomma }}</span>{% endif %}
-            {% if search_price_max %}<span class="filter-tag">Max ${{ search_price_max|intcomma }}</span>{% endif %}
-            {% if search_beds_min %}<span class="filter-tag">{{ search_beds_min }}+ bd</span>{% endif %}
-            {% if search_baths_min %}<span class="filter-tag">{{ search_baths_min }}+ ba</span>{% endif %}
-            {% if search_property_type %}<span class="filter-tag">{{ search_property_type }}</span>{% endif %}
-          </div>
+        {% if search_q or search_price_min or search_price_max or search_beds_min or search_baths_min or
+        search_property_type %}
+        <div style="margin-top:8px; font-size:0.82rem;">
+          {% if search_q %}<span class="filter-tag">{{ search_q }}</span>{% endif %}
+          {% if search_price_min %}<span class="filter-tag">Min ${{ search_price_min|intcomma }}</span>{% endif %}
+          {% if search_price_max %}<span class="filter-tag">Max ${{ search_price_max|intcomma }}</span>{% endif %}
+          {% if search_beds_min %}<span class="filter-tag">{{ search_beds_min }}+ bd</span>{% endif %}
+          {% if search_baths_min %}<span class="filter-tag">{{ search_baths_min }}+ ba</span>{% endif %}
+          {% if search_property_type %}<span class="filter-tag">{{ search_property_type }}</span>{% endif %}
+        </div>
         {% endif %}
       </form>
     </div>
@@ -86,54 +107,57 @@
     <!-- Listing Grid -->
     <div class="listing-grid">
       {% for l in listings %}
-        <a class="listing-card" href="{% url 'listings:listing_detail' l.id %}">
-          <div class="listing-image-wrap">
-            {% if l.main_image_url %}
-              <img class="listing-image" src="{{ l.main_image_url }}" alt="{{ l.title }}">
-            {% endif %}
-            <div class="badge-strip">
-              <span class="badge badge-status-active">{{ l.status|default:"active"|title }}</span>
-              {% if l.property_type %}<span class="badge">{{ l.property_type }}</span>{% endif %}
-            </div>
+      <a class="listing-card" href="{% url 'listings:listing_detail' l.id %}">
+        <div class="listing-image-wrap">
+          {% if l.main_image_url %}
+          <img class="listing-image" src="{{ l.main_image_url }}" alt="{{ l.title }}">
+          {% endif %}
+          <div class="badge-strip">
+            <span class="badge badge-status-active">{{ l.status|default:"active"|title }}</span>
+            {% if l.property_type %}<span class="badge">{{ l.property_type }}</span>{% endif %}
           </div>
-          <div class="listing-body">
-            <div class="listing-price">
-              <div class="price-main">${{ l.price|floatformat:0|intcomma }}</div>
-            </div>
-            <div class="listing-title">{{ l.title }}</div>
-            <div class="listing-location">{{ l.street_address }}, {{ l.city }}, {{ l.state }} {{ l.zip_code }}</div>
-            <div class="listing-meta">
-              {% if l.beds %}<span class="meta-pill">{{ l.beds }} bd</span>{% endif %}
-              {% if l.baths %}<span class="meta-pill">{{ l.baths }} ba</span>{% endif %}
-              {% if l.sqft %}<span class="meta-pill">{{ l.sqft|intcomma }} sqft</span>{% endif %}
-            </div>
-          </div>
-        </a>
-      {% empty %}
-        <div style="padding:24px 0; color:#888;">
-          <p>No active homes matched your filters.</p>
-          <a href="{% url 'listings:listing_list' %}">Clear all filters →</a>
         </div>
+        <div class="listing-body">
+          <div class="listing-price">
+            <div class="price-main">${{ l.price|floatformat:0|intcomma }}</div>
+          </div>
+          <div class="listing-title">{{ l.title }}</div>
+          <div class="listing-location">{{ l.street_address }}, {{ l.city }}, {{ l.state }} {{ l.zip_code }}</div>
+          <div class="listing-meta">
+            {% if l.beds %}<span class="meta-pill">{{ l.beds }} bd</span>{% endif %}
+            {% if l.baths %}<span class="meta-pill">{{ l.baths }} ba</span>{% endif %}
+            {% if l.sqft %}<span class="meta-pill">{{ l.sqft|intcomma }} sqft</span>{% endif %}
+          </div>
+        </div>
+      </a>
+      {% empty %}
+      <div style="padding:24px 0; color:#888;">
+        <p>No active homes matched your filters.</p>
+        <a href="{% url 'listings:listing_list' %}">Clear all filters →</a>
+      </div>
       {% endfor %}
     </div>
 
     <!-- Pagination -->
     {% if is_paginated %}
-      <nav aria-label="Pagination" style="margin-top:20px;">
-        <ul class="pagination">
-          {% if page_obj.has_previous %}
-            <li class="page-item"><a class="page-link" href="?{{ query_string }}&page={{ page_obj.previous_page_number }}">← Previous</a></li>
-          {% else %}
-            <li class="page-item disabled"><span class="page-link">← Previous</span></li>
-          {% endif %}
-          <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ paginator.num_pages }}</span></li>
-          {% if page_obj.has_next %}
-            <li class="page-item"><a class="page-link" href="?{{ query_string }}&page={{ page_obj.next_page_number }}">Next →</a></li>
-          {% else %}
-            <li class="page-item disabled"><span class="page-link">Next →</span></li>
-          {% endif %}
-        </ul>
-      </nav>
+    <nav aria-label="Pagination" style="margin-top:20px;">
+      <ul class="pagination">
+        {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link" href="?{{ query_string }}&page={{ page_obj.previous_page_number }}">←
+            Previous</a></li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">← Previous</span></li>
+        {% endif %}
+        <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ paginator.num_pages
+            }}</span></li>
+        {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link" href="?{{ query_string }}&page={{ page_obj.next_page_number }}">Next
+            →</a></li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">Next →</span></li>
+        {% endif %}
+      </ul>
+    </nav>
     {% endif %}
 
   </div>
@@ -151,7 +175,7 @@
     const mapEl = document.getElementById("map");
     if (!mapEl) return;
     const fallback = { lat: 30.2672, lng: -97.7431 };
-    const map = new google.maps.Map(mapEl, { center: fallback, zoom: 11 });
+    const map = new google.maps.Map(mapEl, { center: fallback, zoom: 9 });
     const info = new google.maps.InfoWindow();
     const bounds = new google.maps.LatLngBounds();
     fetch("{% url 'listings:markers' %}" + window.location.search)
