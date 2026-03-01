@@ -383,6 +383,10 @@ body.page {
   display: flex;
   height: calc(100vh - 92px);
   overflow: hidden;
+  /* Break out of .container to fill full viewport */
+  margin-left: calc(-1.5rem);
+  margin-right: calc(-1.5rem);
+  width: calc(100% + 3rem);
 }
 
 .listings-column {
