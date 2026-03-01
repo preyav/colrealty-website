@@ -1,13 +1,125 @@
-{% extends "admin/login.html" %}
+{% extends "base.html" %}
+{% load i18n static %}
 
-{% block extrastyle %}
-{{ block.super }}
-<style type="text/css">
-    /* Change the header color */
-    #header { background: #004d40 !important; color: #fff; }
-    /* Change the login button color */
-    .submit-row input { background: #004d40 !important; border-color: #004d40 !important; }
-    /* Change the links */
-    a { color: #004d40; }
+{% block title %}Sign In | Col Realty{% endblock %}
+
+{% block extra_head %}
+<style>
+  .login-wrap {
+    min-height: calc(100vh - 200px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+  }
+  .login-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 20px;
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  }
+  .login-card h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+    color: #111827;
+  }
+  .login-card p.subtitle {
+    font-size: 0.9rem;
+    color: #6b7280;
+    margin-bottom: 1.8rem;
+  }
+  .login-card .form-group { margin-bottom: 1rem; }
+  .login-card label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.35rem;
+  }
+  .login-card input[type=text],
+  .login-card input[type=password] {
+    width: 100%;
+    padding: 0.6rem 0.85rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 0.92rem;
+    color: #111827;
+    background: #f9fafb;
+    transition: border-color 0.15s;
+    box-sizing: border-box;
+  }
+  .login-card input[type=text]:focus,
+  .login-card input[type=password]:focus {
+    outline: none;
+    border-color: #ff6b3d;
+    background: #fff;
+  }
+  .login-card .btn-login {
+    width: 100%;
+    padding: 0.7rem;
+    background: #ff6b3d;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 0.5rem;
+    box-shadow: 0 4px 14px rgba(255,107,61,0.3);
+    transition: background 0.15s, transform 0.08s;
+  }
+  .login-card .btn-login:hover {
+    background: #ff835a;
+    transform: translateY(-1px);
+  }
+  .login-card .errornote {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+    border-radius: 8px;
+    padding: 0.6rem 0.9rem;
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+  }
 </style>
+{% endblock %}
+
+{% block content %}
+<div class="login-wrap">
+  <div class="login-card">
+    <h1>Welcome back</h1>
+    <p class="subtitle">Sign in to your Col Realty account</p>
+
+    {% if form.errors %}
+      <div class="errornote">
+        {% if form.non_field_errors %}
+          {{ form.non_field_errors }}
+        {% else %}
+          Please enter the correct username and password.
+        {% endif %}
+      </div>
+    {% endif %}
+
+    <form method="post" action="{{ app_path }}">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ next }}">
+
+      <div class="form-group">
+        <label for="id_username">{% trans 'Username' %}</label>
+        <input type="text" name="username" id="id_username" autocomplete="username" autofocus required>
+      </div>
+
+      <div class="form-group">
+        <label for="id_password">{% trans 'Password' %}</label>
+        <input type="password" name="password" id="id_password" autocomplete="current-password" required>
+      </div>
+
+      <button type="submit" class="btn-login">Sign In →</button>
+    </form>
+  </div>
+</div>
 {% endblock %}
