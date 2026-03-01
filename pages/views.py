@@ -24,7 +24,7 @@ BUY_TYPES = {
 
 class ColRealtyLoginView(LoginView):
     template_name = "pages/login.html"
-    next_page     = "index"
+    next_page = "index"
 
 
 def login(request):
@@ -79,8 +79,8 @@ def _build_rental_markers(qs):
 
 def home(request):
     qs = Listing.objects.filter(status="active").order_by("-id")
-    paginator  = Paginator(qs, 12)
-    page_obj   = paginator.get_page(request.GET.get("page"))
+    paginator = Paginator(qs, 12)
+    page_obj = paginator.get_page(request.GET.get("page"))
     return render(request, "pages/home.html", {
         "listings":    page_obj,
         "page_obj":    page_obj,
@@ -93,6 +93,82 @@ def contact(request):
     return render(request, "pages/contact.html")
 
 
+def contact_submit(request):
+    import logging
+    from django.conf import settings
+    from django.core.mail import send_mail
+    from django.shortcuts import redirect
+
+    logger = logging.getLogger(__name__)
+
+    if request.method != "POST":
+        return redirect("pages:contact")
+
+    name = (request.POST.get("name") or "").strip()
+    email = (request.POST.get("email") or "").strip()
+    phone = (request.POST.get("phone") or "").strip()
+    subject = (request.POST.get("subject") or "").strip()
+    description = (request.POST.get("description") or "").strip()
+    issue = (request.POST.get("issue") or "General Inquiry").strip()
+
+    if not name or not email or not subject or not description:
+        return redirect("pages:contact")
+
+    # ── 1. Email Col Realty ────────────────────────────────────────────────
+    try:
+        notify_email = getattr(settings, "LEAD_NOTIFY_EMAIL", "").strip()
+        if notify_email:
+            body = (
+                f"New Contact Form Submission\n"
+                f"{'='*40}\n"
+                f"Issue:       {issue}\n"
+                f"Name:        {name}\n"
+                f"Email:       {email}\n"
+                f"Phone:       {phone or 'Not provided'}\n"
+                f"Subject:     {subject}\n\n"
+                f"Description:\n{description}\n"
+            )
+            send_mail(
+                f"[Col Realty Contact] {subject}",
+                body,
+                settings.DEFAULT_FROM_EMAIL,
+                [notify_email],
+                fail_silently=False,
+            )
+            logger.info("Contact form email sent to %s", notify_email)
+    except Exception as exc:
+        logger.exception("Contact form email failed: %s", exc)
+
+    # ── 2. Sync to HubSpot ─────────────────────────────────────────────────
+    try:
+        if getattr(settings, "HUBSPOT_PRIVATE_APP_TOKEN", "").strip():
+            from leads.services.hubspot import upsert_contact, create_note
+            # Split name into first/last
+            parts = name.strip().split(" ", 1)
+            firstname = parts[0]
+            lastname = parts[1] if len(parts) > 1 else ""
+
+            contact_id = upsert_contact(
+                email=email,
+                firstname=firstname,
+                lastname=lastname,
+                phone=phone,
+            )
+            note_body = (
+                f"Contact Form Inquiry\n"
+                f"Issue: {issue}\n"
+                f"Subject: {subject}\n\n"
+                f"{description}"
+            )
+            create_note(contact_id, note_body)
+            logger.info(
+                "Contact form synced to HubSpot contact %s", contact_id)
+    except Exception as exc:
+        logger.exception("Contact form HubSpot sync failed: %s", exc)
+
+    return redirect("/contact/?sent=1")
+
+
 def health(request):
     return JsonResponse({"status": "ok"})
 
@@ -102,9 +178,10 @@ def health(request):
 # ─────────────────────────────────────────────
 
 def buy(request):
-    qs         = Listing.objects.filter(status="active", property_type__in=BUY_TYPES).order_by("-id")
-    paginator  = Paginator(qs, 12)
-    page_obj   = paginator.get_page(request.GET.get("page"))
+    qs = Listing.objects.filter(
+        status="active", property_type__in=BUY_TYPES).order_by("-id")
+    paginator = Paginator(qs, 12)
+    page_obj = paginator.get_page(request.GET.get("page"))
     return render(request, "listings/list.html", {
         "listings":    page_obj,
         "page_obj":    page_obj,
@@ -152,9 +229,9 @@ def sell_concierge(request):
 # ─────────────────────────────────────────────
 
 def rent(request):
-    qs        = Rental.objects.filter(status="active").order_by("-id")
+    qs = Rental.objects.filter(status="active").order_by("-id")
     paginator = Paginator(qs, 12)
-    page_obj  = paginator.get_page(request.GET.get("page"))
+    page_obj = paginator.get_page(request.GET.get("page"))
     return render(request, "rentals/list.html", {
         "rentals":     page_obj,
         "page_obj":    page_obj,

@@ -42,6 +42,9 @@ urlpatterns = [
     # CONTACT US
     path("company/contactus/", views.company_contactus, name="contactus"),
 
+    # CONTACT_SUBMIT
+    path('contact/submit/', views.contact_submit, name='contact_submit'),
+
     # BLOG
     path("colcircle/blog/", views.colcircle_blog, name="blog"),
 
@@ -52,7 +55,8 @@ urlpatterns = [
     path("colcircle/colcircle/", views.colcircle_colcircle, name="colcircle"),
 
     # NEIGHBORHOODS
-    path("explore/neighborhoods/", views.explore_neighborhoods, name="neighborhoods"),
+    path("explore/neighborhoods/",
+         views.explore_neighborhoods, name="neighborhoods"),
 
     # NEW HOMES
     path("explore/newhomes/", views.explore_newhomes, name="newhomes"),

@@ -1,29 +1,340 @@
 {% extends "base.html" %}
-{% block title %}Contact | Col Realty{% endblock %}
+{% load static %}
+{% block title %}Contact Us | Col Realty{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ── Hero ── */
+  .contact-hero {
+    position: relative;
+    height: 320px;
+    background: url('https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .contact-hero-card {
+    background: rgba(255,255,255,0.92);
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 2.5rem 3rem;
+    text-align: center;
+    max-width: 600px;
+    width: 90%;
+    backdrop-filter: blur(8px);
+  }
+  .contact-hero-card h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 0.5rem;
+  }
+  .contact-hero-card .divider {
+    width: 40px;
+    height: 3px;
+    background: #ff6b3d;
+    margin: 0.75rem auto 1rem;
+    border-radius: 2px;
+  }
+  .contact-hero-card p {
+    color: #6b7280;
+    font-size: 0.95rem;
+    margin: 0;
+    line-height: 1.6;
+  }
+
+  /* ── Three columns ── */
+  .contact-columns {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+    padding: 3rem 0;
+    text-align: center;
+  }
+  @media (max-width: 700px) {
+    .contact-columns { grid-template-columns: 1fr; }
+  }
+  .contact-col .col-icon {
+    font-size: 2rem;
+    color: #9ca3af;
+    margin-bottom: 1rem;
+  }
+  .contact-col .col-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 0.5rem;
+  }
+  .contact-col .col-title a {
+    color: #ff6b3d;
+    text-decoration: none;
+  }
+  .contact-col .col-title a:hover { text-decoration: underline; }
+  .contact-col p {
+    font-size: 0.88rem;
+    color: #6b7280;
+    line-height: 1.6;
+    margin: 0;
+  }
+  .btn-message {
+    display: inline-block;
+    margin-top: 0.75rem;
+    padding: 0.5rem 1.2rem;
+    background: #ff6b3d;
+    color: #fff;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    transition: background 0.15s;
+  }
+  .btn-message:hover { background: #ff835a; color: #fff; }
+
+  /* ── Social icons ── */
+  .social-icons {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+  }
+  .social-icons a {
+    color: #9ca3af;
+    font-size: 1.3rem;
+    transition: color 0.15s;
+  }
+  .social-icons a:hover { color: #ff6b3d; }
+
+  /* ── Request form modal ── */
+  .request-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+  .request-overlay.active { display: flex; }
+  .request-modal {
+    background: #fff;
+    border-radius: 20px;
+    padding: 2rem 2.5rem;
+    max-width: 520px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  }
+  .request-modal .close-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1.2rem;
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    color: #9ca3af;
+    cursor: pointer;
+    line-height: 1;
+  }
+  .request-modal .close-btn:hover { color: #111; }
+  .request-modal h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin: 0 0 0.3rem;
+    color: #111827;
+  }
+  .request-modal p.modal-sub {
+    font-size: 0.88rem;
+    color: #6b7280;
+    margin: 0 0 1.5rem;
+  }
+  .form-group {
+    margin-bottom: 1rem;
+  }
+  .form-group label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.3rem;
+  }
+  .form-group label .req { color: #ef4444; }
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    width: 100%;
+    padding: 0.6rem 0.85rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: #111827;
+    background: #f9fafb;
+    font-family: inherit;
+    transition: border-color 0.15s;
+    box-sizing: border-box;
+  }
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: #ff6b3d;
+    background: #fff;
+  }
+  .form-group textarea { resize: vertical; min-height: 100px; }
+  .btn-submit {
+    width: 100%;
+    padding: 0.75rem;
+    background: #c0392b;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 0.5rem;
+    transition: background 0.15s;
+  }
+  .btn-submit:hover { background: #a93226; }
+
+  /* ── Success message ── */
+  .success-banner {
+    background: #f0fdf4;
+    border: 1px solid #86efac;
+    border-radius: 10px;
+    padding: 1rem 1.2rem;
+    color: #15803d;
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+    display: none;
+  }
+  .success-banner.show { display: block; }
+</style>
+{% endblock %}
 
 {% block content %}
-<section class="section">
-    <h1>Contact Col Realty</h1>
-    <p class="section-sub">
-        Have a quick question, or want to talk through buying or selling? Start here.
-    </p>
 
-    <div class="card-full">
-        <p>For now, this is a simple static form. Later, you can connect it to email or a CRM.</p>
-        <form class="contact-form">
-            <input type="text" name="name" placeholder="Your name" required />
-            <input type="email" name="email" placeholder="Email" required />
-            <input type="tel" name="phone" placeholder="Phone (optional)" />
-            <select name="role">
-                <option value="">I am…</option>
-                <option value="buyer">a Buyer</option>
-                <option value="seller">a Seller</option>
-                <option value="both">both (buying & selling)</option>
-                <option value="investor">an Investor</option>
-            </select>
-            <textarea name="message" rows="4" placeholder="How can we help?"></textarea>
-            <button type="submit">Send Message</button>
-        </form>
+<!-- ── Hero ── -->
+<div style="margin: 0 -1.5rem;">
+  <div class="contact-hero">
+    <div class="contact-hero-card">
+      <h1>Contact Us</h1>
+      <div class="divider"></div>
+      <p>We're here to help! Our team at Col Realty is available Monday–Saturday, 8am–6pm CST, seven days a week.</p>
     </div>
-</section>
+  </div>
+</div>
+
+<!-- ── Three Columns ── -->
+<div class="contact-columns">
+
+  <div class="contact-col">
+    <div class="col-icon"><i class="fas fa-phone"></i></div>
+    <div class="col-title"><a href="tel:+15126993810">(512) 699-3810</a></div>
+    <p>Talk to a Col Realty agent for help with buying, selling, renting, or any questions about our services.</p>
+  </div>
+
+  <div class="contact-col">
+    <div class="col-icon"><i class="fas fa-envelope"></i></div>
+    <div class="col-title">
+      <button class="btn-message" onclick="openRequestForm()">Message us</button>
+    </div>
+    <p>Send our team a message about buying, selling, property management, or any other inquiry.</p>
+  </div>
+
+  <div class="contact-col">
+    <div class="col-icon"><i class="fas fa-share-alt"></i></div>
+    <div class="col-title">Connect with us</div>
+    <div class="social-icons">
+      <a href="#" title="Facebook"><i class="fab fa-facebook"></i></a>
+      <a href="#" title="Instagram"><i class="fab fa-instagram"></i></a>
+      <a href="#" title="LinkedIn"><i class="fab fa-linkedin"></i></a>
+      <a href="#" title="Twitter/X"><i class="fab fa-x-twitter"></i></a>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Request Form Modal ── -->
+<div class="request-overlay" id="requestOverlay">
+  <div class="request-modal">
+    <button class="close-btn" onclick="closeRequestForm()">×</button>
+
+    <h2>Submit a request</h2>
+    <p class="modal-sub">A member of our team will respond as soon as possible.</p>
+
+    <div class="success-banner" id="successBanner">
+      ✓ Your request was sent! We'll be in touch shortly.
+    </div>
+
+    <form method="post" action="{% url 'pages:contact_submit' %}" id="contactForm">
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label for="issue">Please choose your issue below</label>
+        <select name="issue" id="issue">
+          <option value="buying">Customer looking to: Buy a Home</option>
+          <option value="selling">Customer looking to: Sell a Home</option>
+          <option value="renting">Customer looking to: Rent a Property</option>
+          <option value="property_management">Customer looking to: Property Management</option>
+          <option value="general">General Inquiry</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="name">Your name <span class="req">*</span></label>
+        <input type="text" name="name" id="name" required placeholder="Full name">
+      </div>
+
+      <div class="form-group">
+        <label for="email">Your email address <span class="req">*</span></label>
+        <input type="email" name="email" id="email" required placeholder="you@email.com">
+      </div>
+
+      <div class="form-group">
+        <label for="phone">Phone number</label>
+        <input type="tel" name="phone" id="phone" placeholder="(512) 000-0000">
+      </div>
+
+      <div class="form-group">
+        <label for="subject">Subject <span class="req">*</span></label>
+        <input type="text" name="subject" id="subject" required placeholder="Brief subject">
+      </div>
+
+      <div class="form-group">
+        <label for="description">Description <span class="req">*</span></label>
+        <textarea name="description" id="description" required placeholder="Please enter the details of your request. A member of our support staff will respond as soon as possible."></textarea>
+      </div>
+
+      <button type="submit" class="btn-submit">Submit</button>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function openRequestForm() {
+    document.getElementById('requestOverlay').classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeRequestForm() {
+    document.getElementById('requestOverlay').classList.remove('active');
+    document.body.style.overflow = '';
+  }
+  // Close on overlay click
+  document.getElementById('requestOverlay').addEventListener('click', function(e) {
+    if (e.target === this) closeRequestForm();
+  });
+  // Show success if redirected back with ?sent=1
+  if (window.location.search.includes('sent=1')) {
+    openRequestForm();
+    document.getElementById('successBanner').classList.add('show');
+    document.getElementById('contactForm').style.display = 'none';
+  }
+</script>
 {% endblock %}
