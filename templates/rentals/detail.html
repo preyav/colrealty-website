@@ -570,7 +570,7 @@
     <!-- Stats bar -->
     <div class="stats-bar">
       <div class="stat-item">
-        <div class="stat-value">${{ rental.rent|floatformat:0|intcomma }}<span
+        <div class="stat-value">${{ rental.price|floatformat:0|intcomma }}<span
             style="font-size:13px;font-weight:400;">/mo</span></div>
         <div class="stat-label">Rent</div>
       </div>
@@ -853,7 +853,7 @@
     </div>
 
     <div class="lead-form-card">
-      <div class="lead-form-price">${{ rental.rent|floatformat:0|intcomma }}<span
+      <div class="lead-form-price">${{ rental.price|floatformat:0|intcomma }}<span
           style="font-size:14px;font-weight:400;color:#888;">/mo</span></div>
       <div class="lead-form-address">{{ rental.street_address }}, {{ rental.city }}</div>
 
