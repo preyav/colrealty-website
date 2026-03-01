@@ -783,3 +783,59 @@ body.page {
   max-width: 1000px;
   margin: 0 auto;
 }
+
+/* ── Inline Search (Compass-style, inside listings column) ── */
+.listings-top {
+  background: #ffffff;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-subtle);
+  padding: 1.2rem 1.4rem;
+  margin-bottom: 1.2rem;
+  box-shadow: var(--shadow-soft);
+}
+
+.listings-top-header {
+  margin-bottom: 1rem;
+}
+
+.listings-top-header .hero-title {
+  font-size: 1.5rem;
+  margin: 0 0 0.3rem;
+}
+
+.listings-top-header .hero-text {
+  font-size: 0.88rem;
+  color: var(--muted);
+  margin: 0;
+}
+
+.inline-search-form {
+  width: 100%;
+}
+
+.inline-search-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.inline-search-field {
+  flex: 1;
+  min-width: 110px;
+}
+
+.inline-search-field .input-field {
+  border-radius: 8px;
+  padding: 0.48rem 0.7rem;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 700px) {
+  .inline-search-row {
+    flex-direction: column;
+  }
+  .inline-search-field {
+    width: 100%;
+  }
+}
