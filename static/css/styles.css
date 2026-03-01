@@ -386,13 +386,15 @@ body.page {
 }
 
 .listings-column {
-  flex: 1.35;
+  flex: 0 0 420px;   /* fixed width, not growing */
+  width: 420px;
   overflow-y: auto;
-  padding: 20px;
+  padding: 16px;
+  border-right: 1px solid var(--border-subtle);
 }
 
 .map-column {
-  flex: 1;
+  flex: 1;           /* takes all remaining space */
   position: sticky;
   top: 0;
   height: 100%;
@@ -405,12 +407,14 @@ body.page {
     height: auto;
     overflow: visible;
   }
+  .listings-column {
+    flex: none;
+    width: 100%;
+    border-right: none;
+  }
   .map-column {
     height: 400px;
     order: -1;
-  }
-  .listings-column {
-    overflow-y: visible;
   }
 }
 
@@ -423,8 +427,8 @@ body.page {
 /* ── Listing Grid ─────────────────────────────────────────── */
 .listing-grid {
   display: grid;
-  gap: 1.3rem;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+  grid-template-columns: 1fr;  /* single column in narrow listings panel */
 }
 
 .listing-card {
@@ -838,4 +842,44 @@ body.page {
   .inline-search-field {
     width: 100%;
   }
+}
+
+/* ── Horizontal card layout for narrow listings panel ─────── */
+.listing-card {
+  flex-direction: row !important;
+  height: 110px;
+}
+
+.listing-image-wrap {
+  flex: 0 0 140px;
+  width: 140px;
+  padding-top: 0 !important;
+  height: 110px;
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+}
+
+.listing-image {
+  position: absolute;
+  border-radius: 0;
+}
+
+.listing-body {
+  flex: 1;
+  padding: 0.65rem 0.75rem !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.listing-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.listing-location {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
