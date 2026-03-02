@@ -17,10 +17,12 @@ BUY_TYPES = {
     "Residential", "Residential Income", "Single Family", "Townhome",
 }
 
+LEASE_TYPES = ["Residential Lease", "Commercial Lease"]
 
 # ─────────────────────────────────────────────
 # Auth
 # ─────────────────────────────────────────────
+
 
 class ColRealtyLoginView(LoginView):
     template_name = "pages/login.html"
@@ -78,14 +80,26 @@ def _build_rental_markers(qs):
 # ─────────────────────────────────────────────
 
 def home(request):
-    qs = Listing.objects.filter(status="active").order_by("-id")
-    paginator = Paginator(qs, 12)
-    page_obj = paginator.get_page(request.GET.get("page"))
+    new_listings = Listing.objects.filter(
+        status="active"
+    ).exclude(
+        property_type__in=LEASE_TYPES
+    ).order_by("-id")[:8]
+
+    recent_rentals = Listing.objects.filter(
+        status="active",
+        property_type__in=LEASE_TYPES
+    ).order_by("-id")[:8]
+
+    land_listings = Listing.objects.filter(
+        status="active",
+        property_type__in=["Land", "Farm"]
+    ).order_by("-id")[:8]
+
     return render(request, "pages/home.html", {
-        "listings":    page_obj,
-        "page_obj":    page_obj,
-        "paginator":   paginator,
-        "is_paginated": page_obj.has_other_pages(),
+        "new_listings":   new_listings,
+        "recent_rentals": recent_rentals,
+        "land_listings":  land_listings,
     })
 
 
