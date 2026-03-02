@@ -151,7 +151,7 @@
     const mapEl = document.getElementById("map");
     if (!mapEl) return;
     const fallback = { lat: 30.2672, lng: -97.7431 };
-    const map = new google.maps.Map(mapEl, { center: fallback, zoom: 11 });
+    const map = new google.maps.Map(mapEl, { center: fallback, zoom: 9 });
     const info = new google.maps.InfoWindow();
     const bounds = new google.maps.LatLngBounds();
     fetch("{% url 'listings:markers' %}" + window.location.search)
@@ -172,8 +172,7 @@
           });
         });
         if (hasAny) {
-          map.fitBounds(bounds);
-          google.maps.event.addListenerOnce(map, "bounds_changed", () => { if (map.getZoom() > 16) map.setZoom(16); });
+          if (map.getZoom() > 16) map.setZoom(16);
         }
       })
       .catch(err => console.error("Failed to load markers:", err));
