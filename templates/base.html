@@ -21,7 +21,7 @@
       .header-inner { display:flex !important; align-items:center !important; }
 
       /* Mega dropdown */
-      .main-nav { display:flex; align-items:center; gap:4px; }
+      .main-nav { display:flex; align-items:center; gap:0; justify-content:flex-end; } .main-nav > * { flex:1; text-align:center; }
       .nav-item { position:relative; }
       .nav-item .mega-drop {
         display:none; position:absolute; top:calc(100% + 12px); left:50%; transform:translateX(-50%);
@@ -164,12 +164,11 @@
                   </div>
                 </div>
 
-                <a href="{% url 'pages:propman' %}" class="nav-link">Property Management</a>
-                <a href="{% url 'pages:contact' %}" class="nav-link">Contact Us</a>
+                <a href="{% url 'pages:contact' %}" class="nav-link" style="white-space:nowrap;">Contact Us</a>
 
                 <!-- JOIN -->
                 <div class="nav-item has-dropdown drop-right">
-                  <a class="nav-link dropdown-toggle" href="{% url 'pages:login' %}">Join Us <span class="chevron">▾</span></a>
+                  <a class="nav-link dropdown-toggle" href="{% url 'pages:login' %}" style="white-space:nowrap;">Register / Sign In <span class="chevron">▾</span></a>
                   <div class="simple-drop">
                     <a href="{% url 'pages:login' %}">Sign In</a>
                     <a href="{% url 'pages:login' %}">Create Account</a>
