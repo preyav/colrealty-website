@@ -228,16 +228,13 @@
     }
 
     .simple-drop a {
-      display: flex;
-      align-items: center;
-      padding: 12px 14px;
+      display: block;
+      padding: 9px 14px;
       font-size: 13px;
-      font-weight: 400;
-      color: #111;
+      color: #333;
       text-decoration: none;
-      border-radius: 10px;
+      border-radius: 7px;
       transition: background .12s;
-      font-family: inherit;
     }
 
     .simple-drop a:hover {
@@ -323,9 +320,9 @@
           <a class="nav-link dropdown-toggle" href="{% url 'pages:login' %}" style="white-space:nowrap;">Register/Sign
             In <span class="chevron">▾</span></a>
           <div class="simple-drop">
-            <a href="{% url 'pages:login' %}">Sign In</a>
-            <a href="{% url 'pages:login' %}">Create Account</a>
-            <a href="{% url 'pages:joinus' %}">Join as Agent</a>
+            <a href="{% url 'pages:login' %}" style="font-weight:400;">Sign In</a>
+            <a href="{% url 'pages:login' %}" style="font-weight:400;">Create Account</a>
+            <a href="{% url 'pages:joinus' %}" style="font-weight:400;">Join as Agent</a>
           </div>
         </div>
       </nav>
