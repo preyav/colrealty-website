@@ -387,13 +387,13 @@
 <div class="hp-hero">
   <div class="hp-hero-inner">
     <div class="hp-tabs">
-      <a href="{% url 'listings:list' %}" class="hp-tab active">Buy</a>
+      <a href="{% url 'listings:listing_list' %}" class="hp-tab active">Buy</a>
       <a href="#" class="hp-tab">Mortgage</a>
       <a href="{% url 'pages:sell' %}" class="hp-tab">Sell</a>
       <a href="{% url 'rentals:list' %}" class="hp-tab">Rent</a>
       <a href="#" class="hp-tab">My Home Value</a>
     </div>
-    <form class="hp-search-box" action="{% url 'listings:list' %}" method="get">
+    <form class="hp-search-box" action="{% url 'listings:listing_list' %}" method="get">
       <input class="hp-search-input" type="text" name="q" placeholder="City, Address, School, Agent, ZIP">
       <button type="submit" class="hp-search-btn">
         <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round">
@@ -409,7 +409,7 @@
 
   <!-- Feature blocks -->
   <div class="hp-features">
-    <a class="hp-feat-card" href="{% url 'listings:list' %}">
+    <a class="hp-feat-card" href="{% url 'listings:listing_list' %}">
       <div class="hp-feat-icon">🏠</div>
       <div class="hp-feat-title">Buy a Home</div>
       <div class="hp-feat-desc">Find your perfect home in Austin & Central Texas with our live MLS listings.</div>
@@ -451,12 +451,12 @@
   <div class="hp-feed-header">
     <h2 class="hp-feed-title">Feed</h2>
     <div class="hp-feed-pills">
-      <a href="{% url 'listings:list' %}" class="hp-pill active">All</a>
-      <a href="{% url 'listings:list' %}" class="hp-pill">New</a>
-      <a href="{% url 'listings:list' %}?property_type=Residential" class="hp-pill">Residential</a>
-      <a href="{% url 'listings:list' %}?property_type=Condo" class="hp-pill">Condo</a>
-      <a href="{% url 'listings:list' %}?property_type=Land" class="hp-pill">Land</a>
-      <a href="{% url 'listings:list' %}?property_type=Farm" class="hp-pill">Farm</a>
+      <a href="{% url 'listings:listing_list' %}" class="hp-pill active">All</a>
+      <a href="{% url 'listings:listing_list' %}" class="hp-pill">New</a>
+      <a href="{% url 'listings:listing_list' %}?property_type=Residential" class="hp-pill">Residential</a>
+      <a href="{% url 'listings:listing_list' %}?property_type=Condo" class="hp-pill">Condo</a>
+      <a href="{% url 'listings:listing_list' %}?property_type=Land" class="hp-pill">Land</a>
+      <a href="{% url 'listings:listing_list' %}?property_type=Farm" class="hp-pill">Farm</a>
       <a href="{% url 'rentals:list' %}" class="hp-pill">Rentals</a>
     </div>
   </div>
@@ -465,7 +465,7 @@
   <div class="hp-section">
     <div class="hp-section-head">
       <h3 class="hp-section-title">New Listings</h3>
-      <a href="{% url 'listings:list' %}" class="hp-section-link">See all →</a>
+      <a href="{% url 'listings:listing_list' %}" class="hp-section-link">See all →</a>
     </div>
     <div class="hp-grid">
       {% for l in new_listings %}
@@ -520,7 +520,7 @@
   <div class="hp-section">
     <div class="hp-section-head">
       <h3 class="hp-section-title">Land & Farms</h3>
-      <a href="{% url 'listings:list' %}?property_type=Land" class="hp-section-link">See all →</a>
+      <a href="{% url 'listings:listing_list' %}?property_type=Land" class="hp-section-link">See all →</a>
     </div>
     <div class="hp-grid">
       {% for l in land_listings %}
