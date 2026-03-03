@@ -11,6 +11,8 @@ urlpatterns = [
     path("listings/", include(("listings.urls", "listings"), namespace="listings")),
     path("rentals/",  include("rentals.urls")),
     path("leads/",    include("leads.urls")),
+    path("accounts/", include("accounts.urls")),
+    path("accounts/", include("allauth.urls")),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
