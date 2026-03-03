@@ -2,338 +2,202 @@
 {% load humanize %}
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}Col Realty{% endblock %}</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
-    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <style>
-    .header-search {
-      flex: 1;
-      max-width: 420px;
-      margin: 0 24px;
-      position: relative;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Col Realty{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+      .header-search { flex:1; max-width:420px; margin:0 24px; position:relative; }
+      .header-search form { display:flex; align-items:center; background:#f5f5f5; border:1px solid #e8e8e8; border-radius:100px; padding:0 16px; height:40px; transition:border-color .15s,box-shadow .15s; }
+      .header-search form:focus-within { border-color:#aaa; box-shadow:0 0 0 3px rgba(0,0,0,.06); background:#fff; }
+      .header-search .search-icon { color:#888; font-size:14px; margin-right:8px; flex-shrink:0; }
+      .header-search input { border:none; background:transparent; outline:none; font-size:13px; color:#111; width:100%; font-family:inherit; }
+      .header-search input::placeholder { color:#aaa; }
+      .header-search button { background:none; border:none; padding:0; cursor:pointer; color:#888; font-size:13px; flex-shrink:0; display:none; }
+      .header-search form:focus-within button { display:block; }
+      .header-inner { display:flex !important; align-items:center !important; }
 
-    .header-search form {
-      display: flex;
-      align-items: center;
-      background: #f5f5f5;
-      border: 1px solid #e8e8e8;
-      border-radius: 100px;
-      padding: 0 16px;
-      height: 40px;
-      transition: border-color .15s, box-shadow .15s;
-    }
-
-    .header-search form:focus-within {
-      border-color: #aaa;
-      box-shadow: 0 0 0 3px rgba(0, 0, 0, .06);
-      background: #fff;
-    }
-
-    .header-search .search-icon {
-      color: #888;
-      font-size: 14px;
-      margin-right: 8px;
-      flex-shrink: 0;
-    }
-
-    .header-search input {
-      border: none;
-      background: transparent;
-      outline: none;
-      font-size: 13px;
-      color: #111;
-      width: 100%;
-      font-family: inherit;
-    }
-
-    .header-search input::placeholder {
-      color: #aaa;
-    }
-
-    .header-search button {
-      background: none;
-      border: none;
-      padding: 0;
-      cursor: pointer;
-      color: #888;
-      font-size: 13px;
-      flex-shrink: 0;
-      display: none;
-    }
-
-    .header-search form:focus-within button {
-      display: block;
-    }
-
-    .header-inner {
-      display: flex !important;
-      align-items: center !important;
-    }
-
-    /* Mega dropdown */
-    .main-nav {
-      display: flex;
-      align-items: center;
-      gap: 24px;
-      justify-content: flex-end;
-    }
-
-    .main-nav>* {
-      white-space: nowrap;
-    }
-
-    .nav-item {
-      position: relative;
-    }
-
-    .nav-item .mega-drop {
-      display: none;
-      position: absolute;
-      top: calc(100% + 1px);
-      left: 50%;
-      transform: translateX(-50%);
-      background: #fff;
-      border-radius: 14px;
-      box-shadow: 0 8px 40px rgba(0, 0, 0, .14);
-      padding: 24px;
-      min-width: 560px;
-      z-index: 200;
-      border: 1px solid #ebebeb;
-    }
-
-    .nav-item.drop-right .mega-drop {
-      left: auto;
-      right: 0;
-      transform: none;
-      min-width: 200px;
-    }
-
-    .nav-item:hover .mega-drop,
-    .nav-item:focus-within .mega-drop {
-      display: block;
-    }
-
-    .mega-drop::before {
-      content: '';
-      position: absolute;
-      top: -7px;
-      left: 50%;
-      transform: translateX(-50%);
-      border-left: 7px solid transparent;
-      border-right: 7px solid transparent;
-      border-bottom: 7px solid #fff;
-      filter: drop-shadow(0 -2px 2px rgba(0, 0, 0, .06));
-    }
-
-    .nav-item.drop-right .mega-drop::before {
-      left: auto;
-      right: 28px;
-      transform: none;
-    }
-
-    .mega-drop-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-    }
-
-    .mega-drop-single {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .mega-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      padding: 12px 14px;
-      border-radius: 10px;
-      text-decoration: none;
-      color: #111;
-      transition: background .12s;
-    }
-
-    .mega-item:hover {
-      background: #f5f5f5;
-      color: #111;
-    }
-
-    .mega-item-icon {
-      width: 38px;
-      height: 38px;
-      border-radius: 9px;
-      background: #f0f0f0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      flex-shrink: 0;
-    }
-
-    .mega-item-title {
-      font-size: 13px;
-      font-weight: 700;
-      color: #111;
-      line-height: 1.2;
-      margin-bottom: 2px;
-    }
-
-    .mega-item-desc {
-      font-size: 11px;
-      color: #888;
-      line-height: 1.4;
-    }
-
-    .mega-drop-divider {
-      border: none;
-      border-top: 1px solid #f0f0f0;
-      margin: 10px 0;
-    }
-
-    .mega-drop-label {
-      font-size: 10px;
-      font-weight: 700;
-      color: #aaa;
-      text-transform: uppercase;
-      letter-spacing: .08em;
-      padding: 0 14px 8px;
-      display: block;
-    }
-
-    .simple-drop {
-      display: none;
-      position: absolute;
-      top: calc(100% + 1px);
-      right: 0;
-      background: #fff;
-      border-radius: 10px;
-      box-shadow: 0 8px 30px rgba(0, 0, 0, .12);
-      padding: 8px;
-      min-width: 180px;
-      z-index: 200;
-      border: 1px solid #ebebeb;
-    }
-
-    .nav-item:hover .simple-drop,
-    .nav-item:focus-within .simple-drop {
-      display: block;
-    }
-
-    .simple-drop a {
-      display: block;
-      padding: 9px 14px;
-      font-size: 13px;
-      color: #333;
-      text-decoration: none;
-      border-radius: 7px;
-      transition: background .12s;
-    }
-
-    .simple-drop a:hover {
-      background: #f5f5f5;
-      color: #111;
-    }
-  </style>
+      /* Mega dropdown */
+      .main-nav { display:flex; align-items:center; gap:24px; justify-content:flex-end; }
+      .main-nav > * { white-space:nowrap; }
+      .nav-item { position:relative; }
+      .nav-item .mega-drop {
+        display:none; position:absolute; top:calc(100% + 1px); left:50%; transform:translateX(-50%);
+        background:#fff; border-radius:14px; box-shadow:0 8px 40px rgba(0,0,0,.14);
+        padding:24px; min-width:220px; z-index:200; border:1px solid #ebebeb;
+      }
+      .nav-item.drop-right .mega-drop { left:auto; right:0; transform:none; }
+      .nav-item:hover .mega-drop, .nav-item:focus-within .mega-drop { display:block; }
+      .mega-drop::before { content:''; position:absolute; top:-7px; left:50%; transform:translateX(-50%); border-left:7px solid transparent; border-right:7px solid transparent; border-bottom:7px solid #fff; filter:drop-shadow(0 -2px 2px rgba(0,0,0,.06)); }
+      .nav-item.drop-right .mega-drop::before { left:auto; right:28px; transform:none; }
+      .mega-drop-single { display:flex; flex-direction:column; gap:4px; }
+      .mega-item { display:flex; align-items:center; padding:10px 14px; border-radius:10px; text-decoration:none; color:#111; font-size:13px; font-weight:400; transition:background .12s; }
+      .mega-item:hover { background:#f5f5f5; color:#111; }
+      .simple-drop { display:none; position:absolute; top:calc(100% + 1px); right:0; background:#fff; border-radius:10px; box-shadow:0 8px 30px rgba(0,0,0,.12); padding:8px; min-width:200px; z-index:200; border:1px solid #ebebeb; }
+      .nav-item:hover .simple-drop, .nav-item:focus-within .simple-drop { display:block; }
+      .simple-drop a { display:flex; align-items:center; padding:10px 14px; font-size:13px; font-weight:400; color:#111; text-decoration:none; border-radius:7px; transition:background .12s; }
+      .simple-drop a:hover { background:#f5f5f5; color:#111; }
+      .simple-drop hr { margin:6px 0; border:none; border-top:1px solid #f0f0f0; }
+    </style>
   {% block extra_head %}{% endblock %}
 </head>
-
 <body class="page d-flex flex-column min-vh-100">
-  <header class="site-header">
-    <div class="container header-inner">
-      <a href="/" class="brand">
-        <span class="brand-mark">CR</span>
-        <span class="brand-text">
-          <span class="brand-name">Col Realty</span>
-          <span class="brand-tagline">Realestate Redefined</span>
-        </span>
-      </a>
+    <header class="site-header">
+        <div class="container header-inner">
+            <a href="/" class="brand">
+                <span class="brand-mark">CR</span>
+                <span class="brand-text">
+                    <span class="brand-name">Col Realty</span>
+                    <span class="brand-tagline">Realestate Redefined</span>
+                </span>
+            </a>
 
-      <div class="header-search">
-        <form action="/listings/" method="get">
-          <i class="fas fa-search search-icon"></i>
-          <input type="text" name="q" placeholder="Search by city, zip, address..."
-            value="{{ request.GET.q|default:'' }}" autocomplete="off" />
-          <button type="submit"><i class="fas fa-arrow-right"></i></button>
-        </form>
+            <div class="header-search">
+                <form action="/listings/" method="get">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" name="q" placeholder="Search by city, zip, address..." value="{{ request.GET.q|default:'' }}" autocomplete="off"/>
+                    <button type="submit"><i class="fas fa-arrow-right"></i></button>
+                </form>
+            </div>
+
+            <nav class="main-nav">
+                <a href="{% url 'pages:home' %}" class="nav-link">Home</a>
+
+                <!-- BUY -->
+                <div class="nav-item has-dropdown">
+                  <a class="nav-link dropdown-toggle" href="/listings/">Buy <span class="chevron">▾</span></a>
+                  <div class="mega-drop">
+                    <div class="mega-drop-single">
+                      <a class="mega-item" href="/listings/">All Homes</a>
+                      <a class="mega-item" href="/listings/?property_type=Residential">Residential</a>
+                      <a class="mega-item" href="/listings/?property_type=Condo">Condos & Townhomes</a>
+                      <a class="mega-item" href="/listings/?property_type=Land">Land & Lots</a>
+                      <a class="mega-item" href="/listings/?property_type=Farm">Farms & Ranches</a>
+                      <a class="mega-item" href="/listings/?property_type=Commercial+Sale">Commercial</a>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- SELL -->
+                <div class="nav-item has-dropdown">
+                  <a class="nav-link dropdown-toggle" href="{% url 'pages:sell' %}">Sell <span class="chevron">▾</span></a>
+                  <div class="mega-drop">
+                    <div class="mega-drop-single">
+                      <a class="mega-item" href="{% url 'pages:sell_valuation' %}">Home Valuation</a>
+                      <a class="mega-item" href="{% url 'pages:sell_marketing' %}">Marketing Your Home</a>
+                      <a class="mega-item" href="{% url 'pages:sell_concierge' %}">Concierge Service</a>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- RENT -->
+                <div class="nav-item has-dropdown">
+                  <a class="nav-link dropdown-toggle" href="/rentals/">Rent <span class="chevron">▾</span></a>
+                  <div class="mega-drop">
+                    <div class="mega-drop-single">
+                      <a class="mega-item" href="/rentals/">All Rentals</a>
+                      <a class="mega-item" href="/rentals/?property_type=Residential+Lease">Residential Lease</a>
+                      <a class="mega-item" href="/rentals/?property_type=Commercial+Lease">Commercial Lease</a>
+                      <a class="mega-item" href="{% url 'pages:rent_marketing' %}">List Your Rental</a>
+                    </div>
+                  </div>
+                </div>
+
+                <a href="{% url 'pages:contact' %}" class="nav-link" style="white-space:nowrap;">Contact Us</a>
+
+                <!-- USER MENU -->
+                {% if request.user.is_authenticated %}
+                <div class="nav-item has-dropdown drop-right">
+                  <a class="nav-link dropdown-toggle" href="{% url 'accounts:overview' %}" style="white-space:nowrap;display:flex;align-items:center;gap:6px;">
+                    <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#ff6b3d;color:#fff;font-size:12px;font-weight:700;">{{ request.user.first_name|default:request.user.email|slice:":1"|upper }}</span>
+                    {{ request.user.first_name|default:request.user.email }} <span class="chevron">▾</span>
+                  </a>
+                  <div class="simple-drop">
+                    <a href="{% url 'accounts:overview' %}">Overview</a>
+                    <a href="{% url 'accounts:favorites' %}">Favorites</a>
+                    <a href="{% url 'accounts:saved_searches' %}">Saved Searches</a>
+                    <hr>
+                    <a href="{% url 'accounts:settings' %}">Account Settings</a>
+                    <hr>
+                    <a href="{% url 'accounts:sign_out' %}">Sign Out</a>
+                  </div>
+                </div>
+                {% else %}
+                <a class="nav-link" href="#" onclick="document.getElementById('login-modal').style.display='flex';return false;" style="white-space:nowrap;">Register/Sign In</a>
+                {% endif %}
+            </nav>
+        </div>
+    </header>
+
+    <main class="page-main">
+        <div class="container">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    {% include 'partials/_footer.html' %}
+
+    <!-- LOGIN MODAL -->
+    {% if not request.user.is_authenticated %}
+    <div id="login-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;align-items:center;justify-content:center;" onclick="if(event.target===this)this.style.display='none'">
+      <div style="background:#fff;border-radius:20px;padding:40px 36px;width:100%;max-width:440px;position:relative;text-align:center;max-height:90vh;overflow-y:auto;">
+        <button onclick="document.getElementById('login-modal').style.display='none'" style="position:absolute;top:16px;right:20px;background:none;border:none;font-size:24px;cursor:pointer;color:#888;line-height:1;">×</button>
+
+        <!-- Step 1: Choose role -->
+        <div id="modal-step-1">
+          <div style="width:80px;height:80px;margin:0 auto 20px;background:#f5f5f5;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px;">🏠</div>
+          <h2 style="font-size:22px;font-weight:700;margin-bottom:8px;">Register/Sign In</h2>
+          <p style="font-size:13px;color:#888;margin-bottom:28px;">How would you like to use Col Realty?</p>
+          <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px;">
+            <button onclick="selectRole('agent')" style="padding:14px;border:1px solid #ddd;border-radius:10px;background:#fff;font-size:15px;font-weight:600;cursor:pointer;transition:all .15s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='#fff'">Agent</button>
+            <button onclick="selectRole('buyer_seller')" style="padding:14px;border:1px solid #ddd;border-radius:10px;background:#fff;font-size:15px;font-weight:600;cursor:pointer;transition:all .15s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='#fff'">Buyer or Seller</button>
+            <button onclick="selectRole('other')" style="padding:14px;border:1px solid #ddd;border-radius:10px;background:#fff;font-size:15px;font-weight:600;cursor:pointer;transition:all .15s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='#fff'">Other</button>
+          </div>
+          <p style="font-size:11px;color:#aaa;">By continuing, you agree to Col Realty's Terms of Service & Privacy Policy</p>
+        </div>
+
+        <!-- Step 2: Sign in options -->
+        <div id="modal-step-2" style="display:none;">
+          <h2 style="font-size:22px;font-weight:700;margin-bottom:8px;">Sign In</h2>
+          <p id="modal-role-label" style="font-size:13px;color:#888;margin-bottom:24px;"></p>
+          <input type="hidden" id="selected-role" value="">
+
+          <a id="google-login-btn" href="/accounts/google/login/?next=/accounts/overview/" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:13px;border:1px solid #ddd;border-radius:10px;text-decoration:none;color:#111;font-size:14px;font-weight:500;margin-bottom:10px;transition:background .15s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" height="20"> Continue with Google
+          </a>
+          <a href="/accounts/facebook/login/?next=/accounts/overview/" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:13px;border:1px solid #ddd;border-radius:10px;text-decoration:none;color:#fff;background:#1877f2;font-size:14px;font-weight:500;margin-bottom:20px;">
+            <i class="fab fa-facebook" style="font-size:18px;"></i> Continue with Facebook
+          </a>
+
+          <div style="position:relative;margin:16px 0;"><hr style="border:none;border-top:1px solid #e5e7eb;"><span style="position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:#fff;padding:0 10px;font-size:12px;color:#aaa;">or</span></div>
+
+          <form method="post" action="/accounts/login/">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="/accounts/overview/">
+            <input name="login" type="email" placeholder="Email address" style="width:100%;border:1px solid #ddd;border-radius:10px;padding:12px 14px;font-size:14px;margin-bottom:10px;outline:none;box-sizing:border-box;">
+            <input name="password" type="password" placeholder="Password" style="width:100%;border:1px solid #ddd;border-radius:10px;padding:12px 14px;font-size:14px;margin-bottom:16px;outline:none;box-sizing:border-box;">
+            <button type="submit" style="width:100%;background:#ff6b3d;color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;">Sign In</button>
+          </form>
+          <button onclick="document.getElementById('modal-step-1').style.display='block';document.getElementById('modal-step-2').style.display='none';" style="background:none;border:none;color:#888;font-size:13px;margin-top:14px;cursor:pointer;">← Back</button>
+        </div>
       </div>
-
-      <nav class="main-nav">
-        <a href="{% url 'pages:home' %}" class="nav-link">Home</a>
-
-        <!-- BUY -->
-        <div class="nav-item has-dropdown">
-          <a class="nav-link dropdown-toggle" href="/listings/">Buy <span class="chevron">▾</span></a>
-          <div class="mega-drop" style="min-width:220px;">
-            <div class="mega-drop-single">
-              <a class="mega-item" href="/listings/" style="font-weight:400;">All Homes</a>
-              <a class="mega-item" href="/listings/?property_type=Residential" style="font-weight:400;">Residential</a>
-              <a class="mega-item" href="/listings/?property_type=Condo" style="font-weight:400;">Condos & Townhomes</a>
-              <a class="mega-item" href="/listings/?property_type=Land" style="font-weight:400;">Land & Lots</a>
-              <a class="mega-item" href="/listings/?property_type=Farm" style="font-weight:400;">Farms & Ranches</a>
-              <a class="mega-item" href="/listings/?property_type=Commercial+Sale"
-                style="font-weight:400;">Commercial</a>
-            </div>
-          </div>
-        </div>
-
-        <!-- SELL -->
-        <div class="nav-item has-dropdown">
-          <a class="nav-link dropdown-toggle" href="{% url 'pages:sell' %}">Sell <span class="chevron">▾</span></a>
-          <div class="mega-drop" style="min-width:220px;">
-            <div class="mega-drop-single">
-              <a class="mega-item" href="{% url 'pages:sell_valuation' %}" style="font-weight:400;">Home Valuation</a>
-              <a class="mega-item" href="{% url 'pages:sell_marketing' %}" style="font-weight:400;">Marketing Your
-                Home</a>
-            </div>
-          </div>
-        </div>
-
-        <!-- RENT -->
-        <div class="nav-item has-dropdown">
-          <a class="nav-link dropdown-toggle" href="/rentals/">Rent <span class="chevron">▾</span></a>
-          <div class="mega-drop" style="min-width:220px;">
-            <div class="mega-drop-single">
-              <a class="mega-item" href="/rentals/" style="font-weight:400;">All Rentals</a>
-              <a class="mega-item" href="/rentals/?property_type=Residential+Lease" style="font-weight:400;">Residential
-                Lease</a>
-              <a class="mega-item" href="/rentals/?property_type=Commercial+Lease" style="font-weight:400;">Commercial
-                Lease</a>
-            </div>
-          </div>
-        </div>
-
-        <a href="{% url 'pages:contact' %}" class="nav-link" style="white-space:nowrap;">Contact Us</a>
-
-        <!-- JOIN -->
-        <div class="nav-item has-dropdown drop-right">
-          <a class="nav-link dropdown-toggle" href="{% url 'pages:login' %}" style="white-space:nowrap;">Register/Sign
-            In <span class="chevron">▾</span></a>
-          <div class="simple-drop">
-            <a class="mega-item" href="{% url 'pages:login' %}" style="font-weight:400;">Sign In</a>
-            <a class="mega-item" href="{% url 'pages:login' %}" style="font-weight:400;">Create Account</a>
-            <a class="mega-item" href="{% url 'pages:joinus' %}" style="font-weight:400;">Join as Agent</a>
-          </div>
-        </div>
-      </nav>
     </div>
-  </header>
+    <script>
+    function selectRole(role) {
+      document.getElementById('selected-role').value = role;
+      const labels = {'agent': 'Signing in as an Agent', 'buyer_seller': 'Signing in as a Buyer or Seller', 'other': 'Signing in'};
+      document.getElementById('modal-role-label').textContent = labels[role] || 'Signing in';
+      const next = '/accounts/select-type/?role=' + role;
+      document.getElementById('google-login-btn').href = '/accounts/google/login/?next=' + encodeURIComponent(next);
+      document.getElementById('modal-step-1').style.display = 'none';
+      document.getElementById('modal-step-2').style.display = 'block';
+    }
+    </script>
+    {% endif %}
 
-  <main class="page-main">
-    <div class="container">
-      {% block content %}{% endblock %}
-    </div>
-  </main>
-
-  {% include 'partials/_footer.html' %}
-  {% block extra_js %}{% endblock %}
+    {% block extra_js %}{% endblock %}
 </body>
-
 </html>
