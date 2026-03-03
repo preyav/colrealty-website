@@ -151,7 +151,7 @@
     const mapEl = document.getElementById("map");
     if (!mapEl) return;
     const fallback = { lat: 30.2672, lng: -97.7431 };
-    const map = new google.maps.Map(mapEl, { center: fallback, zoom: 11 });
+    const map = new google.maps.Map(mapEl, { center: fallback, zoom: 9 });
     const info = new google.maps.InfoWindow();
     const bounds = new google.maps.LatLngBounds();
     fetch("{% url 'rentals:markers' %}" + window.location.search)

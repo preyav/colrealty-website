@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Overview | Col Realty{% endblock %}
+{% block content %}
+<style>
+.ov-wrap { max-width:1100px; margin:0 auto; padding:32px 24px; }
+.ov-tabs { display:flex; border-bottom:1px solid #e5e7eb; margin-bottom:32px; }
+.ov-tab { padding:12px 24px; font-size:14px; font-weight:500; color:#888; text-decoration:none; border-bottom:2px solid transparent; margin-bottom:-1px; transition:all .15s; }
+.ov-tab.active, .ov-tab:hover { color:#111; border-bottom-color:#111; }
+.ov-greeting-date { font-size:13px; color:#888; margin-bottom:4px; }
+.ov-greeting { font-size:28px; font-weight:700; color:#111; margin-bottom:32px; }
+.ov-section { background:#fff; border-radius:14px; border:1px solid #e5e7eb; padding:24px; margin-bottom:24px; }
+.ov-section-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+.ov-section-title { font-size:18px; font-weight:700; color:#111; margin:0; }
+.ov-view-btn { font-size:13px; color:#111; border:1px solid #ddd; border-radius:8px; padding:6px 16px; text-decoration:none; transition:background .12s; }
+.ov-view-btn:hover { background:#f5f5f5; color:#111; }
+.ov-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:16px; }
+.ov-card { border-radius:10px; overflow:hidden; border:1px solid #e5e7eb; text-decoration:none; color:inherit; transition:box-shadow .15s; display:block; }
+.ov-card:hover { box-shadow:0 4px 16px rgba(0,0,0,.1); }
+.ov-card-img { height:140px; background:#f0f0f0; overflow:hidden; }
+.ov-card-img img { width:100%; height:100%; object-fit:cover; }
+.ov-card-body { padding:10px 12px; }
+.ov-card-price { font-size:15px; font-weight:700; color:#111; margin:0 0 2px; }
+.ov-card-addr { font-size:11px; color:#888; margin:0; }
+.ov-search-item { display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid #f0f0f0; }
+.ov-search-item:last-child { border-bottom:none; }
+.ov-search-name { font-size:14px; font-weight:500; color:#111; text-decoration:none; }
+.ov-search-name:hover { text-decoration:underline; }
+.ov-search-date { font-size:12px; color:#aaa; }
+.ov-empty { color:#aaa; font-size:14px; text-align:center; padding:24px 0; }
+</style>
+<div class="ov-wrap">
+  <div class="ov-tabs">
+    <a class="ov-tab active" href="{% url 'accounts:overview' %}">Overview</a>
+    <a class="ov-tab" href="{% url 'accounts:favorites' %}">Favorites</a>
+    <a class="ov-tab" href="{% url 'accounts:saved_searches' %}">Saved Searches</a>
+    <a class="ov-tab" href="{% url 'accounts:settings' %}">Account Settings</a>
+  </div>
+  <div class="ov-greeting-date">{% now "D, M j" %}</div>
+  <div class="ov-greeting">{{ greeting }}, {{ request.user.first_name|default:request.user.email }}</div>
+  <div class="ov-section">
+    <div class="ov-section-head">
+      <h2 class="ov-section-title">Favorites</h2>
+      <a class="ov-view-btn" href="{% url 'accounts:favorites' %}">View</a>
+    </div>
+    {% if favorites %}
+    <div class="ov-grid">
+      {% for fav in favorites %}
+      <a class="ov-card" href="{% url 'listings:listing_detail' fav.listing.id %}">
+        <div class="ov-card-img">{% if fav.listing.main_image_url %}<img src="{{ fav.listing.main_image_url }}" alt="">{% endif %}</div>
+        <div class="ov-card-body">
+          <p class="ov-card-price">${{ fav.listing.price|floatformat:0|intcomma }}</p>
+          <p class="ov-card-addr">{{ fav.listing.street_address }}, {{ fav.listing.city }}</p>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="ov-empty">No favorites yet. <a href="/listings/">Browse homes →</a></p>
+    {% endif %}
+  </div>
+  <div class="ov-section">
+    <div class="ov-section-head">
+      <h2 class="ov-section-title">Saved Searches</h2>
+      <a class="ov-view-btn" href="{% url 'accounts:saved_searches' %}">View</a>
+    </div>
+    {% if saved_searches %}
+      {% for s in saved_searches %}
+      <div class="ov-search-item">
+        <a class="ov-search-name" href="{{ s.query_url }}">{{ s.name }}</a>
+        <span class="ov-search-date">{{ s.created_at|naturalday }}</span>
+      </div>
+      {% endfor %}
+    {% else %}
+    <p class="ov-empty">No saved searches yet. <a href="/listings/">Start searching →</a></p>
+    {% endif %}
+  </div>
+  <div class="ov-section">
+    <div class="ov-section-head">
+      <h2 class="ov-section-title">Recently Viewed</h2>
+    </div>
+    {% if recently_viewed %}
+    <div class="ov-grid">
+      {% for rv in recently_viewed %}
+      <a class="ov-card" href="{% url 'listings:listing_detail' rv.listing.id %}">
+        <div class="ov-card-img">{% if rv.listing.main_image_url %}<img src="{{ rv.listing.main_image_url }}" alt="">{% endif %}</div>
+        <div class="ov-card-body">
+          <p class="ov-card-price">${{ rv.listing.price|floatformat:0|intcomma }}</p>
+          <p class="ov-card-addr">{{ rv.listing.street_address }}, {{ rv.listing.city }}</p>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="ov-empty">No recently viewed homes.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

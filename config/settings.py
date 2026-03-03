@@ -105,6 +105,14 @@ if not DEBUG:
 # ─────────────────────────────────────────────────────────────────────────────
 
 INSTALLED_APPS = [
+    "accounts", 
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "allauth.socialaccount.providers.google",
+    "allauth.socialaccount.providers.facebook",
+    "allauth.socialaccount.providers.apple",
+    "django_celery_results",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -112,13 +120,13 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.humanize",
+    "django.contrib.sites",
     "listings",
     "rentals",
     "pages",
     "leads",
     "mls_sync",
-    "portal",
-    "django_celery_results",
+    "portal", 
 ]
 
 
@@ -127,6 +135,7 @@ INSTALLED_APPS = [
 # ─────────────────────────────────────────────────────────────────────────────
 
 MIDDLEWARE = [
+    "allauth.account.middleware.AccountMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -334,3 +343,16 @@ CELERY_TASK_QUEUES = (
     Queue("default"),
     Queue("hubspot"),
 )
+
+SITE_ID = 1
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthenticationBackend",
+]
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_AUTHENTICATION_METHOD = "email"
+ACCOUNT_EMAIL_VERIFICATION = "optional"
+LOGIN_REDIRECT_URL = "/accounts/overview/"
+LOGOUT_REDIRECT_URL = "/"
+SOCIALACCOUNT_AUTO_SIGNUP = True

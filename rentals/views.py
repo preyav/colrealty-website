@@ -33,11 +33,11 @@ def _to_decimal(val: str):
 
 
 def apply_rental_filters(qs, params: dict):
-    q             = (params.get("q")             or "").strip()
-    rent_min      = (params.get("rent_min")      or "").strip()
-    rent_max      = (params.get("rent_max")      or "").strip()
-    beds_min      = (params.get("beds_min")      or "").strip()
-    baths_min     = (params.get("baths_min")     or "").strip()
+    q = (params.get("q") or "").strip()
+    rent_min = (params.get("rent_min") or "").strip()
+    rent_max = (params.get("rent_max") or "").strip()
+    beds_min = (params.get("beds_min") or "").strip()
+    baths_min = (params.get("baths_min") or "").strip()
     property_type = (params.get("property_type") or "").strip()
 
     if q:
@@ -77,11 +77,12 @@ def apply_rental_filters(qs, params: dict):
 # ─────────────────────────────────────────────
 
 def rental_list(request):
-    qs = Listing.objects.filter(status="active", property_type__in=LEASE_TYPES).order_by("-id")
+    qs = Listing.objects.filter(
+        status="active", property_type__in=LEASE_TYPES).order_by("-id")
     qs = apply_rental_filters(qs, request.GET)
 
-    paginator = Paginator(qs, 12)
-    page_obj  = paginator.get_page(request.GET.get("page"))
+    paginator = Paginator(qs, 42)
+    page_obj = paginator.get_page(request.GET.get("page"))
 
     params = request.GET.copy()
     params.pop("page", None)
@@ -104,7 +105,8 @@ def rental_list(request):
 
 
 def rental_detail(request, pk):
-    rental = get_object_or_404(Listing, pk=pk, status="active", property_type__in=LEASE_TYPES)
+    rental = get_object_or_404(
+        Listing, pk=pk, status="active", property_type__in=LEASE_TYPES)
     return render(request, "rentals/detail.html", {
         "rental":              rental,
         "GOOGLE_MAPS_API_KEY": settings.GOOGLE_MAPS_API_KEY,

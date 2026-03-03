@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Account Settings | Col Realty{% endblock %}
+{% block content %}
+<div style="max-width:700px;margin:0 auto;padding:32px 24px;">
+  <div style="display:flex;border-bottom:1px solid #e5e7eb;margin-bottom:32px;">
+    <a href="{% url 'accounts:overview' %}" style="padding:12px 24px;font-size:14px;font-weight:500;color:#888;text-decoration:none;border-bottom:2px solid transparent;margin-bottom:-1px;">Overview</a>
+    <a href="{% url 'accounts:favorites' %}" style="padding:12px 24px;font-size:14px;font-weight:500;color:#888;text-decoration:none;border-bottom:2px solid transparent;margin-bottom:-1px;">Favorites</a>
+    <a href="{% url 'accounts:saved_searches' %}" style="padding:12px 24px;font-size:14px;font-weight:500;color:#888;text-decoration:none;border-bottom:2px solid transparent;margin-bottom:-1px;">Saved Searches</a>
+    <a href="{% url 'accounts:settings' %}" style="padding:12px 24px;font-size:14px;font-weight:500;color:#111;text-decoration:none;border-bottom:2px solid #111;margin-bottom:-1px;">Account Settings</a>
+  </div>
+  <h1 style="font-size:24px;font-weight:700;margin-bottom:24px;">Account Settings</h1>
+  <div style="background:#fff;border-radius:14px;border:1px solid #e5e7eb;padding:28px;">
+    <form method="post">
+      {% csrf_token %}
+      <div style="margin-bottom:18px;">
+        <label style="font-size:13px;font-weight:600;color:#555;display:block;margin-bottom:6px;">First Name</label>
+        <input name="first_name" value="{{ request.user.first_name }}" style="width:100%;border:1px solid #ddd;border-radius:8px;padding:10px 14px;font-size:14px;outline:none;box-sizing:border-box;">
+      </div>
+      <div style="margin-bottom:18px;">
+        <label style="font-size:13px;font-weight:600;color:#555;display:block;margin-bottom:6px;">Last Name</label>
+        <input name="last_name" value="{{ request.user.last_name }}" style="width:100%;border:1px solid #ddd;border-radius:8px;padding:10px 14px;font-size:14px;outline:none;box-sizing:border-box;">
+      </div>
+      <div style="margin-bottom:18px;">
+        <label style="font-size:13px;font-weight:600;color:#555;display:block;margin-bottom:6px;">Email</label>
+        <input value="{{ request.user.email }}" disabled style="width:100%;border:1px solid #ddd;border-radius:8px;padding:10px 14px;font-size:14px;background:#f5f5f5;box-sizing:border-box;">
+      </div>
+      <div style="margin-bottom:24px;">
+        <label style="font-size:13px;font-weight:600;color:#555;display:block;margin-bottom:6px;">Phone</label>
+        <input name="phone" value="{{ profile.phone }}" style="width:100%;border:1px solid #ddd;border-radius:8px;padding:10px 14px;font-size:14px;outline:none;box-sizing:border-box;">
+      </div>
+      <button type="submit" style="background:#111;color:#fff;border:none;border-radius:8px;padding:11px 28px;font-size:14px;font-weight:600;cursor:pointer;">Save Changes</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

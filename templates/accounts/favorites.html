@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Favorites | Col Realty{% endblock %}
+{% block content %}
+<div style="max-width:1100px;margin:0 auto;padding:32px 24px;">
+  <div style="display:flex;border-bottom:1px solid #e5e7eb;margin-bottom:32px;">
+    <a href="{% url 'accounts:overview' %}" style="padding:12px 24px;font-size:14px;font-weight:500;color:#888;text-decoration:none;border-bottom:2px solid transparent;margin-bottom:-1px;">Overview</a>
+    <a href="{% url 'accounts:favorites' %}" style="padding:12px 24px;font-size:14px;font-weight:500;color:#111;text-decoration:none;border-bottom:2px solid #111;margin-bottom:-1px;">Favorites</a>
+    <a href="{% url 'accounts:saved_searches' %}" style="padding:12px 24px;font-size:14px;font-weight:500;color:#888;text-decoration:none;border-bottom:2px solid transparent;margin-bottom:-1px;">Saved Searches</a>
+    <a href="{% url 'accounts:settings' %}" style="padding:12px 24px;font-size:14px;font-weight:500;color:#888;text-decoration:none;border-bottom:2px solid transparent;margin-bottom:-1px;">Account Settings</a>
+  </div>
+  <h1 style="font-size:24px;font-weight:700;margin-bottom:24px;">Favorites</h1>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px;">
+    {% for fav in favorites %}
+    <a href="{% url 'listings:listing_detail' fav.listing.id %}" style="background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;text-decoration:none;color:inherit;display:block;transition:box-shadow .15s;" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,.1)'" onmouseout="this.style.boxShadow=''">
+      <div style="height:180px;overflow:hidden;background:#f0f0f0;">{% if fav.listing.main_image_url %}<img src="{{ fav.listing.main_image_url }}" style="width:100%;height:100%;object-fit:cover;">{% endif %}</div>
+      <div style="padding:14px;">
+        <div style="font-size:17px;font-weight:700;">${{ fav.listing.price|floatformat:0|intcomma }}</div>
+        <div style="font-size:13px;color:#888;">{{ fav.listing.street_address }}, {{ fav.listing.city }}</div>
+      </div>
+    </a>
+    {% empty %}
+    <p style="color:#888;">No favorites yet. <a href="/listings/">Browse homes →</a></p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

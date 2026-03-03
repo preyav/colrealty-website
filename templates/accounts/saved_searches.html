@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Saved Searches | Col Realty{% endblock %}
+{% block content %}
+<div style="max-width:700px;margin:0 auto;padding:32px 24px;">
+  <div style="display:flex;border-bottom:1px solid #e5e7eb;margin-bottom:32px;">
+    <a href="{% url 'accounts:overview' %}" style="padding:12px 24px;font-size:14px;font-weight:500;color:#888;text-decoration:none;border-bottom:2px solid transparent;margin-bottom:-1px;">Overview</a>
+    <a href="{% url 'accounts:favorites' %}" style="padding:12px 24px;font-size:14px;font-weight:500;color:#888;text-decoration:none;border-bottom:2px solid transparent;margin-bottom:-1px;">Favorites</a>
+    <a href="{% url 'accounts:saved_searches' %}" style="padding:12px 24px;font-size:14px;font-weight:500;color:#111;text-decoration:none;border-bottom:2px solid #111;margin-bottom:-1px;">Saved Searches</a>
+    <a href="{% url 'accounts:settings' %}" style="padding:12px 24px;font-size:14px;font-weight:500;color:#888;text-decoration:none;border-bottom:2px solid transparent;margin-bottom:-1px;">Account Settings</a>
+  </div>
+  <h1 style="font-size:24px;font-weight:700;margin-bottom:24px;">Saved Searches</h1>
+  <div style="background:#fff;border-radius:14px;border:1px solid #e5e7eb;padding:8px;">
+    {% for s in saved_searches %}
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #f0f0f0;">
+      <a href="{{ s.query_url }}" style="font-size:14px;font-weight:500;color:#111;text-decoration:none;">{{ s.name }}</a>
+      <span style="font-size:12px;color:#aaa;">{{ s.created_at|naturalday }}</span>
+    </div>
+    {% empty %}
+    <p style="padding:24px;color:#888;text-align:center;">No saved searches yet.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
