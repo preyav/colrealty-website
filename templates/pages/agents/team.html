@@ -1,0 +1,333 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Our Agents | Col Realty{% endblock %}
+
+{% block extra_head %}
+<style>
+  .agents-hero {
+    background: #fff;
+    border-bottom: 1px solid #ebebeb;
+    padding: 52px 0 44px;
+    text-align: center;
+  }
+
+  .agents-hero .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #ff6b3d;
+    letter-spacing: .8px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  .agents-hero h1 {
+    font-size: 38px;
+    font-weight: 800;
+    color: #111;
+    margin-bottom: 12px;
+    letter-spacing: -.5px;
+  }
+
+  .agents-hero p {
+    font-size: 15px;
+    color: #777;
+    max-width: 480px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  .agents-section {
+    padding: 52px 0 80px;
+    background: #f7f7f7;
+  }
+
+  .agents-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+
+  @media (max-width: 900px) {
+    .agents-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 580px) {
+    .agents-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .agent-card {
+    background: #fff;
+    border-radius: 16px;
+    border: 1px solid #ebebeb;
+    overflow: hidden;
+    transition: box-shadow .2s, transform .2s;
+  }
+
+  .agent-card:hover {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, .10);
+    transform: translateY(-4px);
+  }
+
+  .card-photo {
+    position: relative;
+    width: 100%;
+    background: #f7f7f7;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    min-height: 220px;
+  }
+
+  .card-photo img {
+    width: 180px;
+    height: 180px;
+    object-fit: cover;
+    object-position: center top;
+    border-radius: 50%;
+    border: 3px solid #e8e8e8;
+    transition: transform .35s, box-shadow .25s;
+  }
+
+  .agent-card:hover .card-photo img {
+    transform: scale(1.04);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, .12);
+  }
+
+  .avatar-fallback {
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #e4e4e4, #d0d0d0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid #e8e8e8;
+  }
+
+  .avatar-initials {
+    width: 80px;
+    height: 80px;
+    background: #111;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -1px;
+  }
+
+  .badge-role {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    background: #fff;
+    color: #111;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .8px;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid #ddd;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .08);
+  }
+
+  .badge-role.broker {
+    background: #111;
+    color: #fff;
+    border-color: #111;
+  }
+
+  .card-body-area {
+    padding: 20px 20px 0;
+  }
+
+  .card-body-area h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111;
+    margin-bottom: 2px;
+  }
+
+  .agent-role-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin-bottom: 4px;
+  }
+
+  .agent-location {
+    font-size: 13px;
+    color: #888;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 12px;
+  }
+
+  .agent-location i {
+    font-size: 11px;
+    color: #bbb;
+  }
+
+  .card-divider {
+    height: 1px;
+    background: #f0f0f0;
+    margin: 0 -20px;
+  }
+
+  .specialties {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 14px 0 0;
+  }
+
+  .tag {
+    background: #f5f5f5;
+    color: #333;
+    border: 1px solid #e0e0e0;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+
+  .card-footer-area {
+    padding: 16px 20px 20px;
+  }
+
+  .contact-row {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-bottom: 14px;
+  }
+
+  .contact-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #555;
+    text-decoration: none;
+  }
+
+  .contact-item i {
+    width: 16px;
+    text-align: center;
+    color: #bbb;
+    font-size: 12px;
+  }
+
+  .contact-item:hover {
+    color: #111;
+  }
+
+  .btn-contact {
+    display: block;
+    width: 100%;
+    background: #111;
+    color: #fff;
+    text-align: center;
+    padding: 12px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 14px;
+    text-decoration: none;
+    transition: background .15s;
+  }
+
+  .btn-contact:hover {
+    background: #333;
+    color: #fff;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Hero — full width, sits outside Bootstrap container -->
+<div style="margin: 0 calc(50% - 50vw); width: 100vw;">
+  <section class="agents-hero">
+    <div class="container">
+      <h1>Our Agents</h1>
+      <p>Dedicated real estate professionals helping you buy, sell, and invest with confidence across the Austin and
+        Dalls-Fort Worth areas.
+      </p>
+    </div>
+  </section>
+</div>
+
+<!-- Agent Cards -->
+<section class="agents-section" style="margin: 0 calc(50% - 50vw); width: 100vw;">
+  <div class="container">
+    <div class="agents-grid">
+
+      {% for agent in agents %}
+      <div class="agent-card">
+        <a href="{% url 'pages:agent_detail' agent.slug %}" style="text-decoration:none;">
+          <div class="card-photo" style="cursor:pointer;">
+            {% if agent.photo %}
+            <img src="{{ agent.photo.url }}" alt="{{ agent.name }}">
+            {% else %}
+            <div class="avatar-fallback">
+              <div class="avatar-initials">{{ agent.initials }}</div>
+            </div>
+            {% endif %}
+          </div>
+        </a>
+        <div class="card-body-area">
+          <div class="agent-role-label">{{ agent.get_role_display }}</div>
+          <h2>
+            <a href="{% url 'pages:agent_detail' agent.slug %}" style="color:#111;text-decoration:none;">
+              {{ agent.name }}
+            </a>
+          </h2>
+          <div class="agent-location"><i class="fas fa-map-marker-alt"></i> {{ agent.location }}</div>
+          <div class="card-divider"></div>
+          <div class="specialties">
+            {% for spec in agent.specialties.all %}
+            <span class="tag">{{ spec.name }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="card-footer-area">
+          <div class="contact-row">
+            <a href="mailto:{{ agent.email }}" class="contact-item">
+              <i class="fas fa-envelope"></i> {{ agent.email }}
+            </a>
+            {% if agent.phone %}
+            <a href="tel:{{ agent.phone_raw }}" class="contact-item">
+              <i class="fas fa-phone"></i> {{ agent.phone }}
+            </a>
+            {% endif %}
+          </div>
+          <a href="{% url 'pages:agent_detail' agent.slug %}" class="btn-contact">
+            Contact {{ agent.first_name }}
+          </a>
+        </div>
+      </div>
+      {% empty %}
+      <p style="color:#aaa; font-size:14px;">No agents found.</p>
+      {% endfor %}
+
+    </div>
+  </div>
+</section>
+
+{% endblock %}

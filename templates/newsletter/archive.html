@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="nl-hero">
+  <div class="nl-container">
+    <h1>Col Realty Market Insider</h1>
+    <p>Hyperlocal insights for Buyers, Sellers & Investors across Central Texas.</p>
+
+    {% include "newsletter/subscribe_block.html" %}
+  </div>
+</section>
+
+<section class="nl-container nl-section">
+  <h2>Latest Issue</h2>
+  {% if latest %}
+  <a class="nl-card" href="{{ latest.get_absolute_url }}">
+    <div class="nl-card-title">{{ latest.edition_label|default:latest.published_date }}</div>
+    <div class="nl-card-sub">{{ latest.hero_title|default:latest.title }}</div>
+  </a>
+  {% else %}
+  <p>No published issues yet.</p>
+  {% endif %}
+
+  <h2 class="nl-mt">Archive</h2>
+  <div class="nl-grid">
+    {% for issue in issues %}
+    <a class="nl-card" href="{{ issue.get_absolute_url }}">
+      <div class="nl-card-title">{{ issue.edition_label|default:issue.published_date }}</div>
+      <div class="nl-card-sub">{{ issue.hero_title|default:issue.title }}</div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

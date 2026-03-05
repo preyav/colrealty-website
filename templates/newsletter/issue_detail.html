@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="newsletter-container">
+
+    <h1>{{ issue.hero_title|default:issue.title }}</h1>
+
+    {% if issue.hero_subtitle %}
+    <p class="subtitle">{{ issue.hero_subtitle }}</p>
+    {% endif %}
+
+    {% for section in issue.sections.all %}
+    <div class="newsletter-section">
+
+        <h2>
+            {% if section.icon_emoji %}
+            {{ section.icon_emoji }}
+            {% endif %}
+            {{ section.heading }}
+        </h2>
+
+        <div class="newsletter-body">
+            {{ section.body|linebreaks }}
+        </div>
+
+    </div>
+    {% endfor %}
+
+</div>
+
+{% endblock %}

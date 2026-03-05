@@ -1,0 +1,285 @@
+{# Newsletter Subscribe Modal (homepage popup) #}
+<div id="nl-overlay" class="nl-overlay" aria-hidden="true">
+  <div class="nl-modal" role="dialog" aria-modal="true" aria-labelledby="nl-title">
+    <button type="button" class="nl-close" id="nl-close" aria-label="Close newsletter signup">×</button>
+
+    <div class="nl-head">
+      <div class="nl-kicker">Col Realty Market Insider</div>
+      <h2 id="nl-title" class="nl-title">Central Texas market updates — monthly.</h2>
+      <p class="nl-subtitle">
+        Hyper-local stats for buyers, sellers, and investors + community highlights (Austin • Round Rock • Pflugerville
+        and nearby).
+      </p>
+    </div>
+
+    <form id="nl-form" class="nl-form" method="post" action="{% url 'newsletter:newsletter_subscribe' %}">
+      {% csrf_token %}
+
+      <div class="nl-row">
+        <input class="nl-input" type="text" name="first_name" placeholder="First name (optional)"
+          autocomplete="given-name">
+        <input class="nl-input" type="text" name="last_name" placeholder="Last name (optional)"
+          autocomplete="family-name">
+      </div>
+
+      <div class="nl-row">
+        <input class="nl-input" type="email" name="email" placeholder="Email address" autocomplete="email" required>
+        <input class="nl-input" type="text" name="zip_code" placeholder="ZIP (optional)" inputmode="numeric"
+          autocomplete="postal-code">
+      </div>
+
+      <button class="nl-btn" type="submit" id="nl-submit">Subscribe</button>
+
+      <div class="nl-fineprint">
+        By subscribing you agree to receive the Col Realty newsletter. Unsubscribe anytime.
+      </div>
+
+      <div id="nl-msg" class="nl-msg" aria-live="polite"></div>
+    </form>
+  </div>
+</div>
+
+<style>
+  /* Compass-ish minimal palette (adjust to match your exact tokens) */
+  :root {
+    --nl-bg: rgba(10, 10, 10, .55);
+    --nl-card: #ffffff;
+    --nl-text: #111827;
+    --nl-muted: #6b7280;
+    --nl-border: #e5e7eb;
+    --nl-accent: #111827;
+    /* near-black */
+    --nl-accent-2: #0b1220;
+    /* deep navy */
+    --nl-btn: #111827;
+    --nl-btn-text: #ffffff;
+    --nl-radius: 18px;
+  }
+
+  .nl-overlay {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: var(--nl-bg);
+    padding: 18px;
+    z-index: 9999;
+  }
+
+  .nl-overlay.is-open {
+    display: flex;
+  }
+
+  .nl-modal {
+    width: min(720px, 100%);
+    background: var(--nl-card);
+    border-radius: var(--nl-radius);
+    border: 1px solid var(--nl-border);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .25);
+    padding: 22px;
+    position: relative;
+  }
+
+  .nl-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 36px;
+    height: 36px;
+    border-radius: 999px;
+    border: 1px solid var(--nl-border);
+    background: #fff;
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .nl-kicker {
+    font-size: 12px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--nl-muted);
+    margin-bottom: 8px;
+  }
+
+  .nl-title {
+    font-size: 26px;
+    margin: 0 0 8px 0;
+    color: var(--nl-text);
+    font-weight: 800;
+  }
+
+  .nl-subtitle {
+    margin: 0 0 16px 0;
+    color: var(--nl-muted);
+    line-height: 1.5;
+    font-size: 14px;
+  }
+
+  .nl-form {
+    margin-top: 6px;
+  }
+
+  .nl-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  @media (max-width: 640px) {
+    .nl-row {
+      grid-template-columns: 1fr;
+    }
+
+    .nl-title {
+      font-size: 22px;
+    }
+  }
+
+  .nl-input {
+    width: 100%;
+    border: 1px solid var(--nl-border);
+    border-radius: 12px;
+    padding: 12px 12px;
+    font-size: 14px;
+    outline: none;
+  }
+
+  .nl-input:focus {
+    border-color: #c7cad1;
+    box-shadow: 0 0 0 3px rgba(17, 24, 39, .08);
+  }
+
+  .nl-btn {
+    width: 100%;
+    background: var(--nl-btn);
+    color: var(--nl-btn-text);
+    border: none;
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-weight: 800;
+    cursor: pointer;
+    margin-top: 6px;
+  }
+
+  .nl-btn:disabled {
+    opacity: .65;
+    cursor: not-allowed;
+  }
+
+  .nl-fineprint {
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--nl-muted);
+  }
+
+  .nl-msg {
+    margin-top: 10px;
+    font-size: 13px;
+    color: var(--nl-text);
+  }
+
+  .nl-msg.is-error {
+    color: #b91c1c;
+  }
+
+  .nl-msg.is-ok {
+    color: #065f46;
+  }
+</style>
+
+<script>
+  (function () {
+    const overlay = document.getElementById("nl-overlay");
+    if (!overlay) return;
+
+    // Show only on homepage by default
+    const isHome = (window.location.pathname === "/" || window.location.pathname === "/home/");
+    if (!isHome) return;
+
+    const CLOSE_KEY = "colrealty_nl_dismissed_v1";
+    const SUB_KEY = "colrealty_nl_subscribed_v1";
+
+    const closeBtn = document.getElementById("nl-close");
+    const form = document.getElementById("nl-form");
+    const msg = document.getElementById("nl-msg");
+    const submitBtn = document.getElementById("nl-submit");
+
+    function openModal() {
+      overlay.classList.add("is-open");
+      overlay.setAttribute("aria-hidden", "false");
+      // focus first input
+      const email = form.querySelector('input[name="email"]');
+      if (email) setTimeout(() => email.focus(), 50);
+    }
+
+    function closeModal(persist = true) {
+      overlay.classList.remove("is-open");
+      overlay.setAttribute("aria-hidden", "true");
+      if (persist) localStorage.setItem(CLOSE_KEY, String(Date.now()));
+    }
+
+    // close on overlay click
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) closeModal(true);
+    });
+    closeBtn.addEventListener("click", () => closeModal(true));
+
+    // Esc to close
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && overlay.classList.contains("is-open")) closeModal(true);
+    });
+
+    // Show after a short delay unless dismissed/subscribed
+    const dismissed = localStorage.getItem(CLOSE_KEY);
+    const subscribed = localStorage.getItem(SUB_KEY);
+    if (!dismissed && !subscribed) {
+      setTimeout(openModal, 1600);
+    }
+
+    // Ajax submit to keep user on page
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      msg.textContent = "";
+      msg.classList.remove("is-error", "is-ok");
+      submitBtn.disabled = true;
+
+      try {
+        const formData = new FormData(form);
+
+        const res = await fetch(form.action, {
+          method: "POST",
+          body: formData,
+          credentials: "same-origin",   // ⭐ important for Django CSRF cookies
+          headers: {
+            "X-Requested-With": "XMLHttpRequest"
+          }
+        });
+
+        // Your subscribe view currently returns HTML. We'll handle both HTML + JSON.
+        if (!res.ok) throw new Error("Subscribe failed.");
+
+        // If you later change the view to return JSON, this still works.
+        const text = await res.text();
+
+        // Simple success heuristic: no server error and response exists
+        msg.textContent = "You’re in! Watch for the next Market Insider in your inbox.";
+        msg.classList.add("is-ok");
+        localStorage.setItem(SUB_KEY, "1");
+
+        // close after a beat
+        setTimeout(() => closeModal(false), 1200);
+
+      } catch (err) {
+        msg.textContent = "Sorry — we couldn’t subscribe you right now. Please try again.";
+        msg.classList.add("is-error");
+        submitBtn.disabled = false;
+      }
+    });
+
+    // Optional: allow footer link/button to open it
+    window.ColRealtyOpenNewsletter = openModal;
+  })();
+</script>

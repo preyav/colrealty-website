@@ -1,0 +1,42 @@
+<div class="nl-stats-grid">
+  <div class="nl-stat">
+    <div class="nl-stat-value">
+      {% if stats_all.median_price %}${{ stats_all.median_price|floatformat:0 }}{% else %}—{% endif %}
+    </div>
+    <div class="nl-stat-label">Metro Median (Active)</div>
+  </div>
+
+  <div class="nl-stat">
+    <div class="nl-stat-value">
+      {% if stats_all.avg_dom %}{{ stats_all.avg_dom|floatformat:0 }}{% else %}—{% endif %}
+    </div>
+    <div class="nl-stat-label">Avg Days on Market</div>
+  </div>
+
+  <div class="nl-stat">
+    <div class="nl-stat-value">{{ stats_all.active_count }}</div>
+    <div class="nl-stat-label">Active Listings</div>
+  </div>
+
+  <div class="nl-stat">
+    <div class="nl-stat-value">{{ stats_all.sold_30d_count }}</div>
+    <div class="nl-stat-label">Sold (Last 30 days)</div>
+  </div>
+</div>
+
+<div class="nl-submarket">
+  <strong>Austin:</strong>
+  {% if stats_austin.median_price %}${{ stats_austin.median_price|floatformat:0 }}{% else %}—{% endif %}
+  &nbsp; • &nbsp;
+  <strong>Cedar Park:</strong>
+  {% if stats_cedarpark.median_price %}${{ stats_cedarpark.median_price|floatformat:0 }}{% else %}—{% endif %}
+  &nbsp; • &nbsp;
+  <strong>Leander:</strong>
+  {% if stats_leander.median_price %}${{ stats_leander.median_price|floatformat:0 }}{% else %}—{% endif %}
+  &nbsp; • &nbsp;
+  <strong>Pflugerville:</strong>
+  {% if stats_pflugerville.median_price %}${{ stats_pflugerville.median_price|floatformat:0 }}{% else %}—{% endif %}
+  &nbsp; • &nbsp;
+  <strong>Round Rock:</strong>
+  {% if stats_roundrock.median_price %}${{ stats_roundrock.median_price|floatformat:0 }}{% else %}—{% endif %}
+</div>

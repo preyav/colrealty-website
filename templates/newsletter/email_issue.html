@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+
+<body style="font-family:Arial; max-width:700px; margin:auto;">
+
+    <h1>{{ issue.hero_title|default:issue.title }}</h1>
+
+    {% for section in issue.sections.all %}
+    <h2>
+        {% if section.icon_emoji %}
+        {{ section.icon_emoji }}
+        {% endif %}
+        {{ section.heading }}
+    </h2>
+
+    <p>{{ section.body|linebreaks }}</p>
+
+    {% endfor %}
+
+    <p>
+        Read online:
+        <a href="{{ issue_url }}">{{ issue_url }}</a>
+    </p>
+
+</body>
+
+</html>

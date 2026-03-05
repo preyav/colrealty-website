@@ -1,0 +1,7 @@
+<form class="nl-subscribe" method="post" action="{% url 'newsletter:newsletter_subscribe' %}">
+  {% csrf_token %}
+  <input type="text" name="first_name" placeholder="First name (optional)">
+  <input type="email" name="email" placeholder="Email address" required>
+  <input type="text" name="zip_code" placeholder="ZIP (optional)">
+  <button type="submit">Subscribe</button>
+</form>
