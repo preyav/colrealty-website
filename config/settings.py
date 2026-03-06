@@ -44,7 +44,8 @@ env = environ.Env(
 def _require_env(name: str) -> str:
     val = os.environ.get(name)
     if val is None or str(val).strip() == "":
-        raise ImproperlyConfigured(f"Missing required environment variable: {name}")
+        raise ImproperlyConfigured(
+            f"Missing required environment variable: {name}")
     return val
 
 
@@ -67,10 +68,11 @@ if READ_DOTENV:
 # Third-party API keys
 # ─────────────────────────────────────────────────────────────────────────────
 
-GOOGLE_MAPS_API_KEY                    = env("GOOGLE_MAPS_API_KEY", default="")
-HUBSPOT_PRIVATE_APP_TOKEN              = env("HUBSPOT_PRIVATE_APP_TOKEN", default="")
-HUBSPOT_AGENT_NOTIFICATION_EMAIL_ID    = env("HUBSPOT_AGENT_NOTIFICATION_EMAIL_ID", default="")
-LEAD_NOTIFY_EMAIL                      = env("LEAD_NOTIFY_EMAIL", default="")
+GOOGLE_MAPS_API_KEY = env("GOOGLE_MAPS_API_KEY", default="")
+HUBSPOT_PRIVATE_APP_TOKEN = env("HUBSPOT_PRIVATE_APP_TOKEN", default="")
+HUBSPOT_AGENT_NOTIFICATION_EMAIL_ID = env(
+    "HUBSPOT_AGENT_NOTIFICATION_EMAIL_ID", default="")
+LEAD_NOTIFY_EMAIL = env("LEAD_NOTIFY_EMAIL", default="")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -83,14 +85,16 @@ if not SECRET_KEY:
     SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 
 allowed_hosts_raw = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost")
-ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_raw.split(",") if host.strip()]
+ALLOWED_HOSTS = [host.strip()
+                 for host in allowed_hosts_raw.split(",") if host.strip()]
 
-DEBUG_PROPAGATE_EXCEPTIONS = env.bool("DEBUG_PROPAGATE_EXCEPTIONS", default=False)
+DEBUG_PROPAGATE_EXCEPTIONS = env.bool(
+    "DEBUG_PROPAGATE_EXCEPTIONS", default=False)
 
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-    SESSION_COOKIE_SECURE   = True
-    CSRF_COOKIE_SECURE      = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
 
     if not os.environ.get("DJANGO_ALLOWED_HOSTS"):
         _require_env("DJANGO_ALLOWED_HOSTS")
@@ -105,7 +109,7 @@ if not DEBUG:
 # ─────────────────────────────────────────────────────────────────────────────
 
 INSTALLED_APPS = [
-    "accounts", 
+    "accounts",
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
@@ -121,12 +125,13 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.humanize",
     "django.contrib.sites",
+    "leads",
     "listings",
+    "mls_sync",
+    "newsletter",
     "rentals",
     "pages",
-    "leads",
-    "mls_sync",
-    "portal", 
+    "portal",
 ]
 
 
@@ -151,7 +156,7 @@ MIDDLEWARE = [
 # URL / WSGI / ASGI
 # ─────────────────────────────────────────────────────────────────────────────
 
-ROOT_URLCONF     = "config.urls"
+ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
@@ -208,9 +213,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # ─────────────────────────────────────────────────────────────────────────────
 
 LANGUAGE_CODE = "en-us"
-TIME_ZONE     = "UTC"
-USE_I18N      = True
-USE_TZ        = True
+TIME_ZONE = "UTC"
+USE_I18N = True
+USE_TZ = True
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -227,10 +232,10 @@ if AWS_STORAGE_BUCKET_NAME:
     # ── S3 mode ───────────────────────────────────────────────────────────
     INSTALLED_APPS += ["storages"]
 
-    AWS_S3_REGION_NAME       = os.environ.get("AWS_S3_REGION_NAME", "us-east-1")
+    AWS_S3_REGION_NAME = os.environ.get("AWS_S3_REGION_NAME", "us-east-1")
     AWS_S3_SIGNATURE_VERSION = "s3v4"
-    AWS_S3_FILE_OVERWRITE    = False
-    AWS_S3_CUSTOM_DOMAIN     = os.environ.get("AWS_S3_CUSTOM_DOMAIN")
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_S3_CUSTOM_DOMAIN = os.environ.get("AWS_S3_CUSTOM_DOMAIN")
 
     _base_url = (
         f"https://{AWS_S3_CUSTOM_DOMAIN}"
@@ -239,9 +244,9 @@ if AWS_STORAGE_BUCKET_NAME:
     )
 
     STATIC_URL = f"{_base_url}/static/"
-    MEDIA_URL  = f"{_base_url}/media/"
+    MEDIA_URL = f"{_base_url}/media/"
 
-    STATIC_ROOT      = BASE_DIR / "staticfiles"
+    STATIC_ROOT = BASE_DIR / "staticfiles"
     STATICFILES_DIRS = [BASE_DIR / "static"]
 
     STORAGES = {
@@ -271,11 +276,11 @@ if AWS_STORAGE_BUCKET_NAME:
 
 else:
     # ── WhiteNoise local mode ─────────────────────────────────────────────
-    STATIC_URL       = "/static/"
-    STATIC_ROOT      = BASE_DIR / "staticfiles"
+    STATIC_URL = "/static/"
+    STATIC_ROOT = BASE_DIR / "staticfiles"
     STATICFILES_DIRS = [BASE_DIR / "static"]
 
-    MEDIA_URL  = "/media/"
+    MEDIA_URL = "/media/"
     MEDIA_ROOT = BASE_DIR / "media"
 
     STORAGES = {
@@ -287,31 +292,34 @@ else:
         },
     }
 
-    WHITENOISE_MANIFEST_STRICT = env.bool("WHITENOISE_MANIFEST_STRICT", default=False)
+    WHITENOISE_MANIFEST_STRICT = env.bool(
+        "WHITENOISE_MANIFEST_STRICT", default=False)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # MLS Sync
 # ─────────────────────────────────────────────────────────────────────────────
 
-MLS_API_BASE_URL                = env("MLS_API_BASE_URL", default="")
-MLS_API_TOKEN                   = env("MLS_API_TOKEN", default="")
-MLS_ORIGINATING_SYSTEM_NAME     = env("MLS_ORIGINATING_SYSTEM_NAME", default="actris")
+MLS_API_BASE_URL = env("MLS_API_BASE_URL", default="")
+MLS_API_TOKEN = env("MLS_API_TOKEN", default="")
+MLS_ORIGINATING_SYSTEM_NAME = env(
+    "MLS_ORIGINATING_SYSTEM_NAME", default="actris")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Email — Gmail SMTP
 # ─────────────────────────────────────────────────────────────────────────────
 
-EMAIL_BACKEND       = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST          = env("EMAIL_HOST", default="smtp.gmail.com")
-EMAIL_PORT          = env.int("EMAIL_PORT", default=587)
-EMAIL_USE_TLS       = env.bool("EMAIL_USE_TLS", default=True)
-EMAIL_HOST_USER     = env("EMAIL_HOST_USER", default="")
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = env("EMAIL_HOST", default="smtp.gmail.com")
+EMAIL_PORT = env.int("EMAIL_PORT", default=587)
+EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
 
-DEFAULT_FROM_EMAIL  = env("DEFAULT_FROM_EMAIL", default=EMAIL_HOST_USER or "no-reply@colrealty.com")
-SERVER_EMAIL        = env("SERVER_EMAIL", default=DEFAULT_FROM_EMAIL)
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL",
+                         default=EMAIL_HOST_USER or "no-reply@colrealty.com")
+SERVER_EMAIL = env("SERVER_EMAIL", default=DEFAULT_FROM_EMAIL)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -327,18 +335,19 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 from kombu import Queue  # noqa: E402
 
-CELERY_BROKER_URL              = env("CELERY_BROKER_URL", default="redis://localhost:6379/0")
-CELERY_RESULT_BACKEND          = "django-db"
-CELERY_CACHE_BACKEND           = "django-cache"
-CELERY_TASK_SERIALIZER         = "json"
-CELERY_RESULT_SERIALIZER       = "json"
-CELERY_ACCEPT_CONTENT          = ["json"]
-CELERY_TIMEZONE                = TIME_ZONE
-CELERY_TASK_TRACK_STARTED      = True
-CELERY_TASK_TIME_LIMIT         = 300
-CELERY_TASK_SOFT_TIME_LIMIT    = 240
+CELERY_BROKER_URL = env("CELERY_BROKER_URL",
+                        default="redis://localhost:6379/0")
+CELERY_RESULT_BACKEND = "django-db"
+CELERY_CACHE_BACKEND = "django-cache"
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 300
+CELERY_TASK_SOFT_TIME_LIMIT = 240
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
-CELERY_TASK_DEFAULT_QUEUE      = "default"
+CELERY_TASK_DEFAULT_QUEUE = "default"
 CELERY_TASK_QUEUES = (
     Queue("default"),
     Queue("hubspot"),
@@ -355,4 +364,8 @@ ACCOUNT_AUTHENTICATION_METHOD = "email"
 ACCOUNT_EMAIL_VERIFICATION = "optional"
 LOGIN_REDIRECT_URL = "/accounts/overview/"
 LOGOUT_REDIRECT_URL = "/"
+SOCIALACCOUNT_LOGIN_ON_GET = True
 SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_EMAIL_VERIFICATION = "none"
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'

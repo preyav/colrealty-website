@@ -524,7 +524,7 @@
             </div>
 
             <div class="agent-identity">
-              <span class="role-badge">{{ agent.role }}</span>
+              <span class="role-badge">{{ agent.get_role_display }}</span>
               <h1>{{ agent.name }}</h1>
               <div class="location"><i class="fas fa-map-marker-alt"></i> {{ agent.location }}</div>
             </div>
@@ -616,7 +616,7 @@
           <div class="content-card">
             <h2>Current Listings</h2>
             <div class="listings-grid">
-              {% for listing in agent.listings %}
+              {% for listing in listings %}
               <div class="listing-card">
                 <div class="listing-photo"><i class="fas fa-home"></i></div>
                 <div class="listing-info">

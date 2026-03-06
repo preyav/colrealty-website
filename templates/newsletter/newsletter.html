@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="newsletter-hero">
+    <div class="container">
+        <h1>Col Realty Market Insider</h1>
+        <p>Central Texas • March 2026 Edition</p>
+    </div>
+</section>
+
+<section class="newsletter-section">
+    <div class="container">
+
+        <!-- Market Snapshot -->
+        <h2>📊 Central Texas Market Snapshot</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>$455,000</h3>
+                <p>Austin Median Price</p>
+            </div>
+            <div class="stat-card">
+                <h3>$395,000</h3>
+                <p>Pflugerville Median</p>
+            </div>
+            <div class="stat-card">
+                <h3>52 Days</h3>
+                <p>Avg Days on Market</p>
+            </div>
+            <div class="stat-card">
+                <h3>3.4 Months</h3>
+                <p>Inventory Level</p>
+            </div>
+        </div>
+
+        <!-- Buyers -->
+        <h2>🏡 For Home Buyers</h2>
+        <p>
+            Inventory is improving across Pflugerville, Round Rock and Cedar Park.
+            Homes listed 30+ days are seeing increased negotiation flexibility.
+        </p>
+
+        <!-- Sellers -->
+        <h2>🏠 For Sellers</h2>
+        <p>
+            Proper pricing within 2–3% of comparable sales is key. Homes staged
+            and updated with light cosmetic upgrades are outperforming.
+        </p>
+
+        <!-- Investors -->
+        <h2>💰 For Investors</h2>
+        <p>
+            Pflugerville 3/2 rentals averaging $2,200–$2,400. North Austin tech
+            corridor continues to show stable rental demand.
+        </p>
+
+        <!-- Community Spotlight -->
+        <h2>🌆 Community Spotlight: Pflugerville</h2>
+        <ul>
+            <li>Lake Pflugerville active lifestyle growth</li>
+            <li>New dining concepts at Stone Hill</li>
+            <li>Infrastructure expansion near SH-130</li>
+        </ul>
+
+        <!-- Closing CTA -->
+        <div class="cta-box">
+            <h3>Ready to Talk Strategy?</h3>
+            <p>Buying, selling, or investing — let's build your next move.</p>
+            <a href="{% url 'contact' %}" class="cta-btn">Contact Col Realty</a>
+        </div>
+
+    </div>
+</section>
+
+{% endblock %}

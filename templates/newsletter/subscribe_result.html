@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="max-width:480px; margin:80px auto; text-align:center; padding:0 24px;">
+  {% if ok %}
+  <div style="font-size:48px; margin-bottom:16px;">🎉</div>
+  <h2 style="font-size:24px; font-weight:800; color:#111; margin-bottom:8px;">You're subscribed!</h2>
+  <p style="color:#666; font-size:15px; line-height:1.6;">Welcome to the Col Realty Market Insider. You'll receive our
+    next issue straight to your inbox.</p>
+  <a href="{% url 'newsletter:newsletter_archive' %}"
+    style="display:inline-block; margin-top:24px; background:#111; color:#fff; padding:12px 28px; border-radius:8px; font-weight:700; text-decoration:none;">View
+    Latest Issues →</a>
+  {% else %}
+  <div style="font-size:48px; margin-bottom:16px;">⚠️</div>
+  <h2 style="font-size:24px; font-weight:800; color:#111; margin-bottom:8px;">Something went wrong</h2>
+  <p style="color:#666; font-size:15px;">Please check your email and try again.</p>
+  <a href="{% url 'newsletter:newsletter_archive' %}"
+    style="display:inline-block; margin-top:24px; background:#111; color:#fff; padding:12px 28px; border-radius:8px; font-weight:700; text-decoration:none;">←
+    Go Back</a>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,15 +1,19 @@
 # pages/views.py
+import logging
 import os
+
 from django.conf import settings
 from django.contrib.auth.views import LoginView
+from django.core.mail import send_mail
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import JsonResponse
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
-
 from listings.models import Listing
 from rentals.models import Rental
+from .models import Agent, LegalDocument
+from django.http import Http404
 
 
 BUY_TYPES = {
@@ -19,10 +23,12 @@ BUY_TYPES = {
 
 LEASE_TYPES = ["Residential Lease", "Commercial Lease"]
 
+logger = logging.getLogger(__name__)
+
+
 # ─────────────────────────────────────────────
 # Auth
 # ─────────────────────────────────────────────
-
 
 class ColRealtyLoginView(LoginView):
     template_name = "pages/login.html"
@@ -65,7 +71,7 @@ def _build_rental_markers(qs):
         markers.append({
             "id":      r.id,
             "title":   r.title,
-            "price":   str(r.rent),         # Rental uses `rent`, not `price`
+            "price":   str(r.rent),
             "address": r.full_address(),
             "lat":     float(r.latitude),
             "lng":     float(r.longitude),
@@ -108,27 +114,20 @@ def contact(request):
 
 
 def contact_submit(request):
-    import logging
-    from django.conf import settings
-    from django.core.mail import send_mail
-    from django.shortcuts import redirect
-
-    logger = logging.getLogger(__name__)
-
     if request.method != "POST":
         return redirect("pages:contact")
 
-    name = (request.POST.get("name") or "").strip()
-    email = (request.POST.get("email") or "").strip()
-    phone = (request.POST.get("phone") or "").strip()
-    subject = (request.POST.get("subject") or "").strip()
+    name        = (request.POST.get("name") or "").strip()
+    email       = (request.POST.get("email") or "").strip()
+    phone       = (request.POST.get("phone") or "").strip()
+    subject     = (request.POST.get("subject") or "").strip()
     description = (request.POST.get("description") or "").strip()
-    issue = (request.POST.get("issue") or "General Inquiry").strip()
+    issue       = (request.POST.get("issue") or "General Inquiry").strip()
 
     if not name or not email or not subject or not description:
         return redirect("pages:contact")
 
-    # ── 1. Email Col Realty ────────────────────────────────────────────────
+    # Email Col Realty
     try:
         notify_email = getattr(settings, "LEAD_NOTIFY_EMAIL", "").strip()
         if notify_email:
@@ -153,30 +152,18 @@ def contact_submit(request):
     except Exception as exc:
         logger.exception("Contact form email failed: %s", exc)
 
-    # ── 2. Sync to HubSpot ─────────────────────────────────────────────────
+    # Sync to HubSpot
     try:
         if getattr(settings, "HUBSPOT_PRIVATE_APP_TOKEN", "").strip():
             from leads.services.hubspot import upsert_contact, create_note
-            # Split name into first/last
-            parts = name.strip().split(" ", 1)
+            parts     = name.strip().split(" ", 1)
             firstname = parts[0]
-            lastname = parts[1] if len(parts) > 1 else ""
-
+            lastname  = parts[1] if len(parts) > 1 else ""
             contact_id = upsert_contact(
-                email=email,
-                firstname=firstname,
-                lastname=lastname,
-                phone=phone,
+                email=email, firstname=firstname, lastname=lastname, phone=phone,
             )
-            note_body = (
-                f"Contact Form Inquiry\n"
-                f"Issue: {issue}\n"
-                f"Subject: {subject}\n\n"
-                f"{description}"
-            )
-            create_note(contact_id, note_body)
-            logger.info(
-                "Contact form synced to HubSpot contact %s", contact_id)
+            create_note(contact_id, f"Contact Form Inquiry\nIssue: {issue}\nSubject: {subject}\n\n{description}")
+            logger.info("Contact form synced to HubSpot contact %s", contact_id)
     except Exception as exc:
         logger.exception("Contact form HubSpot sync failed: %s", exc)
 
@@ -195,13 +182,13 @@ def buy(request):
     qs = Listing.objects.filter(
         status="active", property_type__in=BUY_TYPES).order_by("-id")
     paginator = Paginator(qs, 12)
-    page_obj = paginator.get_page(request.GET.get("page"))
+    page_obj  = paginator.get_page(request.GET.get("page"))
     return render(request, "listings/list.html", {
-        "listings":    page_obj,
-        "page_obj":    page_obj,
-        "paginator":   paginator,
-        "is_paginated": page_obj.has_other_pages(),
-        "markers":     _build_listing_markers(qs),
+        "listings":       page_obj,
+        "page_obj":       page_obj,
+        "paginator":      paginator,
+        "is_paginated":   page_obj.has_other_pages(),
+        "markers":        _build_listing_markers(qs),
         "GOOGLE_MAPS_API_KEY": settings.GOOGLE_MAPS_API_KEY,
     })
 
@@ -239,19 +226,19 @@ def sell_concierge(request):
 
 
 # ─────────────────────────────────────────────
-# Rent pages  ← FIXED: now uses Rental model
+# Rent pages
 # ─────────────────────────────────────────────
 
 def rent(request):
     qs = Rental.objects.filter(status="active").order_by("-id")
     paginator = Paginator(qs, 12)
-    page_obj = paginator.get_page(request.GET.get("page"))
+    page_obj  = paginator.get_page(request.GET.get("page"))
     return render(request, "rentals/list.html", {
-        "rentals":     page_obj,
-        "page_obj":    page_obj,
-        "paginator":   paginator,
-        "is_paginated": page_obj.has_other_pages(),
-        "markers":     _build_rental_markers(qs),
+        "rentals":        page_obj,
+        "page_obj":       page_obj,
+        "paginator":      paginator,
+        "is_paginated":   page_obj.has_other_pages(),
+        "markers":        _build_rental_markers(qs),
         "GOOGLE_MAPS_API_KEY": settings.GOOGLE_MAPS_API_KEY,
     })
 
@@ -269,12 +256,65 @@ def propman(request):
 
 
 # ─────────────────────────────────────────────
-# Company pages
+# Agents
 # ─────────────────────────────────────────────
 
-def company_aboutus(request):
-    return render(request, "pages/company/aboutus.html")
+def agents(request):
+    """Team page — lists all active agents."""
+    agents_qs = (
+        Agent.objects.filter(is_active=True)
+        .prefetch_related("specialties")
+        .order_by("order", "name")
+    )
+    return render(request, "pages/agents/team.html", {"agents": agents_qs})
 
+
+def agent_detail(request, slug):
+    """Individual agent profile page."""
+    agent = get_object_or_404(
+        Agent.objects.prefetch_related("specialties", "testimonials"),
+        slug=slug,
+        is_active=True,
+    )
+    return render(request, "pages/agents/detail.html", {
+        "agent": agent,
+        "listings": [],
+    })
+
+
+def agent_contact(request, slug):
+    """Handles the contact form submission from the agent detail page."""
+    agent = get_object_or_404(Agent, slug=slug, is_active=True)
+
+    if request.method == 'POST':
+        name     = request.POST.get('name', '').strip()
+        email    = request.POST.get('email', '').strip()
+        phone    = request.POST.get('phone', '').strip()
+        interest = request.POST.get('interest', '')
+        message  = request.POST.get('message', '').strip()
+
+        send_mail(
+            subject=f'New enquiry for {agent.name} from {name} via Col Realty',
+            message=(
+                f"Name:     {name}\n"
+                f"Email:    {email}\n"
+                f"Phone:    {phone}\n"
+                f"Interest: {interest}\n\n"
+                f"Message:\n{message}"
+            ),
+            from_email='noreply@colrealty.com',
+            recipient_list=[agent.email],
+            fail_silently=True,
+        )
+
+    return redirect('pages:agent_detail', slug=slug)
+
+def agents_joincol(request):
+    return render(request, "pages/agents/joincol.html")
+
+# ─────────────────────────────────────────────
+# Company pages
+# ─────────────────────────────────────────────
 
 def company_joinus(request):
     return render(request, "pages/company/joinus.html")
@@ -295,14 +335,11 @@ def colcircle(request):
 def colcircle_blog(request):
     return render(request, "pages/colcircle/blog.html")
 
-
-def colcircle_newsletter(request):
-    return render(request, "pages/colcircle/newsletter.html")
-
+def newsletter(request):
+    return redirect("newsletter:newsletter_archive")
 
 def colcircle_colcircle(request):
     return render(request, "pages/colcircle/colcircle.html")
-
 
 # ─────────────────────────────────────────────
 # Explore pages
@@ -318,3 +355,23 @@ def explore_newhomes(request):
 
 def explore_commercial(request):
     return render(request, "pages/explore/commercial.html")
+
+#______________________________________________________________
+#   LEGAL DOCUMENTS
+#______________________________________________________________
+def legal_documents(request):
+    docs = LegalDocument.objects.filter(is_active=True)
+    return render(request, 'pages/legal_documents.html', {'docs': docs})
+
+def legal_trec(request):
+    doc = LegalDocument.objects.filter(doc_type='trec', is_active=True).first()
+    if doc:
+        return redirect(doc.file.url)
+    return redirect('pages:legal_documents')
+
+def legal_iabs(request):
+    doc = LegalDocument.objects.filter(doc_type='iabs', is_active=True).first()
+    if doc:
+        return redirect(doc.file.url)
+    return redirect('pages:legal_documents')
+

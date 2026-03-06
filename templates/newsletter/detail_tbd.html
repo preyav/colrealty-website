@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="nl-hero">
+  <div class="nl-container">
+    <h1>{{ issue.hero_title|default:issue.title }}</h1>
+    <p>{{ issue.hero_subtitle|default:issue.edition_label }}</p>
+    {% include "newsletter/subscribe_block.html" %}
+  </div>
+</section>
+
+<section class="nl-container nl-section">
+
+  {% for section in issue.sections.all %}
+  <div class="nl-block">
+    <h2>{% if section.icon_emoji %}{{ section.icon_emoji }} {% endif %}{{ section.heading }}</h2>
+
+    {% if section.show_mls_stats %}
+    {% include "newsletter/mls_stats_block.html" %}
+    {% endif %}
+
+    {% if section.body %}
+    <div class="nl-body">
+      {{ section.body|linebreaks }}
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+
+</section>
+{% endblock %}

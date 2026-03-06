@@ -6,7 +6,6 @@ app_name = "pages"
 
 urlpatterns = [
     path("", views.home, name="home"),
-    path("contact/", views.contact, name="contact"),
 
     # BUY
     path("buy/", views.buy, name="buy"),
@@ -33,11 +32,14 @@ urlpatterns = [
     # portal
     path("portal/", views.login, name="login"),
 
-    # ABOUT US
-    path("company/aboutus/", views.company_aboutus, name="aboutus"),
+    # AGENTS
 
-    # JOIN US
-    path("company/joinus/", views.company_joinus, name="joinus"),
+    path("agents/team/", views.agents, name="team"),
+    path("agents/joincol/", views.agents_joincol, name="joincol"),
+
+    path('agents/',                   views.agents,       name='agents'),
+    path('agents/<slug:slug>/',       views.agent_detail, name='agent_detail'),
+    path('agents/<slug:slug>/contact/', views.agent_contact, name='agent_contact'),
 
     # CONTACT US
     path("company/contactus/", views.company_contactus, name="contactus"),
@@ -47,9 +49,6 @@ urlpatterns = [
 
     # BLOG
     path("colcircle/blog/", views.colcircle_blog, name="blog"),
-
-    # NEWSLETTER
-    path("colcircle/newsletter/", views.colcircle_newsletter, name="newsletter"),
 
     # COL CIRCLE
     path("colcircle/colcircle/", views.colcircle_colcircle, name="colcircle"),
@@ -66,4 +65,10 @@ urlpatterns = [
 
     # HEALTHCHECK
     path("health/", views.health, name="health"),
+
+    # LEGAL DOCUMENTS
+    path('legal/', views.legal_documents, name='legal_documents'),
+    path('legal/trec/', views.legal_trec, name='legal_trec'),
+    path('legal/iabs/', views.legal_iabs, name='legal_iabs'),
+
 ]
