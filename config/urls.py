@@ -3,9 +3,12 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.generic import RedirectView
 
 
 urlpatterns = [
+    # Redirect admin logout → allauth logout (which handles GET correctly)
+    path('admin/logout/', RedirectView.as_view(url='/accounts/logout/', permanent=False)),
     path("accounts/", include("accounts.urls")),
     path("accounts/", include("allauth.urls")),
     path("admin/",    admin.site.urls),
