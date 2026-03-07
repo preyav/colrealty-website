@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="max-width:440px;margin:80px auto;text-align:center;padding:0 20px;">
+  <h2 style="font-size:22px;font-weight:700;margin-bottom:8px;">Almost There!</h2>
+  <p style="color:#888;font-size:14px;margin-bottom:24px;">Confirm your email to complete sign in with Google.</p>
+  <form method="post" action="{% url 'socialaccount_signup' %}">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit"
+      style="width:100%;background:#6abf4b;color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;margin-top:12px;">Complete
+      Sign Up</button>
+  </form>
+</div>
+{% endblock %}
