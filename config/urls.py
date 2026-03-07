@@ -8,9 +8,9 @@ from django.views.generic import RedirectView
 
 urlpatterns = [
     # Redirect admin logout → allauth logout (which handles GET correctly)
-    path('admin/logout/', RedirectView.as_view(url='/accounts/logout/', permanent=False)),
     path("accounts/", include("accounts.urls")),
     path("accounts/", include("allauth.urls")),
+    path('admin/logout/', RedirectView.as_view(url='/accounts/logout/', permanent=False)),
     path("admin/",    admin.site.urls),
     path("portal/",   include(("portal.urls", "portal"), namespace="portal")),
     path("",          include("pages.urls")),
