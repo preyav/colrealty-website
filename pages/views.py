@@ -117,12 +117,12 @@ def contact_submit(request):
     if request.method != "POST":
         return redirect("pages:contact")
 
-    name        = (request.POST.get("name") or "").strip()
-    email       = (request.POST.get("email") or "").strip()
-    phone       = (request.POST.get("phone") or "").strip()
-    subject     = (request.POST.get("subject") or "").strip()
+    name = (request.POST.get("name") or "").strip()
+    email = (request.POST.get("email") or "").strip()
+    phone = (request.POST.get("phone") or "").strip()
+    subject = (request.POST.get("subject") or "").strip()
     description = (request.POST.get("description") or "").strip()
-    issue       = (request.POST.get("issue") or "General Inquiry").strip()
+    issue = (request.POST.get("issue") or "General Inquiry").strip()
 
     if not name or not email or not subject or not description:
         return redirect("pages:contact")
@@ -156,14 +156,16 @@ def contact_submit(request):
     try:
         if getattr(settings, "HUBSPOT_PRIVATE_APP_TOKEN", "").strip():
             from leads.services.hubspot import upsert_contact, create_note
-            parts     = name.strip().split(" ", 1)
+            parts = name.strip().split(" ", 1)
             firstname = parts[0]
-            lastname  = parts[1] if len(parts) > 1 else ""
+            lastname = parts[1] if len(parts) > 1 else ""
             contact_id = upsert_contact(
                 email=email, firstname=firstname, lastname=lastname, phone=phone,
             )
-            create_note(contact_id, f"Contact Form Inquiry\nIssue: {issue}\nSubject: {subject}\n\n{description}")
-            logger.info("Contact form synced to HubSpot contact %s", contact_id)
+            create_note(
+                contact_id, f"Contact Form Inquiry\nIssue: {issue}\nSubject: {subject}\n\n{description}")
+            logger.info(
+                "Contact form synced to HubSpot contact %s", contact_id)
     except Exception as exc:
         logger.exception("Contact form HubSpot sync failed: %s", exc)
 
@@ -182,7 +184,7 @@ def buy(request):
     qs = Listing.objects.filter(
         status="active", property_type__in=BUY_TYPES).order_by("-id")
     paginator = Paginator(qs, 12)
-    page_obj  = paginator.get_page(request.GET.get("page"))
+    page_obj = paginator.get_page(request.GET.get("page"))
     return render(request, "listings/list.html", {
         "listings":       page_obj,
         "page_obj":       page_obj,
@@ -232,7 +234,7 @@ def sell_concierge(request):
 def rent(request):
     qs = Rental.objects.filter(status="active").order_by("-id")
     paginator = Paginator(qs, 12)
-    page_obj  = paginator.get_page(request.GET.get("page"))
+    page_obj = paginator.get_page(request.GET.get("page"))
     return render(request, "rentals/list.html", {
         "rentals":        page_obj,
         "page_obj":       page_obj,
@@ -276,9 +278,14 @@ def agent_detail(request, slug):
         slug=slug,
         is_active=True,
     )
+    listings = Listing.objects.filter(
+        listing_agent_email__iexact=agent.email,
+        status="active"
+    ).order_by("-created_at")
+
     return render(request, "pages/agents/detail.html", {
         "agent": agent,
-        "listings": [],
+        "listings": listings,
     })
 
 
@@ -287,11 +294,11 @@ def agent_contact(request, slug):
     agent = get_object_or_404(Agent, slug=slug, is_active=True)
 
     if request.method == 'POST':
-        name     = request.POST.get('name', '').strip()
-        email    = request.POST.get('email', '').strip()
-        phone    = request.POST.get('phone', '').strip()
+        name = request.POST.get('name', '').strip()
+        email = request.POST.get('email', '').strip()
+        phone = request.POST.get('phone', '').strip()
         interest = request.POST.get('interest', '')
-        message  = request.POST.get('message', '').strip()
+        message = request.POST.get('message', '').strip()
 
         send_mail(
             subject=f'New enquiry for {agent.name} from {name} via Col Realty',
@@ -309,12 +316,14 @@ def agent_contact(request, slug):
 
     return redirect('pages:agent_detail', slug=slug)
 
+
 def agents_joincol(request):
     return render(request, "pages/agents/joincol.html")
 
 # ─────────────────────────────────────────────
 # Company pages
 # ─────────────────────────────────────────────
+
 
 def company_joinus(request):
     return render(request, "pages/company/joinus.html")
@@ -335,8 +344,10 @@ def colcircle(request):
 def colcircle_blog(request):
     return render(request, "pages/colcircle/blog.html")
 
+
 def newsletter(request):
     return redirect("newsletter:newsletter_archive")
+
 
 def colcircle_colcircle(request):
     return render(request, "pages/colcircle/colcircle.html")
@@ -344,6 +355,7 @@ def colcircle_colcircle(request):
 # ─────────────────────────────────────────────
 # Explore pages
 # ─────────────────────────────────────────────
+
 
 def explore_neighborhoods(request):
     return render(request, "pages/explore/neighborhoods.html")
@@ -356,12 +368,15 @@ def explore_newhomes(request):
 def explore_commercial(request):
     return render(request, "pages/explore/commercial.html")
 
-#______________________________________________________________
+# ______________________________________________________________
 #   LEGAL DOCUMENTS
-#______________________________________________________________
+# ______________________________________________________________
+
+
 def legal_documents(request):
     docs = LegalDocument.objects.filter(is_active=True)
     return render(request, 'pages/legal_documents.html', {'docs': docs})
+
 
 def legal_trec(request):
     doc = LegalDocument.objects.filter(doc_type='trec', is_active=True).first()
@@ -369,9 +384,9 @@ def legal_trec(request):
         return redirect(doc.file.url)
     return redirect('pages:legal_documents')
 
+
 def legal_iabs(request):
     doc = LegalDocument.objects.filter(doc_type='iabs', is_active=True).first()
     if doc:
         return redirect(doc.file.url)
     return redirect('pages:legal_documents')
-

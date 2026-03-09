@@ -1,33 +1,70 @@
 {% extends "base.html" %}
-{% block content %}
-<section class="nl-hero">
-  <div class="nl-container">
-    <h1>Col Realty Market Insider</h1>
-    <p>Hyperlocal insights for Buyers, Sellers & Investors across Central Texas.</p>
 
-    {% include "newsletter/subscribe_block.html" %}
-  </div>
+
+
+{% block content %}
+
+<!-- ── HERO ── -->
+<section class="nl-hero">
+  <h1><span class="green">Col's</span> Newsletter</h1>
+  <p>Hyperlocal insights for buyers, sellers &amp; investors across Central Texas — delivered to your inbox.</p>
+  {% include "newsletter/subscribe_block.html" %}
 </section>
 
-<section class="nl-container nl-section">
-  <h2>Latest Issue</h2>
+<!-- ── BODY ── -->
+<div class="nl-body">
+
   {% if latest %}
-  <a class="nl-card" href="{{ latest.get_absolute_url }}">
-    <div class="nl-card-title">{{ latest.edition_label|default:latest.published_date }}</div>
-    <div class="nl-card-sub">{{ latest.hero_title|default:latest.title }}</div>
-  </a>
-  {% else %}
-  <p>No published issues yet.</p>
+  <!-- LATEST ISSUE — dotted rectangle box, centered -->
+  <div class="nl-dot-box">
+
+    <div class="nl-section-heading">
+      <h2>Latest Issue</h2>
+    </div>
+
+    <div class="nl-featured-wrap"><a class="nl-featured" href="{{ latest.get_absolute_url }}">
+      <div class="nl-featured-visual">
+        <span class="nl-featured-badge">Latest Issue</span>
+      </div>
+      <div class="nl-featured-body">
+        <div class="nl-featured-label">{{ latest.edition_label|default:latest.published_date }}</div>
+        <div class="nl-featured-title">{{ latest.hero_title|default:latest.title }}</div>
+        <div class="nl-featured-cta">Read this issue</div>
+      </div>
+    </a></div>
+  </div>
   {% endif %}
 
-  <h2 class="nl-mt">Archive</h2>
-  <div class="nl-grid">
-    {% for issue in issues %}
-    <a class="nl-card" href="{{ issue.get_absolute_url }}">
-      <div class="nl-card-title">{{ issue.edition_label|default:issue.published_date }}</div>
-      <div class="nl-card-sub">{{ issue.hero_title|default:issue.title }}</div>
-    </a>
-    {% endfor %}
+  {% if issues %}
+  <!-- ALL ISSUES — dotted rectangle box -->
+  <div class="nl-dot-box">
+
+    <div class="nl-section-heading">
+      <h2>All Issues <span class="nl-issue-count">{{ issues|length }} issue{{ issues|length|pluralize }}</span></h2>
+    </div>
+
+    <div class="nl-grid">
+      {% for issue in issues %}
+      <a class="nl-card" href="{{ issue.get_absolute_url }}">
+        <div class="nl-card-visual">
+          <span class="nl-card-edition">{{ issue.edition_label|default:"Issue" }}</span>
+        </div>
+        <div class="nl-card-body">
+          <div class="nl-card-date">{{ issue.edition_label|default:issue.published_date }}</div>
+          <div class="nl-card-title">{{ issue.hero_title|default:issue.title }}</div>
+          <div class="nl-card-arrow">Read issue →</div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
   </div>
-</section>
+
+  {% else %}
+  <div class="nl-empty">
+    <p>No past issues yet — check back soon.</p>
+  </div>
+  {% endif %}
+
+</div>
+
 {% endblock %}

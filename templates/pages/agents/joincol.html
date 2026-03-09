@@ -1,11 +1,19 @@
 {% extends "base.html" %}
-{% block title %}Join Col | Col Realty{% endblock %}
+{% block title %}Sell Your Home | Col Realty{% endblock %}
 
 {% block content %}
-<section class="section">
+<section class="section center-section">
+
     <h1>Want to join our boutique & robust team?</h1>
-    <div class="card-full">
-        <h2><a href="{% url 'pages:contact' %}" class="link-button">Call us</a></h2>
+
+    <div class="card-full centered-card">
+
+        <h2 class="call-text">
+            <a href="{% url 'pages:contact' %}" class="link-button">
+                Please Call Us
+            </a>
+        </h2>
     </div>
+
 </section>
 {% endblock %}

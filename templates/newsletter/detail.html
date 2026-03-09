@@ -1,237 +1,310 @@
 {% extends "base.html" %}
-{% load static %}
-{% block title %}{{ issue.title }} — {{ issue.edition_label }}{% endblock %}
 
-{% block extra_head %}
-<style>
-  .nl-page {
-    background: #e8e8e8;
-    padding: 32px 20px 80px;
-    min-height: 100vh;
-  }
-
-  .nl-topbar {
-    max-width: 760px;
-    margin: 0 auto 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-  .nl-topbar a.back {
-    font-size: 13px; color: #555; text-decoration: none;
-    display: flex; align-items: center; gap: 5px;
-    background: #fff; padding: 7px 14px; border-radius: 6px;
-    border: 1px solid #ddd;
-  }
-  .nl-topbar a.back:hover { color: #111; border-color: #aaa; }
-  .nl-download-btn {
-    display: inline-flex; align-items: center; gap: 7px;
-    background: #6abf4b; color: #fff; padding: 9px 18px;
-    border-radius: 6px; font-size: 13px; font-weight: 700;
-    text-decoration: none; cursor: pointer; border: none;
-    transition: background .15s;
-  }
-  .nl-download-btn:hover { background: #58a83e; color: #fff; }
-
-  .nl-card {
-    max-width: 760px;
-    margin: 0 auto;
-    background: #fff;
-    border-radius: 4px;
-    box-shadow: 0 2px 16px rgba(0,0,0,.12);
-  }
-
-  /* Letterhead — white bg, green bottom border */
-  .nl-letterhead {
-    padding: 32px 48px 24px;
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    border-bottom: 3px solid #6abf4b;
-    flex-wrap: wrap;
-    gap: 20px;
-  }
-  .nl-letterhead-logo img { height: 72px; width: auto; }
-  .nl-letterhead-address {
-    text-align: right;
-    font-size: 12px;
-    color: #444;
-    line-height: 1.8;
-  }
-  .nl-letterhead-address strong {
-    font-size: 13px; color: #111;
-    display: block; margin-bottom: 2px;
-  }
-  .nl-letterhead-address a { color: #6abf4b; text-decoration: none; font-weight: 600; }
-
-  .nl-edition-bar {
-    background: #f7f7f7;
-    border-bottom: 1px solid #ebebeb;
-    padding: 10px 48px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .nl-edition-bar .label { font-size: 11px; font-weight: 700; color: #6abf4b; text-transform: uppercase; letter-spacing: 1px; }
-  .nl-edition-bar .date  { font-size: 11px; color: #999; }
-
-  .nl-hero {
-    padding: 36px 48px 28px;
-    border-bottom: 1px solid #f0f0f0;
-  }
-  .nl-hero h1 { font-size: 26px; font-weight: 900; color: #111; margin: 0 0 8px; letter-spacing: -.4px; line-height: 1.2; }
-  .nl-hero p  { font-size: 14px; color: #777; margin: 0; }
-
-  .nl-section-block {
-    padding: 28px 48px;
-    border-bottom: 1px solid #f0f0f0;
-  }
-  .nl-section-block:last-of-type { border-bottom: none; }
-  .nl-section-block h2 {
-    font-size: 13px; font-weight: 800; color: #333;
-    margin: 0 0 14px; padding-bottom: 10px;
-    border-bottom: 1px solid #ebebeb;
-    text-transform: uppercase; letter-spacing: .6px;
-  }
-  .nl-body { font-size: 14px; color: #333; line-height: 1.85; }
-  .nl-body p { margin: 0 0 10px; }
-  .nl-body p:last-child { margin: 0; }
-
-  .nl-stats-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 18px; }
-  .nl-stat-box { border: 1px solid #e8e8e8; border-radius: 6px; padding: 16px; text-align: center; background: #fafafa; }
-  .nl-stat-box .val { font-size: 20px; font-weight: 900; color: #111; }
-  .nl-stat-box .lbl { font-size: 10px; color: #888; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin-top: 3px; }
-
-  .nl-subscribe-strip {
-    background: #f7f7f7;
-    border-top: 2px solid #6abf4b;
-    padding: 20px 48px;
-    display: flex; align-items: center; justify-content: space-between;
-    flex-wrap: wrap; gap: 12px;
-  }
-  .nl-subscribe-strip p { margin: 0; font-size: 13px; color: #555; }
-  .nl-subscribe-strip a {
-    background: #111; color: #fff; padding: 9px 20px;
-    border-radius: 6px; font-size: 12px; font-weight: 700;
-    text-decoration: none; white-space: nowrap;
-  }
-  .nl-subscribe-strip a:hover { background: #333; }
-
-  .nl-footer {
-    padding: 16px 48px;
-    border-top: 1px solid #ebebeb;
-    display: flex; align-items: center; justify-content: space-between;
-    flex-wrap: wrap; gap: 10px;
-  }
-  .nl-footer p { margin: 0; font-size: 11px; color: #aaa; line-height: 1.6; }
-  .nl-footer a { color: #6abf4b; text-decoration: none; }
-
-  @media (max-width: 620px) {
-    .nl-letterhead, .nl-edition-bar, .nl-hero,
-    .nl-section-block, .nl-subscribe-strip, .nl-footer { padding-left: 24px; padding-right: 24px; }
-    .nl-letterhead { flex-direction: column; }
-    .nl-letterhead-address { text-align: left; }
-    .nl-stats-row { grid-template-columns: 1fr 1fr; }
-    .nl-hero h1 { font-size: 20px; }
-  }
-
-  @media print {
-    .nl-topbar, .nl-subscribe-strip { display: none !important; }
-    .nl-page { background: #fff; padding: 0; }
-    .nl-card { box-shadow: none; }
-  }
-</style>
+{% block title %}
+{{ issue.title }} | Col Realty
 {% endblock %}
 
 {% block content %}
-<div class="nl-page">
+<div class="newsletter-detail-page">
+  <div class="newsletter-topbar">
+    <a href="{% url 'newsletter:newsletter_archive' %}" class="newsletter-back-btn">← All Issues</a>
 
-  <div class="nl-topbar">
-    <a href="{% url 'newsletter:newsletter_archive' %}" class="back">← All Issues</a>
-    <button class="nl-download-btn" onclick="window.print()">⬇ Download / Save as PDF</button>
+    <a href="javascript:window.print();" class="newsletter-pdf-btn">
+      ⬇ Download / Save as PDF
+    </a>
   </div>
 
-  <div class="nl-card">
-
-    <!-- Letterhead -->
-    <div class="nl-letterhead">
-      <div class="nl-letterhead-logo">
-        <img src="{% static 'images/colrealty_logo.png' %}" alt="Col Realty">
+  <div class="newsletter-layout">
+    <!-- Left Sidebar -->
+    <aside class="newsletter-sidebar">
+      <div class="newsletter-brand-block">
+        <div class="newsletter-brand-name">Col Realty</div>
+        <div class="newsletter-brand-contact">
+          info@colrealty.com<br>
+          www.colrealty.com
+        </div>
       </div>
-      <div class="nl-letterhead-address">
-        <strong>Col Realty LLC</strong>
-        <a href="tel:+15126993810">(512) 699-3810</a><br>
-        <a href="mailto:info@colrealty.com">info@colrealty.com</a><br>
-        <a href="https://www.colrealty.com">www.colrealty.com</a>
+
+      <div class="newsletter-sidebar-content">
+        <h1 class="newsletter-cover-title">
+          Spring Is Here — And So Is the Market
+        </h1>
+
+        <p class="newsletter-cover-subtitle">
+          Your monthly real estate update for Austin and Central Texas.
+        </p>
       </div>
-    </div>
+    </aside>
 
-    <!-- Edition bar -->
-    <div class="nl-edition-bar">
-      <span class="label">{{ issue.edition_label|default:"Newsletter" }}</span>
-      <span class="date">Published {{ issue.published_date|date:"F j, Y" }}</span>
-    </div>
+    <!-- Main Content -->
+    <main class="newsletter-main">
+      <div class="newsletter-header-card">
+        <div class="newsletter-meta-left">
+          <span class="newsletter-edition">{{ issue.edition_label|default:"Latest Issue" }}</span>
+          <h2 class="newsletter-main-title">
+            {{ issue.hero_title|default:issue.title }}
+          </h2>
+          {% if issue.hero_subtitle %}
+          <p class="newsletter-main-subtitle">{{ issue.hero_subtitle }}</p>
+          {% endif %}
+        </div>
 
-    <!-- Hero -->
-    <div class="nl-hero">
-      <h1>{{ issue.hero_title|default:issue.title }}</h1>
-      {% if issue.hero_subtitle %}<p>{{ issue.hero_subtitle }}</p>{% endif %}
-    </div>
+        <div class="newsletter-meta-right">
+          <span class="newsletter-published-label">Published</span>
+          <span class="newsletter-published-date">{{ issue.published_date }}</span>
+        </div>
+      </div>
 
-    <!-- Sections -->
-    {% for section in issue.sections.all %}
-    <div class="nl-section-block">
-      <h2>{% if section.icon_emoji %}{{ section.icon_emoji }} {% endif %}{{ section.heading }}</h2>
+      {% for section in issue.sections.all %}
+      <section class="newsletter-section-card">
+        <h3 class="newsletter-section-title">
+          {% if section.icon_emoji %}{{ section.icon_emoji }} {% endif %}
+          {{ section.heading }}
+        </h3>
 
-      {% if section.show_mls_stats and stats_all %}
-      <div class="nl-stats-row">
-        {% if stats_all.median_price %}
-        <div class="nl-stat-box">
-          <div class="val">${{ stats_all.median_price|floatformat:0 }}</div>
-          <div class="lbl">Median Price</div>
+        {% if section.show_mls_stats %}
+        {% include "newsletter/mls_stats_block.html" %}
+        {% endif %}
+
+        {% if section.body %}
+        <div class="newsletter-section-body">
+          {{ section.body|linebreaks }}
         </div>
         {% endif %}
-        {% if stats_all.days_on_market %}
-        <div class="nl-stat-box">
-          <div class="val">{{ stats_all.days_on_market }}</div>
-          <div class="lbl">Days on Market</div>
-        </div>
-        {% endif %}
-        {% if stats_all.list_to_sale %}
-        <div class="nl-stat-box">
-          <div class="val">{{ stats_all.list_to_sale }}%</div>
-          <div class="lbl">List-to-Sale</div>
-        </div>
-        {% endif %}
-      </div>
-      {% endif %}
-
-      {% if section.body %}
-      <div class="nl-body">{{ section.body|linebreaks }}</div>
-      {% endif %}
-    </div>
-    {% endfor %}
-
-    <!-- Subscribe strip -->
-    <div class="nl-subscribe-strip">
-      <p>Know someone who'd love this? Forward it their way.</p>
-      <a href="{% url 'newsletter:newsletter_subscribe' %}">Subscribe for Free →</a>
-    </div>
-
-    <!-- Footer -->
-    <div class="nl-footer">
-      <p>© 2026 Col Realty LLC · Austin & DFW, Texas</p>
-      <p>
-        <a href="{% url 'pages:legal_trec' %}">Consumer Protection</a> ·
-        <a href="{% url 'pages:legal_iabs' %}">IABS Notice</a> ·
-        <a href="{% url 'pages:legal_documents' %}">Legal Documents</a>
-      </p>
-    </div>
-
+      </section>
+      {% endfor %}
+    </main>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  .newsletter-detail-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 30px 12px 60px;
+    font-family: inherit;
+    color: #212529;
+  }
+
+  .newsletter-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .newsletter-back-btn,
+  .newsletter-pdf-btn {
+    display: inline-block;
+    padding: 12px 18px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 15px;
+  }
+
+  .newsletter-back-btn {
+    background: #f3f4f6;
+    color: #374151;
+    border: 1px solid #e5e7eb;
+  }
+
+  .newsletter-pdf-btn {
+    font-weight: 600;
+    padding: 12px 22px;
+    border-radius: 10px;
+  }
+
+  .newsletter-pdf-btn:hover {
+    background: #218838;
+    color: #ffffff !important;
+  }
+
+  .newsletter-layout {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: 0;
+    background: #ffffff;
+    border: 1px solid #d9e9d0;
+    border-radius: 8px;
+    overflow: hidden;
+    min-height: 900px;
+  }
+
+  .newsletter-sidebar {
+    background: #f3f4f6;
+    border-right: 1px solid #e5e7eb;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .newsletter-brand-block {
+    border-bottom: 4px solid #69be3c;
+    padding: 28px 24px;
+    min-height: 180px;
+  }
+
+  .newsletter-brand-name {
+    font-size: 28px;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 14px;
+  }
+
+  .newsletter-brand-contact {
+    color: #28a745;
+    line-height: 1.8;
+    font-size: 15px;
+  }
+
+  .newsletter-sidebar-content {
+    padding: 36px 30px;
+  }
+
+  .newsletter-cover-title {
+    font-size: 26px;
+    line-height: 1.35;
+    font-weight: 700;
+    color: #212529;
+  }
+
+  .newsletter-cover-subtitle {
+    color: #6c757d;
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  .newsletter-main {
+    background: #ffffff;
+    padding: 0;
+  }
+
+  .newsletter-header-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+    padding: 36px 42px 30px;
+    border-bottom: 1px solid #e5e7eb;
+    flex-wrap: wrap;
+  }
+
+  .newsletter-edition {
+    display: inline-block;
+    color: #28a745;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 10px;
+    font-size: 16px;
+  }
+
+  .newsletter-main-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #212529;
+  }
+
+  .newsletter-main-subtitle {
+    color: #6b7280;
+    font-size: 17px;
+    margin: 0;
+  }
+
+  .newsletter-meta-right {
+    text-align: right;
+    min-width: 180px;
+    color: #6b7280;
+    font-size: 15px;
+  }
+
+  .newsletter-published-label {
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .newsletter-published-date {
+    display: block;
+  }
+
+  .newsletter-section-card {
+    padding: 28px 32px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .newsletter-section-card:last-child {
+    border-bottom: none;
+  }
+
+  .newsletter-section-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #212529;
+    margin: 0 0 18px 0;
+    line-height: 1.2;
+    border-bottom: 1px solid #ececec;
+    padding-bottom: 14px;
+  }
+
+  .newsletter-section-body {
+    color: #374151;
+    font-size: 17px;
+    line-height: 1.9;
+  }
+
+  .newsletter-section-body {
+    font-size: 16px;
+    line-height: 1.7;
+    color: #495057;
+  }
+
+  @media (max-width: 992px) {
+    .newsletter-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .newsletter-sidebar {
+      border-right: none;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .newsletter-header-card,
+    .newsletter-section-card {
+      padding: 28px 22px;
+    }
+
+    .newsletter-cover-title {
+      font-size: 26px;
+      line-height: 1.35;
+      font-weight: 700;
+      color: #212529;
+    }
+
+    .newsletter-meta-right {
+      text-align: left;
+    }
+  }
+
+  @media print {
+
+    .newsletter-topbar,
+    header,
+    footer {
+      display: none !important;
+    }
+
+    .newsletter-detail-page {
+      max-width: 100%;
+      padding: 0;
+    }
+
+    .newsletter-layout {
+      border: none;
+    }
+  }
+</style>
 {% endblock %}

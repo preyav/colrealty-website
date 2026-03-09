@@ -7,4 +7,5 @@ urlpatterns = [
     path("", views.newsletter_archive, name="newsletter_archive"),
     path("issue/<slug:slug>/", views.newsletter_detail, name="newsletter_detail"),
     path("subscribe/", views.subscribe, name="newsletter_subscribe"),
+    path("latest/", views.newsletter_latest, name="newsletter_latest"),
 ]

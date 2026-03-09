@@ -8,6 +8,7 @@ never expire, replacing the short-lived signed MLS URLs.
 import os
 import hashlib
 import logging
+import time
 import requests
 from pathlib import Path
 
@@ -47,17 +48,27 @@ def _download_and_store(url: str, rel_path: str) -> str | None:
     if default_storage.exists(rel_path):
         return default_storage.url(rel_path)
 
-    try:
-        resp = requests.get(url, timeout=REQUEST_TIMEOUT, stream=True)
-        resp.raise_for_status()
-        data = resp.content
-        if len(data) < 1000:          # suspiciously small = probably an error page
-            return None
-        default_storage.save(rel_path, ContentFile(data))
-        return default_storage.url(rel_path)
-    except Exception as e:
-        logger.warning(f"Image cache: failed to download {url[:80]}… — {e}")
-        return None
+    for attempt in range(3):
+        try:
+            resp = requests.get(url, timeout=REQUEST_TIMEOUT, stream=True)
+            if resp.status_code == 429:
+                wait = 2 ** attempt  # 1s, 2s, 4s backoff
+                logger.warning(f"Image cache: 429 rate limit — waiting {wait}s before retry {attempt+1}/3")
+                time.sleep(wait)
+                continue
+            resp.raise_for_status()
+            data = resp.content
+            if len(data) < 1000:          # suspiciously small = probably an error page
+                return None
+            default_storage.save(rel_path, ContentFile(data))
+            return default_storage.url(rel_path)
+        except Exception as e:
+            logger.warning(f"Image cache: failed to download {url[:80]}… — {e}")
+            if attempt < 2:
+                time.sleep(2 ** attempt)
+            else:
+                return None
+    return None
 
 
 def cache_listing_photos(mls_id: str, image_urls: list[str]) -> tuple[str, list[str]]:
@@ -79,6 +90,7 @@ def cache_listing_photos(mls_id: str, image_urls: list[str]) -> tuple[str, list[
         cached = _download_and_store(url, rel_path)
         # Use cached URL if successful, otherwise keep original as fallback
         permanent_urls.append(cached if cached else url)
+        time.sleep(0.3)  # 300ms pause between images to avoid 429s
 
     main = permanent_urls[0] if permanent_urls else ""
     return main, permanent_urls

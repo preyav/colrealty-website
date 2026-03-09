@@ -178,6 +178,12 @@ def map_property_to_listing_data(record: Dict[str, Any]) -> Dict[str, Any]:
         "image_urls": image_urls,
         "virtual_tour_url": record.get("VirtualTourURLUnbranded") or record.get("VirtualTourURLBranded") or "",
 
+        # Listing Agent
+        "listing_agent_name":  record.get("ListAgentFullName") or record.get("ListAgentFirstName", "") + " " + record.get("ListAgentLastName", "") or "",
+        "listing_agent_email": record.get("ListAgentEmail") or "",
+        "listing_agent_phone": record.get("ListAgentDirectPhone") or record.get("ListAgentOfficePhone") or "",
+        "listing_office_name": record.get("ListOfficeName") or "",
+
         # Metadata
         "days_on_market": safe_int(record.get("DaysOnMarket")),
         "is_featured": bool(price and price > 750000),

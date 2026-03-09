@@ -1,5 +1,5 @@
 {# Newsletter Subscribe Modal (homepage popup) #}
-<div id="nl-overlay" class="nl-overlay" aria-hidden="true">
+<div id="nl-overlay" class="nl-overlay" aria-hidden="true" data-redirect-url="{% url 'newsletter:newsletter_latest' %}">
   <div class="nl-modal" role="dialog" aria-modal="true" aria-labelledby="nl-title">
     <button type="button" class="nl-close" id="nl-close" aria-label="Close newsletter signup">×</button>
 
@@ -40,7 +40,6 @@
 </div>
 
 <style>
-  /* Compass-ish minimal palette (adjust to match your exact tokens) */
   :root {
     --nl-bg: rgba(10, 10, 10, .55);
     --nl-card: #ffffff;
@@ -48,9 +47,7 @@
     --nl-muted: #6b7280;
     --nl-border: #e5e7eb;
     --nl-accent: #111827;
-    /* near-black */
     --nl-accent-2: #0b1220;
-    /* deep navy */
     --nl-btn: #111827;
     --nl-btn-text: #ffffff;
     --nl-radius: 18px;
@@ -195,9 +192,7 @@
     const overlay = document.getElementById("nl-overlay");
     if (!overlay) return;
 
-    // Show only on homepage by default
     const isHome = (window.location.pathname === "/" || window.location.pathname === "/home/");
-    if (!isHome) return;
 
     const CLOSE_KEY = "colrealty_nl_dismissed_v1";
     const SUB_KEY = "colrealty_nl_subscribed_v1";
@@ -210,36 +205,44 @@
     function openModal() {
       overlay.classList.add("is-open");
       overlay.setAttribute("aria-hidden", "false");
-      // focus first input
       const email = form.querySelector('input[name="email"]');
       if (email) setTimeout(() => email.focus(), 50);
     }
 
-    function closeModal(persist = true) {
+    function closeModal(persist = true, shouldRedirect = true) {
       overlay.classList.remove("is-open");
       overlay.setAttribute("aria-hidden", "true");
-      if (persist) localStorage.setItem(CLOSE_KEY, String(Date.now()));
+
+      if (persist) {
+        localStorage.setItem(CLOSE_KEY, String(Date.now()));
+      }
+
+      if (shouldRedirect) {
+        const redirectUrl = overlay.dataset.redirectUrl;
+        if (redirectUrl) {
+          window.location.href = redirectUrl;
+        }
+      }
     }
 
-    // close on overlay click
     overlay.addEventListener("click", (e) => {
-      if (e.target === overlay) closeModal(true);
+      if (e.target === overlay) closeModal(true, true);
     });
-    closeBtn.addEventListener("click", () => closeModal(true));
 
-    // Esc to close
+    closeBtn.addEventListener("click", () => closeModal(true, true));
+
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && overlay.classList.contains("is-open")) closeModal(true);
+      if (e.key === "Escape" && overlay.classList.contains("is-open")) {
+        closeModal(true, true);
+      }
     });
 
-    // Show after a short delay unless dismissed/subscribed
     const dismissed = localStorage.getItem(CLOSE_KEY);
     const subscribed = localStorage.getItem(SUB_KEY);
-    if (!dismissed && !subscribed) {
+    if (isHome && !dismissed && !subscribed) {
       setTimeout(openModal, 1600);
     }
 
-    // Ajax submit to keep user on page
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       msg.textContent = "";
@@ -252,25 +255,21 @@
         const res = await fetch(form.action, {
           method: "POST",
           body: formData,
-          credentials: "same-origin",   // ⭐ important for Django CSRF cookies
+          credentials: "same-origin",
           headers: {
             "X-Requested-With": "XMLHttpRequest"
           }
         });
 
-        // Your subscribe view currently returns HTML. We'll handle both HTML + JSON.
         if (!res.ok) throw new Error("Subscribe failed.");
 
-        // If you later change the view to return JSON, this still works.
-        const text = await res.text();
+        await res.text();
 
-        // Simple success heuristic: no server error and response exists
-        msg.textContent = "You’re in! Watch for the next Market Insider in your inbox.";
+        msg.textContent = "You’re in! Redirecting to the latest issue...";
         msg.classList.add("is-ok");
         localStorage.setItem(SUB_KEY, "1");
 
-        // close after a beat
-        setTimeout(() => closeModal(false), 1200);
+        setTimeout(() => closeModal(false, true), 1200);
 
       } catch (err) {
         msg.textContent = "Sorry — we couldn’t subscribe you right now. Please try again.";
@@ -279,7 +278,6 @@
       }
     });
 
-    // Optional: allow footer link/button to open it
     window.ColRealtyOpenNewsletter = openModal;
   })();
 </script>

@@ -7,273 +7,49 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Col Realty{% endblock %}</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
   <link rel="stylesheet" href="{% static 'css/styles.css' %}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <style>
-
-    /* ─── HEADER LAYOUT ─────────────────────────────────── */
-    .site-header {
-      background: #fff;
-      border-bottom: 1px solid #ebebeb;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-
-    .header-inner {
-      display: flex !important;
-      align-items: center !important;
-      height: 80px;
-    }
-
-    /* ─── LOGO ──────────────────────────────────────────── */
-    .brand {
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      text-decoration: none;
-      margin-right: 24px;
-    }
-
-    .brand img {
-      height: 90px;
-      width: auto;
-      display: block;
-    }
-
-    /* ─── SEARCH BAR ────────────────────────────────────── */
-    .header-search {
-      flex: 1;
-      max-width: 420px;
-      margin-right: 24px;
-      position: relative;
-    }
-
-    .header-search form {
-      display: flex;
-      align-items: center;
-      background: #f5f5f5;
-      border: 1px solid #e8e8e8;
-      border-radius: 100px;
-      padding: 0 16px;
-      height: 40px;
-      transition: border-color .15s, box-shadow .15s;
-    }
-
-    .header-search form:focus-within {
-      border-color: #6abf4b;
-      box-shadow: 0 0 0 3px rgba(106, 191, 75, .1);
-      background: #fff;
-    }
-
-    .header-search .search-icon {
-      color: #aaa;
-      font-size: 13px;
-      margin-right: 8px;
-      flex-shrink: 0;
-    }
-
-    .header-search input {
-      border: none;
-      background: transparent;
-      outline: none;
-      font-size: 13px;
-      color: #111;
-      width: 100%;
-      font-family: inherit;
-    }
-
-    .header-search input::placeholder { color: #bbb; }
-
-    .header-search button {
-      background: none;
-      border: none;
-      padding: 0;
-      cursor: pointer;
-      color: #888;
-      font-size: 13px;
-      flex-shrink: 0;
-      display: none;
-    }
-
-    .header-search form:focus-within button { display: block; }
-
-    /* ─── MAIN NAV ──────────────────────────────────────── */
-    .main-nav {
-      display: flex;
-      align-items: center;
-      gap: 2px;
-      margin-left: auto;
-    }
-
-    /* Full override of Bootstrap nav-link — no underlines, no carets, no artifacts */
-    .main-nav .nav-link,
-    .main-nav .nav-link:hover,
-    .main-nav .nav-link:focus,
-    .main-nav .nav-link:active,
-    .main-nav .dropdown-toggle,
-    .main-nav .dropdown-toggle:hover,
-    .main-nav .dropdown-toggle:focus {
-      font-size: 15px;
-      font-weight: 400;
-      letter-spacing: 0.1px;
-      color: #222 !important;
-      padding: 6px 14px;
-      border-radius: 8px;
-      text-decoration: none !important;
-      border-bottom: none !important;
-      box-shadow: none !important;
-      white-space: nowrap;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      transition: background .12s;
-    }
-
-    .main-nav .nav-link:hover,
-    .main-nav .dropdown-toggle:hover { background: #f5f5f5; }
-
-    /* Remove Bootstrap's built-in dropdown caret pseudo-element */
-    .main-nav .dropdown-toggle::after { display: none !important; }
-
-    .chevron { font-size: 10px; opacity: .55; }
-
-    /* ─── USER AVATAR CIRCLE ────────────────────────────── */
-    .user-avatar {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: #6abf4b;
-      color: #fff;
-      font-size: 12px;
-      font-weight: 700;
-      flex-shrink: 0;
-    }
-
-    /* ─── MEGA DROPDOWNS ────────────────────────────────── */
-    .nav-item { position: relative; }
-
-    .mega-drop {
-      display: none;
-      position: absolute;
-      top: calc(100% + 8px);
-      left: 50%;
-      transform: translateX(-50%);
-      background: #fff;
-      border-radius: 14px;
-      box-shadow: 0 8px 40px rgba(0, 0, 0, .14);
-      padding: 10px;
-      min-width: 220px;
-      z-index: 200;
-      border: 1px solid #ebebeb;
-    }
-
-    .nav-item.drop-right .mega-drop {
-      left: auto;
-      right: 0;
-      transform: none;
-    }
-
-    /* Dropdowns open only when .open class is added via JS */
-    .nav-item.open .mega-drop,
-    .nav-item.open .simple-drop { display: block; }
-
-    .mega-drop-single {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .mega-item {
-      display: flex;
-      align-items: center;
-      padding: 9px 14px;
-      border-radius: 8px;
-      text-decoration: none;
-      color: #333;
-      font-size: 13px;
-      font-weight: 400;
-      transition: background .1s;
-    }
-
-    .mega-item:hover {
-      background: #f5f5f5;
-      color: #111;
-    }
-
-    /* ─── SIMPLE DROPDOWN (user menu) ──────────────────── */
-    .simple-drop {
-      display: none;
-      position: absolute;
-      top: calc(100% + 8px);
-      right: 0;
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 8px 30px rgba(0, 0, 0, .12);
-      padding: 8px;
-      min-width: 200px;
-      z-index: 200;
-      border: 1px solid #ebebeb;
-    }
-
-    .simple-drop a {
-      display: flex;
-      align-items: center;
-      padding: 9px 14px;
-      font-size: 13px;
-      font-weight: 400;
-      color: #333;
-      text-decoration: none;
-      border-radius: 7px;
-      transition: background .1s;
-    }
-
-    .simple-drop a:hover {
-      background: #f5f5f5;
-      color: #111;
-    }
-
-    .simple-drop hr {
-      margin: 5px 0;
-      border: none;
-      border-top: 1px solid #f0f0f0;
-    }
-
-  </style>
   {% block extra_head %}{% endblock %}
 </head>
 
 <body class="page d-flex flex-column min-vh-100">
 
   <header class="site-header">
-    <div class="container header-inner">
+    <!--
+      Layout: [Logo] [Search pill]  ──────────────  [Buy][Sell][Rent][Agents] [Sign In]
+    -->
+    <div class="header-inner">
 
-      <!-- Logo -->
+      <!-- ① Logo — extreme left -->
       <a href="/" class="brand">
         <img src="{% static 'images/colrealty_logo.png' %}" alt="Col Realty">
       </a>
 
-      <!-- Search -->
+      <!-- ② Search pill — left side, right after logo -->
       <div class="header-search">
         <form action="/listings/" method="get">
-          <i class="fas fa-search search-icon"></i>
-          <input type="text" name="q" placeholder="Search by city, zip, address..." value="{{ request.GET.q|default:'' }}" autocomplete="off">
-          <button type="submit"><i class="fas fa-arrow-right"></i></button>
+          <i class="fas fa-search h-search-icon"></i>
+          <input type="text" name="q" placeholder="City, Address, ZIP, Agent…" value="{{ request.GET.q|default:'' }}"
+            autocomplete="off">
+          <button type="submit" class="h-search-btn">
+            <i class="fas fa-arrow-right"></i>
+          </button>
         </form>
       </div>
 
-      <!-- Nav -->
+      <!-- ③ All nav + sign-in grouped on the RIGHT -->
       <nav class="main-nav">
 
-        <a href="{% url 'pages:home' %}" class="nav-link">Home</a>
+        <!-- Home -->
+        <div class="nav-item">
+          <a class="nav-link" href="{% url 'pages:home' %}">Home</a>
+        </div>
 
         <!-- Buy -->
         <div class="nav-item">
-          <a class="nav-link dropdown-toggle" href="/listings/">Buy <span class="chevron">▾</span></a>
+          <a class="nav-link" href="/listings/">Buy</a>
           <div class="mega-drop">
             <div class="mega-drop-single">
               <a class="mega-item" href="/listings/">All Homes</a>
@@ -288,7 +64,7 @@
 
         <!-- Sell -->
         <div class="nav-item">
-          <a class="nav-link dropdown-toggle" href="{% url 'pages:sell' %}">Sell <span class="chevron">▾</span></a>
+          <a class="nav-link" href="{% url 'pages:sell' %}">Sell</a>
           <div class="mega-drop">
             <div class="mega-drop-single">
               <a class="mega-item" href="{% url 'pages:sell_valuation' %}">Home Valuation</a>
@@ -300,7 +76,7 @@
 
         <!-- Rent -->
         <div class="nav-item">
-          <a class="nav-link dropdown-toggle" href="/rentals/">Rent <span class="chevron">▾</span></a>
+          <a class="nav-link" href="/rentals/">Rent</a>
           <div class="mega-drop">
             <div class="mega-drop-single">
               <a class="mega-item" href="/rentals/">All Rentals</a>
@@ -313,7 +89,7 @@
 
         <!-- Agents -->
         <div class="nav-item">
-          <a class="nav-link dropdown-toggle" href="{% url 'pages:agents' %}">Agents <span class="chevron">▾</span></a>
+          <a class="nav-link dropdown-toggle" href="{% url 'pages:agents' %}">Agents <span class="chevron">∨</span></a>
           <div class="mega-drop">
             <div class="mega-drop-single">
               <a class="mega-item" href="{% url 'pages:team' %}">Our Team</a>
@@ -322,12 +98,15 @@
           </div>
         </div>
 
-        <!-- User menu -->
+      </nav>
+
+      <!-- ④ Right actions: avatar or sign-in — inside nav -->
+      <div class="header-actions">
         {% if request.user.is_authenticated %}
         <div class="nav-item drop-right">
-          <a class="nav-link dropdown-toggle" href="{% url 'accounts:overview' %}">
+          <a class="nav-link dropdown-toggle nav-link--user" href="{% url 'accounts:overview' %}">
             <span class="user-avatar">{{ request.user.first_name|default:request.user.email|slice:":1"|upper }}</span>
-            {{ request.user.first_name|default:request.user.email }}
+            <span class="user-name">{{ request.user.first_name|default:request.user.email }}</span>
             <span class="chevron">▾</span>
           </a>
           <div class="simple-drop">
@@ -341,10 +120,11 @@
           </div>
         </div>
         {% else %}
-        <a class="nav-link" href="#" onclick="document.getElementById('login-modal').style.display='flex';return false;">Register/Sign In</a>
+        <a class="btn-signin" href="#"
+          onclick="document.getElementById('login-modal').style.display='flex';return false;">Register / Sign In</a>
         {% endif %}
+      </div>
 
-      </nav>
     </div>
   </header>
 
@@ -358,46 +138,52 @@
 
   <!-- LOGIN MODAL -->
   {% if not request.user.is_authenticated %}
-  <div id="login-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;align-items:center;justify-content:center;" onclick="if(event.target===this)this.style.display='none'">
-    <div style="background:#fff;border-radius:20px;padding:40px 36px;width:100%;max-width:440px;position:relative;text-align:center;max-height:90vh;overflow-y:auto;">
-      <button onclick="document.getElementById('login-modal').style.display='none'" style="position:absolute;top:16px;right:20px;background:none;border:none;font-size:24px;cursor:pointer;color:#888;line-height:1;">×</button>
+  <div id="login-modal" class="login-modal" onclick="if(event.target===this)this.style.display='none'">
+    <div class="login-modal-box">
+      <button class="login-modal-close" onclick="document.getElementById('login-modal').style.display='none'">×</button>
 
       <!-- Step 1: Choose role -->
       <div id="modal-step-1">
-        <div style="width:80px;height:80px;margin:0 auto 20px;background:#f5f5f5;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px;">🏠</div>
-        <h2 style="font-size:22px;font-weight:700;margin-bottom:8px;">Register/Sign In</h2>
-        <p style="font-size:13px;color:#888;margin-bottom:28px;">How would you like to use Col Realty?</p>
-        <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px;">
-          <button onclick="selectRole('agent')" style="padding:14px;border:1px solid #ddd;border-radius:10px;background:#fff;font-size:15px;font-weight:600;cursor:pointer;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='#fff'">Agent</button>
-          <button onclick="selectRole('buyer_seller')" style="padding:14px;border:1px solid #ddd;border-radius:10px;background:#fff;font-size:15px;font-weight:600;cursor:pointer;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='#fff'">Buyer or Seller</button>
-          <button onclick="selectRole('other')" style="padding:14px;border:1px solid #ddd;border-radius:10px;background:#fff;font-size:15px;font-weight:600;cursor:pointer;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='#fff'">Other</button>
+        <div class="login-modal-icon">🏠</div>
+        <h2 class="login-modal-title">Register/Sign In</h2>
+        <p class="login-modal-subtitle">How would you like to use Col Realty?</p>
+        <div class="login-modal-role-list">
+          <button class="login-modal-role-btn" onclick="selectRole('agent')">Agent</button>
+          <button class="login-modal-role-btn" onclick="selectRole('buyer_seller')">Buyer or Seller</button>
+          <button class="login-modal-role-btn" onclick="selectRole('other')">Other</button>
         </div>
-        <p style="font-size:11px;color:#aaa;">By continuing, you agree to Col Realty's Terms of Service &amp; Privacy Policy</p>
+        <p class="login-modal-terms">By continuing, you agree to Col Realty's Terms of Service &amp; Privacy Policy</p>
       </div>
 
       <!-- Step 2: Sign in options -->
       <div id="modal-step-2" style="display:none;">
-        <h2 style="font-size:22px;font-weight:700;margin-bottom:8px;">Sign In</h2>
-        <p id="modal-role-label" style="font-size:13px;color:#888;margin-bottom:24px;"></p>
+        <h2 class="login-modal-title">Sign In</h2>
+        <p id="modal-role-label" class="login-modal-role-label"></p>
         <input type="hidden" id="selected-role" value="">
-        <a id="google-login-btn" href="/accounts/google/login/?next=/accounts/overview/" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:13px;border:1px solid #ddd;border-radius:10px;text-decoration:none;color:#111;font-size:14px;font-weight:500;margin-bottom:10px;transition:background .15s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">
-          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" height="20"> Continue with Google
+        <a id="google-login-btn" href="/accounts/google/login/?next=/accounts/overview/"
+          class="login-modal-social-btn login-modal-social-btn--google">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" height="20"> Continue
+          with Google
         </a>
-        <a href="/accounts/facebook/login/?next=/accounts/overview/" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:13px;border:1px solid #ddd;border-radius:10px;text-decoration:none;color:#fff;background:#1877f2;font-size:14px;font-weight:500;margin-bottom:20px;">
-          <i class="fab fa-facebook" style="font-size:18px;"></i> Continue with Facebook
+        <a href="/accounts/facebook/login/?next=/accounts/overview/"
+          class="login-modal-social-btn login-modal-social-btn--facebook">
+          <i class="fab fa-facebook login-modal-facebook-icon"></i> Continue with Facebook
         </a>
-        <div style="position:relative;margin:16px 0;">
-          <hr style="border:none;border-top:1px solid #e5e7eb;">
-          <span style="position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:#fff;padding:0 10px;font-size:12px;color:#aaa;">or</span>
+        <div class="login-modal-divider">
+          <hr>
+          <span class="login-modal-divider-label">or</span>
         </div>
         <form method="post" action="/accounts/login/">
           {% csrf_token %}
           <input type="hidden" name="next" value="/accounts/overview/">
-          <input name="login" type="email" placeholder="Email address" style="width:100%;border:1px solid #ddd;border-radius:10px;padding:12px 14px;font-size:14px;margin-bottom:10px;outline:none;box-sizing:border-box;">
-          <input name="password" type="password" placeholder="Password" style="width:100%;border:1px solid #ddd;border-radius:10px;padding:12px 14px;font-size:14px;margin-bottom:16px;outline:none;box-sizing:border-box;">
-          <button type="submit" style="width:100%;background:#6abf4b;color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;">Sign In</button>
+          <input name="login" type="email" placeholder="Email address" class="login-modal-input">
+          <input name="password" type="password" placeholder="Password"
+            class="login-modal-input login-modal-input--last">
+          <button type="submit" class="login-modal-submit">Sign In</button>
         </form>
-        <button onclick="document.getElementById('modal-step-1').style.display='block';document.getElementById('modal-step-2').style.display='none';" style="background:none;border:none;color:#888;font-size:13px;margin-top:14px;cursor:pointer;">← Back</button>
+        <button class="login-modal-back"
+          onclick="document.getElementById('modal-step-1').style.display='block';document.getElementById('modal-step-2').style.display='none';">←
+          Back</button>
       </div>
     </div>
   </div>
@@ -414,9 +200,6 @@
     }
   </script>
   {% endif %}
-
-  {% block extra_js %}{% endblock %}
-  {% include "newsletter/_subscribe_modal.html" %}
 
   <script>
     // Click-based nav dropdowns — stays open until you click elsewhere
@@ -462,5 +245,10 @@
     });
   </script>
 
+  {% block extra_js %}{% endblock %}
+
+  {% include "newsletter/_subscribe_modal.html" %}
+
 </body>
+
 </html>

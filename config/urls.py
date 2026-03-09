@@ -17,7 +17,8 @@ urlpatterns = [
     path("listings/", include(("listings.urls", "listings"), namespace="listings")),
     path("rentals/",  include("rentals.urls")),
     path("leads/",    include("leads.urls")),
-    path('newsletter/', include('newsletter.urls', namespace='newsletter')),
+    path("newsletter/", include(("newsletter.urls",
+         "newsletter"), namespace="newsletter")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

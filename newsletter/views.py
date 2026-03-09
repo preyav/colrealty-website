@@ -9,13 +9,17 @@ from django.http import JsonResponse
 # reuse existing hubspot service
 from leads.services.hubspot import upsert_contact, create_note
 
+
 def _is_ajax(request):
     return request.headers.get("x-requested-with") == "XMLHttpRequest"
 
+
 def newsletter_archive(request):
-    issues = NewsletterIssue.objects.filter(status="published").order_by("-published_date")
+    issues = NewsletterIssue.objects.filter(
+        status="published").order_by("-published_date")
     latest = issues.first()
     return render(request, "newsletter/archive.html", {"issues": issues, "latest": latest})
+
 
 def newsletter_detail(request, slug):
     issue = get_object_or_404(NewsletterIssue, slug=slug, status="published")
@@ -30,6 +34,7 @@ def newsletter_detail(request, slug):
         "stats_pflugerville": stats_pflugerville,
         "stats_roundrock": stats_roundrock,
     })
+
 
 @require_http_methods(["POST"])
 def subscribe(request):
@@ -75,15 +80,18 @@ def subscribe(request):
 
         subscriber.hubspot_submitted = True
         subscriber.hubspot_response = f"HubSpot contact_id={contact_id}"
-        subscriber.save(update_fields=["hubspot_submitted", "hubspot_response"])
+        subscriber.save(
+            update_fields=["hubspot_submitted", "hubspot_response"])
 
-        messages.success(request, "You're subscribed! Welcome to Col Realty Market Insider.")
+        messages.success(
+            request, "You're subscribed! Welcome to Col Realty Market Insider.")
         return render(request, "newsletter/subscribe_result.html", {"ok": True})
 
     except Exception as e:
         subscriber.hubspot_submitted = False
         subscriber.hubspot_response = str(e)[:5000]
-        subscriber.save(update_fields=["hubspot_submitted", "hubspot_response"])
+        subscriber.save(
+            update_fields=["hubspot_submitted", "hubspot_response"])
 
         # For popup/AJAX: still return ok=True because the user IS subscribed locally
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
@@ -91,8 +99,16 @@ def subscribe(request):
 
         # Non-AJAX fallback (no template required)
         return redirect("newsletter:newsletter_archive")
-    
+
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         return JsonResponse({"ok": True})
-    
+
     return redirect("newsletter:newsletter_archive")
+
+
+def newsletter_latest(request):
+    latest = NewsletterIssue.objects.filter(
+        status="published").order_by("-published_date").first()
+    if not latest:
+        return redirect("newsletter:newsletter_archive")
+    return redirect(latest.get_absolute_url())
