@@ -8,6 +8,13 @@
     <a href="{% url 'accounts:saved_searches' %}" style="padding:12px 24px;font-size:14px;font-weight:500;color:#888;text-decoration:none;border-bottom:2px solid transparent;margin-bottom:-1px;">Saved Searches</a>
     <a href="{% url 'accounts:settings' %}" style="padding:12px 24px;font-size:14px;font-weight:500;color:#111;text-decoration:none;border-bottom:2px solid #111;margin-bottom:-1px;">Account Settings</a>
   </div>
+  {% if messages %}
+  {% for message in messages %}
+  <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:14px;color:#166534;display:flex;align-items:center;gap:8px;">
+    ✅ {{ message }}
+  </div>
+  {% endfor %}
+  {% endif %}
   <h1 style="font-size:24px;font-weight:700;margin-bottom:24px;">Account Settings</h1>
   <div style="background:#fff;border-radius:14px;border:1px solid #e5e7eb;padding:28px;">
     <form method="post">

@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from django.http import JsonResponse
@@ -59,6 +60,7 @@ def account_settings(request):
         request.user.save()
         profile.phone = request.POST.get('phone', '')
         profile.save()
+        messages.success(request, 'Your settings have been saved successfully.')
         return redirect('accounts:settings')
     return render(request, 'accounts/settings.html', {'profile': profile})
 
