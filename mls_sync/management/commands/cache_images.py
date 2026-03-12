@@ -16,59 +16,66 @@ import logging
 from django.core.management.base import BaseCommand
 from django.db.models import Q
 from listings.models import Listing
+from rentals.models import Rental
 from mls_sync.client import MLSClient
-from mls_sync.mappers import map_property_to_listing_data
 from mls_sync.image_cache import cache_listing_photos
 
 logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
-    help = "Cache MLS images permanently for listings with missing or expired images"
+    help = "Cache MLS images permanently for listings/rentals with non-S3 images"
 
     def add_arguments(self, parser):
         parser.add_argument(
             "--mls-id",
             type=str,
-            help="Cache images for a single listing by MLS ID (e.g. ACT220365592)",
+            help="Cache images for a single listing by MLS ID",
         )
         parser.add_argument(
             "--limit",
             type=int,
             default=200,
-            help="Max number of listings to process in one run (default: 200)",
+            help="Max number of records to process in one run (default: 200)",
         )
         parser.add_argument(
             "--all",
             action="store_true",
-            help="Process ALL listings, not just those missing images",
+            help="Process ALL active records, not just those missing S3 images",
+        )
+        parser.add_argument(
+            "--rentals",
+            action="store_true",
+            help="Process Rental model instead of Listing model",
         )
 
     def handle(self, *args, **options):
         mls_id = options.get("mls_id")
         limit = options.get("limit")
         process_all = options.get("all")
+        use_rentals = options.get("rentals")
 
-        self.stdout.write(self.style.NOTICE("=== Col Realty Image Cacher ==="))
+        Model = Rental if use_rentals else Listing
+        model_name = "Rental" if use_rentals else "Listing"
+
+        self.stdout.write(self.style.NOTICE(f"=== Col Realty Image Cacher [{model_name}] ==="))
 
         # ── Build queryset ─────────────────────────────────────────────
         if mls_id:
-            qs = Listing.objects.filter(mls_id=mls_id)
-            self.stdout.write(f"Targeting single listing: {mls_id}")
+            qs = Model.objects.filter(mls_id=mls_id)
+            self.stdout.write(f"Targeting single {model_name}: {mls_id}")
         elif process_all:
-            qs = Listing.objects.filter(status="active")
-            self.stdout.write(f"Processing ALL active listings...")
+            qs = Model.objects.filter(status="active")
+            self.stdout.write(f"Processing ALL active {model_name} records...")
         else:
-            # Only listings with missing main image
-            qs = Listing.objects.filter(
-                status="active"
-            ).filter(
-                Q(main_image_url="") | Q(main_image_url__isnull=True)
+            # Only records with non-S3 main image URLs
+            qs = Model.objects.filter(status="active").exclude(
+                main_image_url__startswith="https://colrealty-media.s3"
             )
-            self.stdout.write(f"Processing listings with missing images...")
+            self.stdout.write(f"Processing {model_name} records with non-S3 images...")
 
         total = qs.count()
-        self.stdout.write(f"Found {total} listings to process. Limit: {limit}")
+        self.stdout.write(f"Found {total} {model_name} records to process. Limit: {limit}")
 
         if total == 0:
             self.stdout.write(self.style.SUCCESS("Nothing to do!"))
@@ -83,9 +90,8 @@ class Command(BaseCommand):
         skipped = 0
         api_calls = 0
 
-        # Build a lookup dict of mls_id -> listing for efficient matching
         target_ids = set(qs.values_list("mls_id", flat=True))
-        self.stdout.write(f"Fetching fresh URLs from MLS API for {len(target_ids)} listings...")
+        self.stdout.write(f"Fetching fresh URLs from MLS API for {len(target_ids)} records...")
 
         for record in client.iter_properties(updated_since="2020-01-01T00:00:00Z"):
             listing_key = record.get("ListingKey") or record.get("ListingId", "")
@@ -94,7 +100,6 @@ class Command(BaseCommand):
             if listing_key not in target_ids:
                 continue
 
-            # Found a match — get fresh image URLs
             media = record.get("Media") or []
             image_urls = [m["MediaURL"] for m in sorted(media, key=lambda x: x.get("Order", 0)) if m.get("MediaURL")]
 
@@ -107,7 +112,7 @@ class Command(BaseCommand):
                 self.stdout.write(f"  {listing_key}: caching {len(image_urls)} images...")
                 try:
                     main_url, cached_urls = cache_listing_photos(listing_key, image_urls)
-                    Listing.objects.filter(mls_id=listing_key).update(
+                    Model.objects.filter(mls_id=listing_key).update(
                         main_image_url=main_url,
                         image_urls=cached_urls,
                     )
@@ -120,20 +125,17 @@ class Command(BaseCommand):
                 target_ids.discard(listing_key)
                 processed += 1
 
-            # Progress update every 10 listings
             if processed % 10 == 0:
                 self.stdout.write(f"  Progress: {processed}/{min(total, limit)} | API calls: {api_calls}")
 
-            # Stop when all targets found
             if not target_ids:
                 break
 
-            # Respect MLS rate limits — pause between listings
             time.sleep(0.5)
 
         # ── Summary ───────────────────────────────────────────────────
         self.stdout.write("\n" + "="*40)
-        self.stdout.write(self.style.SUCCESS(f"Done!"))
+        self.stdout.write(self.style.SUCCESS("Done!"))
         self.stdout.write(f"  Processed : {processed}")
         self.stdout.write(f"  Cached    : {success}")
         self.stdout.write(f"  Skipped   : {skipped}")
@@ -141,6 +143,6 @@ class Command(BaseCommand):
         self.stdout.write(f"  API calls : {api_calls}")
 
         if target_ids:
-            self.stdout.write(f"\nListings not found in MLS (may be expired/removed):")
+            self.stdout.write(f"\nNot found in MLS (may be expired/removed):")
             for mid in list(target_ids)[:10]:
                 self.stdout.write(f"  - {mid}")

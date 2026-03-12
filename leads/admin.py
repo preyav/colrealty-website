@@ -1,6 +1,7 @@
 from django.contrib import admin, messages
 from django.utils.html import format_html
 from .models import Lead
+from django.utils.safestring import mark_safe
 
 
 def retry_hubspot_sync(modeladmin, request, queryset):
@@ -12,6 +13,7 @@ def retry_hubspot_sync(modeladmin, request, queryset):
         queued += 1
     messages.success(request, f"{queued} lead(s) queued for HubSpot sync.")
 
+
 retry_hubspot_sync.short_description = "🔄 Retry HubSpot sync for selected leads"
 
 
@@ -22,14 +24,14 @@ class LeadAdmin(admin.ModelAdmin):
         "source_type", "source_id",
         "email_sent_badge", "hubspot_badge", "error_badge",
     )
-    list_filter  = ("source_type", "email_sent", "hubspot_sent", "created_at")
+    list_filter = ("source_type", "email_sent", "hubspot_sent", "created_at")
     search_fields = ("name", "email", "phone", "message", "page_url")
     readonly_fields = (
         "created_at", "email_sent", "hubspot_sent",
         "hubspot_contact_id", "error", "page_url",
     )
     ordering = ("-created_at",)
-    actions  = [retry_hubspot_sync]
+    actions = [retry_hubspot_sync]
 
     fieldsets = (
         ("Contact Info", {
@@ -55,7 +57,7 @@ class LeadAdmin(admin.ModelAdmin):
                 'target="_blank" style="color:green;">✅ {}</a>',
                 obj.hubspot_contact_id, obj.hubspot_contact_id
             )
-        return format_html('<span style="color:red;">❌ Not synced</span>')
+        return mark_safe('<span style="color:red;">❌ Not synced</span>')
 
     @admin.display(description="Error")
     def error_badge(self, obj):

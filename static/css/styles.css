@@ -1480,7 +1480,7 @@ body.page {
   background: #fff;
   border: 1px solid #e8e8e8;
   border-radius: 12px;
-  overflow: hidden;
+  overflow: visible;
   text-decoration: none;
   color: inherit;
   transition: box-shadow .25s, transform .25s;
@@ -1499,6 +1499,7 @@ body.page {
   aspect-ratio: 4 / 3;
   background: #efefef;
   overflow: hidden;
+  border-radius: 12px 12px 0 0;
 }
 
 .hp-card-img img {
@@ -3209,4 +3210,129 @@ line-height: 1.2;
 .call-text {
   margin-top: 20px;
   font-weight: 600;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Card icon buttons — Redfin style (on image, top-right)
+   ══════════════════════════════════════════════════════════════ */
+.hp-card-price-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.hp-card-price-row .hp-card-price {
+  margin: 0;
+}
+
+.hp-card-icons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.hp-icon-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform .15s;
+  padding: 0;
+}
+.hp-icon-btn:hover { transform: scale(1.15); }
+
+.hp-icon-btn svg { width: 18px; height: 18px; color: #444; }
+
+.hp-icon-fav:hover svg { stroke: #e02020; }
+.hp-icon-fav.saved svg { fill: #e02020; stroke: #e02020; }
+
+.hp-icon-share:hover svg { stroke: #555; }
+
+/* ══════════════════════════════════════════════════════════════
+   Share modal + Login prompt
+   ══════════════════════════════════════════════════════════════ */
+.share-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+}
+.share-modal-overlay[style*="flex"] { display: flex !important; }
+
+.share-modal-box {
+  background: #fff;
+  border-radius: 16px;
+  padding: 28px 24px 24px;
+  width: 90%;
+  max-width: 440px;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0,0,0,.18);
+}
+
+.share-modal-close {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 22px;
+  color: #888;
+  cursor: pointer;
+  line-height: 1;
+}
+.share-modal-close:hover { color: #111; }
+
+.share-modal-title { font-size: 18px; font-weight: 700; color: #111; margin: 0 0 4px; }
+.share-modal-address { font-size: 13px; color: #666; margin: 0 0 20px; }
+
+.share-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.share-opt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: #f5f6f8;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 14px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #333;
+  cursor: pointer;
+  transition: all .15s;
+}
+.share-opt:hover { background: #f0fdf0; border-color: #6abf4b; color: #6abf4b; }
+
+.share-opt-icon {
+  font-size: 22px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.share-copy-confirm {
+  margin-top: 14px;
+  text-align: center;
+  font-size: 13px;
+  color: #166534;
+  background: #f0fdf4;
+  border-radius: 8px;
+  padding: 8px;
 }

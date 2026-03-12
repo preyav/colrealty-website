@@ -1,45 +1,68 @@
 {% extends "base.html" %}
 {% load humanize %}
 
-{% block title %}{{ rental.street_address }}, {{ rental.city }}, {{ rental.state }} | Rent | Col Realty{% endblock %}
+{% block title %}{{ listing.street_address }}, {{ listing.city }}, {{ listing.state }} {{ listing.zip_code }} | Rent | Col Realty{% endblock %}
 
 {% block extra_head %}
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<!-- Inter loaded globally in base.html -->
 <style>
-body.page{background:#fff !important;font-family:'DM Sans',sans-serif !important;}
+/* ── reset dark theme ──────────────────────────────────────── */
+body.page{background:#fff !important;font-family:'Inter',sans-serif !important;}
 .page-main{background:#fff !important;padding:0 !important;}
 .page-main>.container{max-width:100% !important;padding:0 !important;}
 .site-header{background:#fff !important;border-bottom:1px solid #ebebeb !important;box-shadow:none !important;backdrop-filter:none !important;}
+.site-header::before,.site-header::after{display:none !important;}
 .site-header *,.site-header a,.site-header .nav-link,.site-header .brand-name,.site-header .brand-tagline,.site-header .dropdown-link{color:#1a1a1a !important;text-shadow:none !important;}
 .brand-mark{background:#1a1a1a !important;color:#fff !important;border-radius:6px !important;}
 .dropdown-menu{background:#fff !important;border:1px solid #e8e8e8 !important;box-shadow:0 4px 20px rgba(0,0,0,.08) !important;}
 footer,.site-footer{background:#1a1a1a !important;color:#aaa !important;}
 footer a,.site-footer a{color:#aaa !important;}
 footer a:hover,.site-footer a:hover{color:#fff !important;}
+footer h4,footer h5,footer h6{color:#fff !important;}
 
-.cr-wrap{max-width:1100px;margin:0 auto;padding:0 32px;box-sizing:border-box;font-family:'DM Sans',sans-serif;}
+/* ── centered wrapper ─────────────────────────────────────── */
+.cr-wrap{
+  max-width:1100px;
+  margin:0 auto;
+  padding:0 32px;
+  box-sizing:border-box;
+  font-family:'Inter',sans-serif;
+}
 
-.cr-topbar{display:flex;align-items:center;justify-content:space-between;padding:22px 0 0;gap:20px;flex-wrap:nowrap;}
+/* ── topbar ───────────────────────────────────────────────── */
+.cr-topbar{display:flex;align-items:center;justify-content:space-between;padding:22px 0;gap:0;flex-wrap:nowrap;border-bottom:1px solid #ebebeb;}
 .cr-topbar-l{flex-shrink:0;}
-.cr-address{font-family:'DM Serif Display',serif;font-size:22px;font-weight:400;color:#111;line-height:1.15;margin:0 0 2px;letter-spacing:-0.02em;white-space:nowrap;}
-.cr-cityline{font-size:12px;color:#888;margin:0;}
+.cr-address{font-family:'Inter',sans-serif;font-size:18px;font-weight:700;color:#111;line-height:1.2;margin:0 0 2px;letter-spacing:-0.03em;white-space:nowrap;}
+.cr-cityline{font-size:13px;color:#888;margin:0;}
+.cr-topbar-r{display:flex;align-items:center;gap:0;flex-shrink:0;flex-wrap:nowrap;}
 .cr-stat{display:flex;flex-direction:column;align-items:center;padding:0 16px;border-right:1px solid #e0e0e0;}
 .cr-stat:first-child{padding-left:0;}
 .cr-stat:last-of-type{border-right:none;}
-.cr-stat-v{font-size:17px;font-weight:700;color:#111;line-height:1;white-space:nowrap;}
-.cr-stat-l{font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:.08em;margin-top:3px;white-space:nowrap;}
-.cr-actions{display:flex;gap:8px;padding-left:20px;border-left:1px solid #e0e0e0;margin-left:16px;}
-.cr-btn{display:inline-flex;align-items:center;gap:5px;padding:8px 14px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;border:1px solid #ddd;background:#fff;color:#111;transition:background .15s;}
-.cr-btn:hover{background:#f5f5f5;}
-.cr-btn-save{background:#111;color:#fff;border-color:#111;}
-.cr-btn-save:hover{background:#333;}
+.cr-stat-v{font-size:18px;font-weight:700;color:#111;line-height:1;white-space:nowrap;letter-spacing:-0.03em;}
+.cr-stat-l{font-size:12px;color:#888;letter-spacing:0;margin-top:5px;white-space:nowrap;font-weight:400;}
+.cr-actions{display:flex;gap:10px;padding-left:20px;border-left:1px solid #e0e0e0;margin-left:16px;align-items:center;}
 
-.cr-nav-wrap{position:sticky;top:0;z-index:50;background:#fff;border-bottom:1px solid #ebebeb;margin-top:18px;}
-.cr-nav{display:flex;overflow-x:auto;scrollbar-width:none;}
+/* ── labeled Favorite + Share buttons ────────────────────── */
+.cr-action-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:7px;font-size:14px;font-weight:600;cursor:pointer;border:1.5px solid #ddd;background:#fff;color:#111;transition:background .15s,border-color .15s;white-space:nowrap;font-family:'Inter',sans-serif;}
+.cr-action-btn svg{width:18px;height:18px;flex-shrink:0;}
+.cr-action-btn:hover{background:#f5f5f5;border-color:#ccc;}
+.cr-fav-btn.saved{color:#e02020;border-color:#e02020;}
+.cr-fav-btn.saved svg{fill:#e02020;stroke:#e02020;}
+
+/* ── sticky section nav ───────────────────────────────────── */
+.cr-nav-wrap{position:sticky;top:80px;z-index:50;background:#fff;border-bottom:1px solid #ebebeb;margin-top:18px;}
+.cr-nav-inner{display:flex;align-items:center;justify-content:space-between;}
+.cr-nav{display:flex;overflow-x:auto;scrollbar-width:none;flex:1;}
 .cr-nav::-webkit-scrollbar{display:none;}
-.cr-nav a{font-size:13px;font-weight:500;color:#777;text-decoration:none;padding:13px 18px 13px 0;margin-right:6px;border-bottom:2px solid transparent;white-space:nowrap;transition:color .15s,border-color .15s;}
-.cr-nav a:hover,.cr-nav a.active{color:#111;border-bottom-color:#111;}
+.cr-nav a{font-size:14px;font-weight:500;color:#666;text-decoration:none;padding:14px 20px 14px 0;margin-right:4px;border-bottom:2px solid transparent;white-space:nowrap;transition:color .15s,border-color .15s;letter-spacing:-0.01em;}
+.cr-nav a:hover,.cr-nav a.active{color:#111;border-bottom-color:#111;font-weight:600;}
 
+/* sticky nav save/share — hidden until topbar scrolls away */
+.cr-nav-actions{display:flex;align-items:center;gap:8px;padding-left:16px;opacity:0;pointer-events:none;transition:opacity .2s;}
+.cr-nav-actions.visible{opacity:1;pointer-events:auto;}
+.cr-nav-actions .cr-action-btn{font-size:13px;padding:6px 12px;}
+
+/* ── photo grid ───────────────────────────────────────────── */
 .cr-photos{margin-top:20px;}
 .cr-slider{position:relative;border-radius:12px;overflow:hidden;background:#111;cursor:pointer;}
 .cr-slider-img{width:100%;height:520px;object-fit:cover;display:block;}
@@ -53,24 +76,40 @@ footer a:hover,.site-footer a:hover{color:#fff !important;}
 .cr-thumb{flex-shrink:0;width:88px;height:60px;border-radius:6px;overflow:hidden;cursor:pointer;border:2px solid transparent;transition:border-color .15s;}
 .cr-thumb.active{border-color:#111;}
 .cr-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
-.cr-viewall{display:inline-flex;align-items:center;gap:6px;margin-top:10px;background:#fff;border:1px solid #ddd;border-radius:7px;padding:8px 16px;font-size:13px;font-weight:600;color:#111;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .15s;}
+.cr-viewall{display:inline-flex;align-items:center;gap:6px;margin-top:10px;background:#fff;border:1px solid #ddd;border-radius:7px;padding:8px 16px;font-size:13px;font-weight:600;color:#111;cursor:pointer;transition:background .15s;font-family:'Inter',sans-serif;}
 .cr-viewall:hover{background:#f5f5f5;}
+.cr-tour{display:inline-flex;align-items:center;gap:6px;margin-top:10px;margin-left:8px;border:1px solid #111;color:#111;background:transparent;padding:8px 16px;border-radius:6px;font-size:13px;font-weight:600;text-decoration:none;transition:background .15s,color .15s;font-family:'Inter',sans-serif;}
+.cr-tour:hover{background:#111;color:#fff;}
 .cr-nophoto{height:320px;background:#f5f5f5;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#ccc;}
 
+/* ── two-column body ──────────────────────────────────────── */
 .cr-body{display:grid;grid-template-columns:1fr 340px;align-items:start;gap:0;margin-top:0;}
 .cr-main{min-width:0;padding:0 40px 80px 0;}
 .cr-side{position:sticky;top:0;max-height:100vh;overflow-y:auto;border-left:1px solid #ebebeb;scrollbar-width:thin;scrollbar-color:#e0e0e0 transparent;}
 .cr-side::-webkit-scrollbar{width:4px;}
 .cr-side::-webkit-scrollbar-thumb{background:#e0e0e0;border-radius:4px;}
 
+/* ── sections ─────────────────────────────────────────────── */
 .cr-section{padding:28px 0;border-bottom:1px solid #f0f0f0;}
 .cr-section:last-child{border-bottom:none;padding-bottom:60px;}
-.cr-section-title{font-size:17px;font-weight:700;color:#111;margin:0 0 16px;letter-spacing:-0.01em;}
+.cr-section-title{font-size:18px;font-weight:700;color:#111;margin:0 0 16px;letter-spacing:-0.02em;}
 
-.cr-desc{font-size:15px;line-height:1.8;color:#444;font-weight:300;margin:0;}
+/* description */
+.cr-desc{font-size:15px;line-height:1.75;color:#444;font-weight:400;margin:0;}
 .cr-clamp{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;}
-.cr-readmore{background:none;border:none;color:#111;font-weight:600;font-size:13px;cursor:pointer;padding:10px 0 0;text-decoration:underline;font-family:'DM Sans',sans-serif;display:block;}
+.cr-readmore{background:none;border:none;color:#111;font-weight:600;font-size:13px;cursor:pointer;padding:10px 0 0;text-decoration:underline;display:block;font-family:'Inter',sans-serif;}
 
+/* agent card */
+.cr-agent-card{display:flex;align-items:center;gap:14px;margin-bottom:14px;}
+.cr-agent-av{width:48px;height:48px;border-radius:50%;background:#111;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:700;flex-shrink:0;}
+.cr-agent-name{font-size:15px;font-weight:700;color:#111;}
+.cr-agent-co{font-size:12px;color:#999;margin:2px 0;}
+.cr-agent-ph{font-size:13px;color:#555;margin-bottom:10px;}
+.cr-agent-btns{display:flex;gap:8px;flex-wrap:wrap;}
+.cr-agent-btn{padding:8px 14px;border-radius:6px;font-size:13px;font-weight:600;text-decoration:none;border:1px solid #ddd;color:#111;background:#fff;transition:background .15s;font-family:'Inter',sans-serif;}
+.cr-agent-btn:hover{background:#f5f5f5;}
+
+/* details table */
 .cr-tbl{width:100%;border:1px solid #ebebeb;border-radius:10px;overflow:hidden;border-collapse:collapse;}
 .cr-tbl tr{border-bottom:1px solid #f5f5f5;}
 .cr-tbl tr:last-child{border-bottom:none;}
@@ -78,37 +117,57 @@ footer a:hover,.site-footer a:hover{color:#fff !important;}
 .cr-tbl td:first-child{color:#888;width:44%;font-size:13px;}
 .cr-tbl td:last-child{color:#111;font-weight:600;}
 
+/* features */
 .cr-feat-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;}
 .cr-feat-lbl{font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.08em;margin:0 0 8px;}
 .cr-tags{display:flex;flex-wrap:wrap;gap:6px;}
 .cr-tag{background:#f8f8f8;border:1px solid #ebebeb;border-radius:5px;padding:4px 10px;font-size:12px;color:#444;}
 
+/* map */
 .cr-map{width:100%;height:360px;border-radius:12px;overflow:hidden;border:1px solid #ebebeb;}
 #rental-map{height:100%;width:100%;display:block;}
 
+/* history table */
+.cr-hist{width:100%;border-collapse:collapse;}
+.cr-hist th{font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:.06em;padding:0 0 10px;text-align:left;font-weight:600;}
+.cr-hist th:last-child{text-align:right;}
+.cr-hist td{padding:12px 0;font-size:14px;border-top:1px solid #f5f5f5;color:#444;}
+.cr-hist td:last-child{text-align:right;font-weight:600;color:#111;}
+
+/* schools */
+.cr-dist-badge{font-size:12px;font-weight:600;color:#3b5bdb;background:#eef2ff;border-radius:5px;padding:4px 10px;display:inline-block;margin-bottom:14px;}
 .cr-school{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid #f5f5f5;}
 .cr-school:last-of-type{border-bottom:none;}
 .cr-school-rtg{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700;flex-shrink:0;}
 .cr-school-name{font-size:14px;font-weight:600;color:#111;}
 .cr-school-meta{font-size:12px;color:#999;margin-top:2px;}
-.cr-dist-badge{font-size:12px;font-weight:600;color:#3b5bdb;background:#eef2ff;border-radius:5px;padding:4px 10px;display:inline-block;margin-bottom:14px;}
 
+/* open house */
 .cr-oh{display:flex;align-items:center;gap:16px;background:#111;color:#fff;border-radius:10px;padding:20px 24px;}
 .cr-oh-lbl{font-size:10px;opacity:.6;text-transform:uppercase;letter-spacing:.08em;}
 .cr-oh-time{font-size:17px;font-weight:700;margin-top:3px;}
 
-.cr-cta-price{font-size:26px;font-weight:800;color:#111;letter-spacing:-0.02em;padding:20px 24px 4px;}
+/* ── sidebar ──────────────────────────────────────────────── */
+.cr-cta-price{font-size:28px;font-weight:700;color:#111;letter-spacing:-0.03em;padding:20px 24px 4px;font-family:'Inter',sans-serif;line-height:1;}
 .cr-cta-addr{font-size:13px;color:#999;padding:0 24px 16px;}
-.cr-form-wrap{padding:0 24px 20px;}
+.cr-form-wrap{padding:0 24px 20px;border-bottom:1px solid #ebebeb;}
 .cr-field{margin-bottom:10px;}
 .cr-field label{display:block;font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;}
-.cr-field input,.cr-field textarea{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #e0e0e0;border-radius:7px;font-size:14px;color:#111;background:#fff;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .15s;}
+.cr-field input,.cr-field textarea{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #e0e0e0;border-radius:7px;font-size:14px;color:#111;background:#fff;font-family:'Inter',sans-serif;outline:none;transition:border-color .15s;}
 .cr-field input:focus,.cr-field textarea:focus{border-color:#111;}
 .cr-row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-.cr-submit{width:100%;background:#111;color:#fff;border:none;border-radius:7px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;margin-top:6px;font-family:'DM Sans',sans-serif;transition:background .15s;}
+.cr-submit{width:100%;background:#111;color:#fff;border:none;border-radius:7px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;margin-top:6px;font-family:'Inter',sans-serif;transition:background .15s;}
 .cr-submit:hover{background:#333;}
 .cr-fine{font-size:11px;color:#bbb;text-align:center;margin-top:10px;}
 
+/* rental info box in sidebar */
+.cr-rental-info{padding:16px 24px;border-bottom:1px solid #ebebeb;}
+.cr-rental-info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f5f5f5;font-size:13px;}
+.cr-rental-info-row:last-child{border-bottom:none;}
+.cr-rental-info-row span:first-child{color:#888;}
+.cr-rental-info-row span:last-child{font-weight:600;color:#111;}
+
+/* ── lightbox ─────────────────────────────────────────────── */
 .cr-lb{display:none;position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:9999;flex-direction:column;align-items:center;justify-content:center;}
 .cr-lb.open{display:flex;}
 .cr-lb-close{position:absolute;top:20px;right:24px;color:#fff;font-size:28px;cursor:pointer;background:none;border:none;opacity:.7;line-height:1;}
@@ -124,13 +183,16 @@ footer a:hover,.site-footer a:hover{color:#fff !important;}
 .cr-lb-strip img{height:52px;width:72px;object-fit:cover;border-radius:4px;cursor:pointer;opacity:.45;border:2px solid transparent;flex-shrink:0;transition:opacity .15s;}
 .cr-lb-strip img.active{opacity:1;border-color:#fff;}
 
+/* ── responsive ───────────────────────────────────────────── */
 @media(max-width:960px){
   .cr-wrap{padding:0 16px;}
   .cr-body{grid-template-columns:1fr;}
   .cr-side{position:static;max-height:none;border-left:none;border-top:1px solid #ebebeb;}
   .cr-main{padding:0 0 40px;}
+  .cr-topbar{flex-wrap:wrap;gap:12px;}
   .cr-topbar-r{flex-wrap:wrap;gap:8px;}
-  .cr-slider-img{height:280px;} .cr-thumb{width:68px;height:48px;}
+  .cr-slider-img{height:280px;}
+  .cr-thumb{width:68px;height:48px;}
 }
 </style>
 {% endblock %}
@@ -149,156 +211,305 @@ footer a:hover,.site-footer a:hover{color:#fff !important;}
   <div class="cr-lb-strip" id="cr-lb-strip"></div>
 </div>
 
+<!-- Share Modal -->
+<div id="share-modal" class="share-modal-overlay" onclick="if(event.target===this)closeShare()">
+  <div class="share-modal-box">
+    <button class="share-modal-close" onclick="closeShare()">×</button>
+    <h3 class="share-modal-title">Share this rental</h3>
+    <p id="share-modal-address" class="share-modal-address"></p>
+    <div class="share-options">
+      <button class="share-opt" onclick="shareVia('copy')"><span class="share-opt-icon">🔗</span><span>Copy link</span></button>
+      <button class="share-opt" onclick="shareVia('email')"><span class="share-opt-icon">✉️</span><span>Email</span></button>
+      <button class="share-opt" onclick="shareVia('text')"><span class="share-opt-icon">💬</span><span>Text</span></button>
+      <button class="share-opt" onclick="shareVia('facebook')"><span class="share-opt-icon" style="background:#1877f2;color:#fff;border-radius:50%;font-weight:700;font-size:16px;">f</span><span>Facebook</span></button>
+      <button class="share-opt" onclick="shareVia('twitter')"><span class="share-opt-icon" style="background:#000;color:#fff;border-radius:50%;font-size:14px;font-weight:700;">𝕏</span><span>X / Twitter</span></button>
+      <button class="share-opt" onclick="shareVia('whatsapp')"><span class="share-opt-icon">📱</span><span>WhatsApp</span></button>
+    </div>
+    <div id="share-copy-confirm" class="share-copy-confirm" style="display:none;">✅ Link copied to clipboard!</div>
+  </div>
+</div>
+
+<!-- ══ ONE centered wrapper ══ -->
 <div class="cr-wrap">
 
-  <!-- Top bar -->
+  <!-- Topbar: address left | price/stats/actions right -->
   <div class="cr-topbar">
     <div class="cr-topbar-l">
-      <h1 class="cr-address">{{ rental.street_address }}</h1>
-      <p class="cr-cityline">{{ rental.city }}, {{ rental.state }} {{ rental.zip_code }}{% if rental.county %} &middot; {{ rental.county }} County{% endif %}</p>
+      <h1 class="cr-address">{{ listing.street_address }}</h1>
+      <p class="cr-cityline">{{ listing.city }}, {{ listing.state }} {{ listing.zip_code }}{% if listing.county %} &middot; {{ listing.county }} County{% endif %}</p>
     </div>
-    <div style="display:flex;align-items:center;gap:0;flex-shrink:0;">
-      <div class="cr-stat"><span class="cr-stat-v">${{ rental.price|floatformat:0|intcomma }}/mo</span><span class="cr-stat-l">Rent</span></div>
-      {% if rental.beds %}<div class="cr-stat"><span class="cr-stat-v">{{ rental.beds|floatformat:0 }}</span><span class="cr-stat-l">Beds</span></div>{% endif %}
-      {% if rental.baths %}<div class="cr-stat"><span class="cr-stat-v">{{ rental.baths|floatformat:0 }}</span><span class="cr-stat-l">Baths</span></div>{% endif %}
-      {% if rental.sqft %}<div class="cr-stat"><span class="cr-stat-v">{{ rental.sqft|intcomma }}</span><span class="cr-stat-l">Sq Ft</span></div>{% endif %}
+    <div class="cr-topbar-r">
+      <div class="cr-stat" style="padding-left:0;">
+        <span class="cr-stat-v">${{ listing.price|floatformat:0|intcomma }}<span style="font-size:13px;font-weight:400;color:#888;">/mo</span></span>
+        <span class="cr-stat-l">Rent</span>
+      </div>
+      {% if listing.beds %}<div class="cr-stat"><span class="cr-stat-v">{{ listing.beds|floatformat:0 }}</span><span class="cr-stat-l">Beds</span></div>{% endif %}
+      {% if listing.baths %}<div class="cr-stat"><span class="cr-stat-v">{{ listing.baths|floatformat:0 }}</span><span class="cr-stat-l">Baths</span></div>{% endif %}
+      {% if listing.sqft %}<div class="cr-stat" style="border-right:none;"><span class="cr-stat-v">{{ listing.sqft|intcomma }}</span><span class="cr-stat-l">Sq. Ft.</span></div>{% endif %}
       <div class="cr-actions">
-        <button class="cr-btn cr-btn-save">★ Save</button>
-        <button class="cr-btn">↗ Share</button>
+        <button class="cr-action-btn cr-fav-btn {% if is_favorite %}saved{% endif %}" id="detail-fav-btn"
+          onclick="handleFavorite(this, '{{ listing.id }}')"
+          aria-label="Favorite">
+          <svg viewBox="0 0 24 24" fill="{% if is_favorite %}#e02020{% else %}none{% endif %}" stroke="{% if is_favorite %}#e02020{% else %}currentColor{% endif %}" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          <span>Save</span>
+        </button>
+        <button class="cr-action-btn cr-share-btn"
+          onclick="openShare('{{ listing.street_address }}, {{ listing.city }}, {{ listing.state }}', '{{ request.path }}')"
+          aria-label="Share">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          <span>Share</span>
+        </button>
       </div>
     </div>
   </div>
 
-  <!-- Section nav -->
+  <!-- Sticky section nav -->
   <div class="cr-nav-wrap">
-    <div class="cr-nav cr-wrap">
-      <a href="#overview" class="active">Overview</a>
-      <a href="#location">Location</a>
-      <a href="#propertyInfo">Property Info</a>
-      {% if rental.school_district or rental.elementary_school or rental.middle_school or rental.high_school %}<a href="#schools">Schools</a>{% endif %}
+    <div class="cr-wrap">
+      <div class="cr-nav-inner">
+        <nav class="cr-nav">
+          <a href="#overview" class="active">Overview</a>
+          <a href="#location">Location</a>
+          <a href="#propertyInfo">Property Info</a>
+          <a href="#propertyHistory">Listing History</a>
+          {% if listing.school_district or listing.elementary_school or listing.middle_school or listing.high_school %}<a href="#schools">Schools</a>{% endif %}
+        </nav>
+        <!-- Save/Share appear here once topbar scrolls out of view -->
+        <div class="cr-nav-actions" id="cr-nav-actions">
+          <button class="cr-action-btn cr-fav-btn {% if is_favorite %}saved{% endif %}" id="nav-fav-btn"
+            onclick="handleFavorite(this, '{{ listing.id }}')"
+            aria-label="Save">
+            <svg viewBox="0 0 24 24" fill="{% if is_favorite %}#e02020{% else %}none{% endif %}" stroke="{% if is_favorite %}#e02020{% else %}currentColor{% endif %}" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            <span>Save</span>
+          </button>
+          <button class="cr-action-btn cr-share-btn"
+            onclick="openShare('{{ listing.street_address }}, {{ listing.city }}, {{ listing.state }}', '{{ request.path }}')"
+            aria-label="Share">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            <span>Share</span>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
   <!-- Photos -->
   <div class="cr-photos">
-    {% if rental.main_image_url %}
+    {% if listing.image_urls and listing.image_urls|length > 0 %}
       <div class="cr-slider" onclick="lbOpen(sliderIdx)">
-        <img class="cr-slider-img" id="cr-slider-img" src="{{ rental.main_image_url }}" alt="{{ rental.street_address }}">
-        <button class="cr-slider-nav cr-slider-prev" onclick="event.stopPropagation();sliderNav(-1)">‹</button>
-        <button class="cr-slider-nav cr-slider-next" onclick="event.stopPropagation();sliderNav(1)">›</button>
-        <div class="cr-slider-count" id="cr-slider-count">1 / 1</div>
+        <img id="cr-slider-img" class="cr-slider-img" src="{{ listing.image_urls.0 }}" alt="{{ listing.street_address }}" />
+        <button class="cr-slider-nav cr-slider-prev" onclick="event.stopPropagation();sliderNav(-1)">&#8249;</button>
+        <button class="cr-slider-nav cr-slider-next" onclick="event.stopPropagation();sliderNav(1)">&#8250;</button>
+        <div class="cr-slider-count" id="cr-slider-count">1 / {{ listing.image_urls|length }}</div>
       </div>
-      <div class="cr-thumbs" id="cr-thumbs"></div>
-      <div>
-        <button class="cr-viewall" onclick="lbOpen(0)">⊞ View all photos</button>
+      <div class="cr-thumbs" id="cr-thumbs">
+        {% for img in listing.image_urls %}
+          <div class="cr-thumb{% if forloop.first %} active{% endif %}" onclick="sliderGo({{ forloop.counter0 }})">
+            <img src="{{ img }}" alt="Photo {{ forloop.counter }}" />
+          </div>
+        {% endfor %}
+      </div>
+      <div style="display:flex;align-items:center;">
+        <button class="cr-viewall" onclick="lbOpen(sliderIdx)">🖼 View all {{ listing.image_urls|length }} photos</button>
+        {% if listing.virtual_tour_url %}<a href="{{ listing.virtual_tour_url }}" target="_blank" class="cr-tour">▶ Virtual Tour</a>{% endif %}
+      </div>
+    {% elif listing.main_image_url %}
+      <div class="cr-slider" onclick="lbOpen(0)">
+        <img class="cr-slider-img" src="{{ listing.main_image_url }}" alt="{{ listing.street_address }}" />
       </div>
     {% else %}
-      <div class="cr-nophoto">No photos available</div>
+      <div class="cr-nophoto">📷 No photos available</div>
     {% endif %}
   </div>
 
-  <!-- Body -->
+  <!-- Two-column body -->
   <div class="cr-body">
+
+    <!-- LEFT: main content -->
     <div class="cr-main">
 
-      <div id="overview" class="cr-section">
-        {% if rental.status %}<span style="display:inline-block;background:#dcfce7;color:#15803d;border-radius:5px;padding:3px 10px;font-size:12px;font-weight:600;margin-bottom:12px;">{{ rental.status|title }}</span>{% endif %}
-        {% if rental.property_type %}<span style="display:inline-block;background:#f0f4ff;color:#3b5bdb;border-radius:5px;padding:3px 10px;font-size:12px;font-weight:600;margin-bottom:12px;margin-left:6px;">{{ rental.property_type }}</span>{% endif %}
+      <div id="overview">
 
-        {% if rental.description %}
-        <p class="cr-desc cr-clamp" id="desc-clamp">{{ rental.description }}</p>
-        <p class="cr-desc" id="desc-full" style="display:none;">{{ rental.description }}</p>
-        <button class="cr-readmore" onclick="toggleDesc(this)">Read more ↓</button>
+        {% if listing.description %}
+        <div class="cr-section">
+          <h2 class="cr-section-title">Description</h2>
+          <p id="ds" class="cr-desc cr-clamp">{{ listing.description }}</p>
+          <p id="df" class="cr-desc" style="display:none;">{{ listing.description }}</p>
+          <button class="cr-readmore" onclick="var s=document.getElementById('ds'),f=document.getElementById('df');if(f.style.display==='none'){s.style.display='none';f.style.display='block';this.textContent='Show less';}else{s.style.display='block';f.style.display='none';this.textContent='Continue Reading';}">Continue Reading</button>
+        </div>
         {% endif %}
 
-        <div style="margin-top:20px;">
-          <div class="cr-agent-card" style="display:flex;align-items:center;gap:14px;margin-bottom:8px;">
-            <div style="width:48px;height:48px;border-radius:50%;background:#111;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:700;flex-shrink:0;">C</div>
+        <div class="cr-section">
+          <h2 class="cr-section-title">Contact Agent</h2>
+          <div class="cr-agent-card">
+            <div class="cr-agent-av">C</div>
             <div>
-              <div style="font-size:15px;font-weight:700;color:#111;">Col Realty</div>
-              <div style="font-size:12px;color:#999;margin:2px 0;">Listing Agent</div>
-              <a href="tel:5126993810" style="font-size:13px;color:#555;">(512) 699-3810</a>
+              <div class="cr-agent-name">Col Realty</div>
+              <div class="cr-agent-co">Col Realty</div>
+              <div class="cr-agent-ph">(512) 699-3810</div>
             </div>
           </div>
+          <div class="cr-agent-btns">
+            <a href="tel:5126993810" class="cr-agent-btn">📞 Call</a>
+            <a href="sms:5126993810" class="cr-agent-btn">💬 Text</a>
+            <a href="mailto:info@colrealty.com" class="cr-agent-btn">✉️ Email</a>
+          </div>
         </div>
-      </div>
 
-      <div id="propertyInfo" class="cr-section">
-        <h2 class="cr-section-title">Property Details</h2>
-        <table class="cr-tbl">
-          {% if rental.property_type %}<tr><td>Type</td><td>{{ rental.property_type }}</td></tr>{% endif %}
-          {% if rental.year_built %}<tr><td>Year Built</td><td>{{ rental.year_built }}</td></tr>{% endif %}
-          {% if rental.stories %}<tr><td>Stories</td><td>{{ rental.stories }}</td></tr>{% endif %}
-          {% if rental.sqft %}<tr><td>Living Area</td><td>{{ rental.sqft|intcomma }} Sq. Ft.</td></tr>{% endif %}
-          {% if rental.lot_size %}<tr><td>Lot Size</td><td>{{ rental.lot_size }} AC</td></tr>{% endif %}
-          {% if rental.county %}<tr><td>County</td><td>{{ rental.county }}</td></tr>{% endif %}
-          {% if rental.subdivision %}<tr><td>Subdivision</td><td>{{ rental.subdivision }}</td></tr>{% endif %}
-          {% if rental.garage_spaces %}<tr><td>Garage Spaces</td><td>{{ rental.garage_spaces }}</td></tr>{% endif %}
-          {% if rental.mls_id %}<tr><td>MLS #</td><td>{{ rental.mls_id }}</td></tr>{% endif %}
-          {% if rental.days_on_market is not None %}<tr><td>Days Listed</td><td>{{ rental.days_on_market }}</td></tr>{% endif %}
-        </table>
-      </div>
+      </div><!-- /overview -->
 
-      {% if rental.interior_features or rental.exterior_features or rental.appliances or rental.community_features or rental.parking_features %}
-      <div class="cr-section">
-        <h2 class="cr-section-title">Property Information</h2>
-        <div class="cr-feat-grid">
-          {% if rental.interior_features %}<div><p class="cr-feat-lbl">Interior</p><div class="cr-tags">{% for f in rental.interior_features_list %}<span class="cr-tag">{{ f }}</span>{% endfor %}</div></div>{% endif %}
-          {% if rental.exterior_features %}<div><p class="cr-feat-lbl">Exterior</p><div class="cr-tags">{% for f in rental.exterior_features_list %}<span class="cr-tag">{{ f }}</span>{% endfor %}</div></div>{% endif %}
-          {% if rental.appliances %}<div><p class="cr-feat-lbl">Appliances</p><div class="cr-tags">{% for f in rental.appliances_list %}<span class="cr-tag">{{ f }}</span>{% endfor %}</div></div>{% endif %}
-          {% if rental.community_features %}<div><p class="cr-feat-lbl">Community</p><div class="cr-tags">{% for f in rental.community_features_list %}<span class="cr-tag">{{ f }}</span>{% endfor %}</div></div>{% endif %}
-          {% if rental.parking_features %}<div><p class="cr-feat-lbl">Parking</p><div class="cr-tags">{% for f in rental.parking_features_list %}<span class="cr-tag">{{ f }}</span>{% endfor %}</div></div>{% endif %}
-          {% if rental.flooring or rental.heating or rental.cooling %}<div><p class="cr-feat-lbl">Utilities & Finishes</p><div class="cr-tags">{% if rental.heating %}<span class="cr-tag">Heat: {{ rental.heating }}</span>{% endif %}{% if rental.cooling %}<span class="cr-tag">AC: {{ rental.cooling }}</span>{% endif %}{% if rental.flooring %}<span class="cr-tag">{{ rental.flooring }}</span>{% endif %}</div></div>{% endif %}
+      <div id="propertyInfo">
+        <div class="cr-section">
+          <h2 class="cr-section-title">Property Details</h2>
+          <table class="cr-tbl">
+            {% if listing.status %}<tr><td>Status</td><td>{{ listing.status|title }}</td></tr>{% endif %}
+            {% if listing.mls_id %}<tr><td>MLS #</td><td>{{ listing.mls_id }}</td></tr>{% endif %}
+            {% if listing.days_on_market is not None %}<tr><td>Days Listed</td><td>{{ listing.days_on_market }}</td></tr>{% endif %}
+            {% if listing.property_type %}<tr><td>Type</td><td>{{ listing.property_type }}</td></tr>{% endif %}
+            {% if listing.year_built %}<tr><td>Year Built</td><td>{{ listing.year_built }}</td></tr>{% endif %}
+            {% if listing.stories %}<tr><td>Stories</td><td>{{ listing.stories }}</td></tr>{% endif %}
+            {% if listing.sqft %}<tr><td>Living Area</td><td>{{ listing.sqft|intcomma }} Sq. Ft.</td></tr>{% endif %}
+            {% if listing.lot_size %}<tr><td>Lot Size</td><td>{{ listing.lot_size }} AC{% if listing.lot_size_sqft %} / {{ listing.lot_size_sqft|intcomma }} SF{% endif %}</td></tr>{% endif %}
+            {% if listing.county %}<tr><td>County</td><td>{{ listing.county }}</td></tr>{% endif %}
+            {% if listing.subdivision %}<tr><td>Subdivision</td><td>{{ listing.subdivision }}</td></tr>{% endif %}
+            {% if listing.garage_spaces %}<tr><td>Garage Spaces</td><td>{{ listing.garage_spaces }}</td></tr>{% endif %}
+            {% if listing.hoa_fee %}<tr><td>HOA Fees</td><td>${{ listing.hoa_fee|floatformat:0 }}{% if listing.hoa_frequency %} / {{ listing.hoa_frequency }}{% endif %}</td></tr>{% endif %}
+            {% if listing.available_date %}<tr><td>Available</td><td>{{ listing.available_date|date:"M j, Y" }}</td></tr>{% endif %}
+          </table>
         </div>
-        {% if rental.has_fireplace or rental.has_pool or rental.has_garage %}
-        <div style="margin-top:16px;" class="cr-tags">
-          {% if rental.has_fireplace %}<span class="cr-tag">🔥 Fireplace</span>{% endif %}
-          {% if rental.has_pool %}<span class="cr-tag">🏊 Pool</span>{% endif %}
-          {% if rental.has_garage %}<span class="cr-tag">🚗 Garage</span>{% endif %}
+
+        {% if listing.interior_features or listing.exterior_features or listing.appliances or listing.community_features or listing.parking_features %}
+        <div class="cr-section">
+          <h2 class="cr-section-title">Property Information</h2>
+          <div class="cr-feat-grid">
+            {% if listing.interior_features %}<div><p class="cr-feat-lbl">Interior</p><div class="cr-tags">{% for f in listing.interior_features_list %}<span class="cr-tag">{{ f }}</span>{% endfor %}</div></div>{% endif %}
+            {% if listing.exterior_features %}<div><p class="cr-feat-lbl">Exterior</p><div class="cr-tags">{% for f in listing.exterior_features_list %}<span class="cr-tag">{{ f }}</span>{% endfor %}</div></div>{% endif %}
+            {% if listing.appliances %}<div><p class="cr-feat-lbl">Appliances</p><div class="cr-tags">{% for f in listing.appliances_list %}<span class="cr-tag">{{ f }}</span>{% endfor %}</div></div>{% endif %}
+            {% if listing.community_features %}<div><p class="cr-feat-lbl">Community</p><div class="cr-tags">{% for f in listing.community_features_list %}<span class="cr-tag">{{ f }}</span>{% endfor %}</div></div>{% endif %}
+            {% if listing.parking_features %}<div><p class="cr-feat-lbl">Parking</p><div class="cr-tags">{% for f in listing.parking_features_list %}<span class="cr-tag">{{ f }}</span>{% endfor %}</div></div>{% endif %}
+            {% if listing.flooring or listing.heating or listing.cooling %}
+            <div>
+              <p class="cr-feat-lbl">Utilities & Finishes</p>
+              <div class="cr-tags">
+                {% if listing.heating %}<span class="cr-tag">Heat: {{ listing.heating }}</span>{% endif %}
+                {% if listing.cooling %}<span class="cr-tag">AC: {{ listing.cooling }}</span>{% endif %}
+                {% if listing.flooring %}<span class="cr-tag">{{ listing.flooring }}</span>{% endif %}
+                {% if listing.roof %}<span class="cr-tag">Roof: {{ listing.roof }}</span>{% endif %}
+              </div>
+            </div>
+            {% endif %}
+          </div>
+          {% if listing.has_fireplace or listing.has_pool or listing.has_garage or listing.is_waterfront %}
+          <div style="margin-top:16px;" class="cr-tags">
+            {% if listing.has_fireplace %}<span class="cr-tag">🔥 Fireplace</span>{% endif %}
+            {% if listing.has_pool %}<span class="cr-tag">🏊 Pool</span>{% endif %}
+            {% if listing.has_garage %}<span class="cr-tag">🚗 Garage</span>{% endif %}
+            {% if listing.is_waterfront %}<span class="cr-tag">🌊 Waterfront</span>{% endif %}
+          </div>
+          {% endif %}
+          {% if listing.directions %}<p style="margin-top:18px;font-size:13px;color:#666;line-height:1.7;"><strong>Directions:</strong> {{ listing.directions }}</p>{% endif %}
         </div>
         {% endif %}
-      </div>
-      {% endif %}
+      </div><!-- /propertyInfo -->
 
       <div id="location" class="cr-section">
         <h2 class="cr-section-title">Location</h2>
         <div class="cr-map"><div id="rental-map"></div></div>
       </div>
 
-      {% if rental.school_district or rental.elementary_school or rental.middle_school or rental.high_school %}
+      <div id="propertyHistory" class="cr-section">
+        <h2 class="cr-section-title">Listing History</h2>
+        <table class="cr-hist">
+          <thead><tr><th>Date</th><th>Event</th><th>Rent</th></tr></thead>
+          <tbody>
+            {% if listing.created_at %}
+            <tr>
+              <td>{{ listing.created_at|date:"M j, Y" }}</td>
+              <td>Listed (Active){% if listing.mls_id %} · MLS# {{ listing.mls_id }}{% endif %}</td>
+              <td>${{ listing.price|floatformat:0|intcomma }}/mo</td>
+            </tr>
+            {% endif %}
+          </tbody>
+        </table>
+        <p style="font-size:11px;color:#bbb;margin-top:12px;line-height:1.6;">Data sourced from ACTRIS MLS.</p>
+      </div>
+
+      {% if listing.school_district or listing.elementary_school or listing.middle_school or listing.high_school %}
       <div id="schools" class="cr-section">
         <h2 class="cr-section-title">Schools</h2>
-        {% if rental.school_district %}<p style="font-size:13px;color:#555;margin-bottom:12px;">This home is within <span class="cr-dist-badge">{{ rental.school_district }}</span></p>{% endif %}
-        {% if rental.elementary_school %}<div class="cr-school"><div class="cr-school-rtg" style="background:#15803d;">E</div><div><div class="cr-school-name">{{ rental.elementary_school }}</div><div class="cr-school-meta">Public · Elementary · Serves this home</div></div></div>{% endif %}
-        {% if rental.middle_school %}<div class="cr-school"><div class="cr-school-rtg" style="background:#b45309;">M</div><div><div class="cr-school-name">{{ rental.middle_school }}</div><div class="cr-school-meta">Public · Middle School · Serves this home</div></div></div>{% endif %}
-        {% if rental.high_school %}<div class="cr-school"><div class="cr-school-rtg" style="background:#1d4ed8;">H</div><div><div class="cr-school-name">{{ rental.high_school }}</div><div class="cr-school-meta">Public · High School · Serves this home</div></div></div>{% endif %}
+        {% if listing.school_district %}<p style="font-size:13px;color:#555;margin-bottom:12px;">This home is within <span class="cr-dist-badge">{{ listing.school_district }}</span></p>{% endif %}
+        {% if listing.elementary_school %}<div class="cr-school"><div class="cr-school-rtg" style="background:#15803d;">E</div><div><div class="cr-school-name">{{ listing.elementary_school }}</div><div class="cr-school-meta">Public · Elementary · Serves this home</div></div></div>{% endif %}
+        {% if listing.middle_school %}<div class="cr-school"><div class="cr-school-rtg" style="background:#b45309;">M</div><div><div class="cr-school-name">{{ listing.middle_school }}</div><div class="cr-school-meta">Public · Middle School · Serves this home</div></div></div>{% endif %}
+        {% if listing.high_school %}<div class="cr-school"><div class="cr-school-rtg" style="background:#1d4ed8;">H</div><div><div class="cr-school-name">{{ listing.high_school }}</div><div class="cr-school-meta">Public · High School · Serves this home</div></div></div>{% endif %}
+        <p style="font-size:11px;color:#bbb;margin-top:14px;line-height:1.6;">Please verify enrollment eligibility directly with schools.</p>
       </div>
       {% endif %}
 
-      {% if rental.open_house_date %}
+      {% if listing.open_house_date %}
       <div class="cr-section">
         <div class="cr-oh">
           <div style="font-size:28px;">🏡</div>
           <div>
             <div class="cr-oh-lbl">Open House</div>
-            <div class="cr-oh-time">{{ rental.open_house_date|date:"l, F j, Y" }}{% if rental.open_house_start_time %} · {{ rental.open_house_start_time|time:"g:i A" }}{% endif %}{% if rental.open_house_end_time %} – {{ rental.open_house_end_time|time:"g:i A" }}{% endif %}</div>
+            <div class="cr-oh-time">{{ listing.open_house_date|date:"l, F j, Y" }}{% if listing.open_house_start_time %} · {{ listing.open_house_start_time|time:"g:i A" }}{% endif %}{% if listing.open_house_end_time %} – {{ listing.open_house_end_time|time:"g:i A" }}{% endif %}</div>
           </div>
         </div>
       </div>
       {% endif %}
 
-    </div>
+    </div><!-- /cr-main -->
 
-    <!-- Sidebar -->
+    <!-- RIGHT: sticky sidebar -->
     <div class="cr-side">
-      <div class="cr-cta-price">${{ rental.price|floatformat:0|intcomma }}<span style="font-size:14px;font-weight:400;color:#888;">/mo</span></div>
-      <div class="cr-cta-addr">{{ rental.street_address }}, {{ rental.city }}, {{ rental.state }}</div>
+      <div class="cr-cta-price">${{ listing.price|floatformat:0|intcomma }}<span style="font-size:16px;font-weight:400;color:#888;letter-spacing:0;">/mo</span></div>
+      <div class="cr-cta-addr">{{ listing.street_address }}, {{ listing.city }}, {{ listing.state }}</div>
+
+      <!-- Rental quick facts -->
+      <div class="cr-rental-info">
+        {% if listing.beds or listing.baths or listing.sqft %}
+        <div class="cr-rental-info-row">
+          <span>Beds / Baths</span>
+          <span>{{ listing.beds|floatformat:0|default:"—" }} bd / {{ listing.baths|floatformat:0|default:"—" }} ba</span>
+        </div>
+        {% endif %}
+        {% if listing.sqft %}
+        <div class="cr-rental-info-row">
+          <span>Sq. Ft.</span>
+          <span>{{ listing.sqft|intcomma }}</span>
+        </div>
+        {% endif %}
+        {% if listing.available_date %}
+        <div class="cr-rental-info-row">
+          <span>Available</span>
+          <span>{{ listing.available_date|date:"M j, Y" }}</span>
+        </div>
+        {% endif %}
+        {% if listing.deposit %}
+        <div class="cr-rental-info-row">
+          <span>Deposit</span>
+          <span>${{ listing.deposit|floatformat:0|intcomma }}</span>
+        </div>
+        {% endif %}
+        {% if listing.lease_term %}
+        <div class="cr-rental-info-row">
+          <span>Lease Term</span>
+          <span>{{ listing.lease_term }}</span>
+        </div>
+        {% endif %}
+        {% if listing.pets_allowed is not None %}
+        <div class="cr-rental-info-row">
+          <span>Pets</span>
+          <span>{% if listing.pets_allowed %}✓ Allowed{% else %}✗ Not allowed{% endif %}</span>
+        </div>
+        {% endif %}
+      </div>
+
       <div class="cr-form-wrap">
         {% if messages %}{% for message in messages %}<div style="background:#f0fdf4;border-radius:6px;padding:10px 12px;margin-bottom:12px;font-size:13px;color:#15803d;">✓ {{ message }}</div>{% endfor %}{% endif %}
         <form method="post" action="{% url 'leads:create' %}">
           {% csrf_token %}
           <input type="hidden" name="source_type" value="rental">
-          <input type="hidden" name="source_id" value="{{ rental.id }}">
+          <input type="hidden" name="source_id" value="{{ listing.id }}">
           <input type="hidden" name="page_url" value="{{ request.build_absolute_uri }}">
           <div class="cr-row2">
             <div class="cr-field"><label>Name *</label><input type="text" name="name" required placeholder="Your name" /></div>
@@ -306,81 +517,162 @@ footer a:hover,.site-footer a:hover{color:#fff !important;}
           </div>
           <div class="cr-field"><label>Email *</label><input type="email" name="email" required placeholder="you@email.com" /></div>
           <div class="cr-field"><label>Move-in Date</label><input type="date" name="move_in_date" /></div>
-          <div class="cr-field"><label>Message</label><textarea name="message" rows="3">Hi, I'm interested in renting {{ rental.street_address }}, {{ rental.city }}. Please contact me with more details.</textarea></div>
+          <div class="cr-field"><label>Message</label><textarea name="message" rows="3">Hi, I'm interested in renting {{ listing.street_address }}, {{ listing.city }}. Please contact me with more details.</textarea></div>
           <button type="submit" class="cr-submit">Schedule a Tour</button>
         </form>
         <p class="cr-fine">By submitting, you agree to be contacted by Col Realty.</p>
       </div>
     </div>
 
-  </div>
-</div>
+  </div><!-- /cr-body -->
+</div><!-- /cr-wrap -->
 
 <script>
-const PHOTOS=[{% if rental.image_urls %}{% for img in rental.image_urls %}"{{ img }}"{% if not forloop.last %},{% endif %}{% endfor %}{% elif rental.main_image_url %}"{{ rental.main_image_url }}"{% endif %}];
-let lbIdx=0,stripBuilt=false,sliderIdx=0;
+const IS_AUTHENTICATED = {% if request.user.is_authenticated %}true{% else %}false{% endif %};
 
-function sliderGo(i){
-  sliderIdx=i;
-  const img=document.getElementById('cr-slider-img');if(img)img.src=PHOTOS[i];
-  const cnt=document.getElementById('cr-slider-count');if(cnt)cnt.textContent=(i+1)+' / '+PHOTOS.length;
-  document.querySelectorAll('.cr-thumb').forEach((t,j)=>t.classList.toggle('active',j===i));
-  const thumbs=document.getElementById('cr-thumbs');if(thumbs)thumbs.children[i]?.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
-}
-function sliderNav(d){sliderGo((sliderIdx+d+PHOTOS.length)%PHOTOS.length);}
-
-// Build thumbnails
-window.addEventListener('DOMContentLoaded',()=>{
-  const strip=document.getElementById('cr-thumbs');
-  if(strip&&PHOTOS.length>1){
-    PHOTOS.forEach((u,i)=>{const d=document.createElement('div');d.className='cr-thumb'+(i===0?' active':'');d.innerHTML=`<img src="${u}" alt="">`;d.onclick=()=>sliderGo(i);strip.appendChild(d);});
+// ── Favorites ──────────────────────────────────────────────────────
+function handleFavorite(btn, listingId) {
+  if (!IS_AUTHENTICATED) {
+    const modal = document.getElementById('login-modal');
+    if (modal) modal.style.display = 'flex';
+    return;
   }
-  const cnt=document.getElementById('cr-slider-count');if(cnt)cnt.textContent='1 / '+PHOTOS.length;
+  fetch('/accounts/favorite/' + listingId + '/', {
+    method: 'POST',
+    headers: { 'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json' }
+  })
+  .then(r => r.json())
+  .then(data => {
+    const saved = data.status === 'added';
+    btn.classList.toggle('saved', saved);
+    const svg = btn.querySelector('svg');
+    svg.setAttribute('fill', saved ? '#e02020' : 'none');
+    svg.setAttribute('stroke', saved ? '#e02020' : 'currentColor');
+  });
+}
+
+// ── Sticky nav: show Save/Share when topbar scrolls away ──────────
+document.addEventListener('DOMContentLoaded', function() {
+  const topbar = document.querySelector('.cr-topbar');
+  const navActions = document.getElementById('cr-nav-actions');
+  if (topbar && navActions) {
+    const observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        navActions.classList.toggle('visible', !entry.isIntersecting);
+      });
+    }, { threshold: 0, rootMargin: '-80px 0px 0px 0px' });
+    observer.observe(topbar);
+  }
+
+  // Sync favorite state between topbar and nav buttons
+  const topFav = document.getElementById('detail-fav-btn');
+  const navFav = document.getElementById('nav-fav-btn');
+  if (topFav && navFav) {
+    new MutationObserver(function() {
+      navFav.className = topFav.className;
+      const svg = topFav.querySelector('svg');
+      const navSvg = navFav.querySelector('svg');
+      if (svg && navSvg) {
+        navSvg.setAttribute('fill', svg.getAttribute('fill'));
+        navSvg.setAttribute('stroke', svg.getAttribute('stroke'));
+      }
+    }).observe(topFav, { attributes: true, subtree: true, attributeFilter: ['class', 'fill', 'stroke'] });
+  }
+
+  // Section nav active on scroll
+  const navWrapH = 80 + (document.querySelector('.cr-nav-wrap')?.offsetHeight || 48);
+  const SEC = ['overview', 'location', 'propertyInfo', 'propertyHistory', 'schools'];
+  window.addEventListener('scroll', function() {
+    let current = '';
+    SEC.forEach(function(id) {
+      const el = document.getElementById(id);
+      if (el && window.scrollY >= el.offsetTop - navWrapH - 20) current = id;
+    });
+    document.querySelectorAll('.cr-nav a').forEach(function(a) {
+      a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+    });
+  }, { passive: true });
 });
 
-function lbOpen(i){if(!PHOTOS.length)return;lbIdx=i;document.getElementById('cr-lb').classList.add('open');document.body.style.overflow='hidden';lbRender();}
-function lbClose(){document.getElementById('cr-lb').classList.remove('open');document.body.style.overflow='';}
-function lbNav(d){lbIdx=(lbIdx+d+PHOTOS.length)%PHOTOS.length;lbRender();}
-function lbRender(){
-  document.getElementById('cr-lb-img').src=PHOTOS[lbIdx];
-  document.getElementById('cr-lb-count').textContent=(lbIdx+1)+' / '+PHOTOS.length;
-  if(!stripBuilt){const s=document.getElementById('cr-lb-strip');PHOTOS.forEach((u,i)=>{const img=document.createElement('img');img.src=u;img.onclick=()=>{lbIdx=i;lbRender();};s.appendChild(img);});stripBuilt=true;}
-  Array.from(document.getElementById('cr-lb-strip').children).forEach((img,i)=>img.classList.toggle('active',i===lbIdx));
+// ── Share ──────────────────────────────────────────────────────────
+let _shareUrl = '', _shareAddress = '';
+function openShare(address, path) {
+  _shareAddress = address;
+  _shareUrl = window.location.origin + path;
+  document.getElementById('share-modal-address').textContent = address;
+  document.getElementById('share-copy-confirm').style.display = 'none';
+  document.getElementById('share-modal').style.display = 'flex';
 }
-document.addEventListener('keydown',e=>{if(!document.getElementById('cr-lb').classList.contains('open'))return;if(e.key==='ArrowRight')lbNav(1);if(e.key==='ArrowLeft')lbNav(-1);if(e.key==='Escape')lbClose();});
-
-function toggleDesc(btn){
-  const c=document.getElementById('desc-clamp'),f=document.getElementById('desc-full');
-  if(f.style.display==='none'){c.style.display='none';f.style.display='block';btn.textContent='Show less ↑';}
-  else{c.style.display='-webkit-box';f.style.display='none';btn.textContent='Read more ↓';}
+function closeShare() { document.getElementById('share-modal').style.display = 'none'; }
+function shareVia(method) {
+  const url = encodeURIComponent(_shareUrl);
+  const text = encodeURIComponent('Check out this rental: ' + _shareAddress);
+  if      (method === 'copy')     { navigator.clipboard.writeText(_shareUrl).then(() => { document.getElementById('share-copy-confirm').style.display='block'; setTimeout(()=>document.getElementById('share-copy-confirm').style.display='none',2500); }); }
+  else if (method === 'email')    { window.open('mailto:?subject=Check out this rental&body=' + text + '%0A' + url); }
+  else if (method === 'text')     { window.open('sms:?body=' + text + '%20' + url); }
+  else if (method === 'facebook') { window.open('https://www.facebook.com/sharer/sharer.php?u=' + url, '_blank'); }
+  else if (method === 'twitter')  { window.open('https://twitter.com/intent/tweet?text=' + text + '&url=' + url, '_blank'); }
+  else if (method === 'whatsapp') { window.open('https://wa.me/?text=' + text + '%20' + url, '_blank'); }
 }
 
-const SEC=['overview','location','propertyInfo','schools'];
-window.addEventListener('scroll',()=>{
-  let cur='overview';
-  SEC.forEach(id=>{const el=document.getElementById(id);if(el&&window.scrollY>=el.offsetTop-120)cur=id;});
-  document.querySelectorAll('.cr-nav a').forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+cur));
+// ── Photo slider ──────────────────────────────────────────────────
+const PHOTOS = [{% if listing.image_urls %}{% for img in listing.image_urls %}"{{ img }}"{% if not forloop.last %},{% endif %}{% endfor %}{% elif listing.main_image_url %}"{{ listing.main_image_url }}"{% endif %}];
+let sliderIdx = 0, lbIdx = 0, stripBuilt = false;
+
+function sliderGo(i) {
+  sliderIdx = i;
+  const img = document.getElementById('cr-slider-img');
+  if (img) img.src = PHOTOS[i];
+  const cnt = document.getElementById('cr-slider-count');
+  if (cnt) cnt.textContent = (i + 1) + ' / ' + PHOTOS.length;
+  document.querySelectorAll('.cr-thumb').forEach((t, j) => t.classList.toggle('active', j === i));
+  const thumbs = document.getElementById('cr-thumbs');
+  if (thumbs) thumbs.children[i]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+}
+function sliderNav(d) { sliderGo((sliderIdx + d + PHOTOS.length) % PHOTOS.length); }
+
+// ── Lightbox ──────────────────────────────────────────────────────
+function lbOpen(i) { if (!PHOTOS.length) return; lbIdx = i; document.getElementById('cr-lb').classList.add('open'); document.body.style.overflow = 'hidden'; lbRender(); }
+function lbClose() { document.getElementById('cr-lb').classList.remove('open'); document.body.style.overflow = ''; }
+function lbNav(d) { lbIdx = (lbIdx + d + PHOTOS.length) % PHOTOS.length; lbRender(); }
+function lbRender() {
+  document.getElementById('cr-lb-img').src = PHOTOS[lbIdx];
+  document.getElementById('cr-lb-count').textContent = (lbIdx + 1) + ' / ' + PHOTOS.length;
+  if (!stripBuilt) {
+    const s = document.getElementById('cr-lb-strip');
+    PHOTOS.forEach((u, i) => { const img = document.createElement('img'); img.src = u; img.onclick = () => { lbIdx = i; lbRender(); }; s.appendChild(img); });
+    stripBuilt = true;
+  }
+  Array.from(document.getElementById('cr-lb-strip').children).forEach((img, i) => img.classList.toggle('active', i === lbIdx));
+}
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('cr-lb').classList.contains('open')) return;
+  if (e.key === 'ArrowRight') lbNav(1);
+  if (e.key === 'ArrowLeft') lbNav(-1);
+  if (e.key === 'Escape') lbClose();
 });
 </script>
 
-{% if rental.latitude and rental.longitude %}
+{% if listing.latitude and listing.longitude %}
 <script src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&v=weekly" defer></script>
 <script>
-window.addEventListener("load",()=>{
-  const el=document.getElementById("rental-map");if(!el)return;
-  const lat=parseFloat("{{ rental.latitude }}"),lng=parseFloat("{{ rental.longitude }}");if(isNaN(lat)||isNaN(lng))return;
-  const map=new google.maps.Map(el,{center:{lat,lng},zoom:15,styles:[
-    {featureType:"water",elementType:"geometry",stylers:[{color:"#c9e8f0"}]},
-    {featureType:"road",elementType:"geometry",stylers:[{color:"#fff"}]},
-    {featureType:"road",elementType:"geometry.stroke",stylers:[{color:"#e8e8e8"}]},
-    {featureType:"landscape",elementType:"geometry",stylers:[{color:"#f5f5f0"}]},
-    {featureType:"poi",elementType:"geometry",stylers:[{color:"#dae8d0"}]},
-    {featureType:"all",elementType:"labels.text.fill",stylers:[{color:"#444"}]}
+window.addEventListener("load", () => {
+  const el = document.getElementById("rental-map"); if (!el) return;
+  const lat = parseFloat("{{ listing.latitude }}"), lng = parseFloat("{{ listing.longitude }}");
+  if (isNaN(lat) || isNaN(lng)) return;
+  const map = new google.maps.Map(el, { center: { lat, lng }, zoom: 15, styles: [
+    { featureType: "water", elementType: "geometry", stylers: [{ color: "#c9e8f0" }] },
+    { featureType: "road", elementType: "geometry", stylers: [{ color: "#fff" }] },
+    { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#e8e8e8" }] },
+    { featureType: "landscape", elementType: "geometry", stylers: [{ color: "#f5f5f0" }] },
+    { featureType: "poi", elementType: "geometry", stylers: [{ color: "#dae8d0" }] },
+    { featureType: "all", elementType: "labels.text.fill", stylers: [{ color: "#444" }] }
   ]});
-  new google.maps.Marker({map,position:{lat,lng},title:"{{ rental.title|escapejs }}"});
+  new google.maps.Marker({ map, position: { lat, lng }, title: "{{ listing.title|escapejs }}" });
 });
 </script>
 {% else %}
-<script>window.addEventListener("load",()=>{const el=document.getElementById("rental-map");if(el)el.innerHTML="<div style='height:100%;display:flex;align-items:center;justify-content:center;font-size:13px;color:#bbb;background:#f8f8f8;'>Map unavailable</div>";});</script>
+<script>window.addEventListener("load", () => { const el = document.getElementById("rental-map"); if (el) el.innerHTML = "<div style='height:100%;display:flex;align-items:center;justify-content:center;font-size:13px;color:#bbb;background:#f8f8f8;'>Map unavailable</div>"; });</script>
 {% endif %}
+
 {% endblock %}

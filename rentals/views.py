@@ -9,10 +9,7 @@ from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.views.decorators.http import require_GET
 
-from listings.models import Listing
-
-# Lease property types to show on the rentals page
-LEASE_TYPES = ["Residential Lease", "Commercial Lease"]
+from rentals.models import Rental
 
 RENTAL_PROPERTY_TYPE_CHOICES = [
     "Residential Lease",
@@ -50,7 +47,6 @@ def apply_rental_filters(qs, params: dict):
             | Q(description__icontains=q)
         )
 
-    # Listing model uses `price` not `rent`
     min_v = _to_decimal(rent_min)
     max_v = _to_decimal(rent_max)
     if min_v is not None:
@@ -77,8 +73,7 @@ def apply_rental_filters(qs, params: dict):
 # ─────────────────────────────────────────────
 
 def rental_list(request):
-    qs = Listing.objects.filter(
-        status="active", property_type__in=LEASE_TYPES).order_by("-id")
+    qs = Rental.objects.filter(status="active").order_by("-id")
     qs = apply_rental_filters(qs, request.GET)
 
     paginator = Paginator(qs, 42)
@@ -105,19 +100,17 @@ def rental_list(request):
 
 
 def rental_detail(request, pk):
-    rental = get_object_or_404(
-        Listing, pk=pk, status="active", property_type__in=LEASE_TYPES)
+    listing = get_object_or_404(Rental, pk=pk, status="active")
     return render(request, "rentals/detail.html", {
-        "rental":              rental,
+        "listing":             listing,
         "GOOGLE_MAPS_API_KEY": settings.GOOGLE_MAPS_API_KEY,
     })
 
 
 @require_GET
 def rental_markers(request):
-    qs = Listing.objects.filter(
+    qs = Rental.objects.filter(
         status="active",
-        property_type__in=LEASE_TYPES,
         latitude__isnull=False,
         longitude__isnull=False,
     )

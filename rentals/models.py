@@ -3,10 +3,16 @@ from django.urls import reverse
 
 
 class Rental(models.Model):
+    MLS_STATUS_CHOICES = [
+        ("active", "Active"),
+        ("leased", "Leased"),
+        ("inactive", "Inactive"),
+    ]
 
     # ── Core MLS fields ───────────────────────────────────────────────────
-    mls_id = models.CharField(max_length=100, blank=True, null=True)
-    title = models.CharField(max_length=200)
+    mls_id = models.CharField(max_length=128, unique=True, db_index=True)
+    mls_modification_timestamp = models.DateTimeField(null=True, blank=True)
+    title = models.CharField(max_length=512)
 
     # ── Address ───────────────────────────────────────────────────────────
     street_address = models.CharField(max_length=255)
@@ -16,12 +22,15 @@ class Rental(models.Model):
     county = models.CharField(max_length=100, blank=True)
     subdivision = models.CharField(max_length=255, blank=True)
 
-    # ── Pricing ───────────────────────────────────────────────────────────
-    rent = models.DecimalField(max_digits=10, decimal_places=2)
+    # ── Pricing (rental-specific) ─────────────────────────────────────────
+    price = models.DecimalField(max_digits=12, decimal_places=2)   # monthly rent
     deposit = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    lease_term = models.CharField(max_length=100, blank=True)   # e.g. "12 months"
+    lease_term = models.CharField(max_length=100, blank=True)      # e.g. "12 months"
     pets_allowed = models.BooleanField(null=True, blank=True)
-    utilities_included = models.TextField(blank=True)            # e.g. "Water, Trash"
+    utilities_included = models.TextField(blank=True)              # e.g. "Water, Trash"
+    hoa_fee = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    hoa_frequency = models.CharField(max_length=50, blank=True)
+    buyer_agent_compensation = models.CharField(max_length=50, blank=True)
 
     # ── Core specs ────────────────────────────────────────────────────────
     beds = models.DecimalField(max_digits=3, decimal_places=1, null=True, blank=True)
@@ -30,29 +39,45 @@ class Rental(models.Model):
     baths_half = models.IntegerField(null=True, blank=True)
     sqft = models.IntegerField(null=True, blank=True)
     lot_size = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    lot_size_sqft = models.IntegerField(null=True, blank=True)
 
     # ── Building info ─────────────────────────────────────────────────────
-    property_type = models.CharField(max_length=100)
+    property_type = models.CharField(max_length=100, blank=True)
     year_built = models.IntegerField(null=True, blank=True)
     stories = models.IntegerField(null=True, blank=True)
     garage_spaces = models.IntegerField(null=True, blank=True)
+    parking_total = models.IntegerField(null=True, blank=True)
 
-    # ── Features ─────────────────────────────────────────────────────────
+    # ── Features ──────────────────────────────────────────────────────────
     interior_features = models.TextField(blank=True)
     exterior_features = models.TextField(blank=True)
     community_features = models.TextField(blank=True)
+    parking_features = models.TextField(blank=True)
     appliances = models.TextField(blank=True)
     flooring = models.TextField(blank=True)
     laundry_features = models.TextField(blank=True)
+    window_features = models.TextField(blank=True)
+    patio_porch_features = models.TextField(blank=True)
 
     # ── Property attributes ───────────────────────────────────────────────
     has_fireplace = models.BooleanField(null=True, blank=True)
     has_pool = models.BooleanField(null=True, blank=True)
     has_garage = models.BooleanField(null=True, blank=True)
+    is_waterfront = models.BooleanField(null=True, blank=True)
+    is_new_construction = models.BooleanField(null=True, blank=True)
+
+    # ── Construction ──────────────────────────────────────────────────────
+    construction_materials = models.CharField(max_length=255, blank=True)
+    foundation = models.CharField(max_length=100, blank=True)
+    roof = models.CharField(max_length=100, blank=True)
+    fencing = models.CharField(max_length=255, blank=True)
+    direction_faces = models.CharField(max_length=50, blank=True)
 
     # ── Utilities ─────────────────────────────────────────────────────────
     heating = models.CharField(max_length=255, blank=True)
     cooling = models.CharField(max_length=255, blank=True)
+    sewer = models.CharField(max_length=100, blank=True)
+    water_source = models.CharField(max_length=100, blank=True)
 
     # ── Schools ───────────────────────────────────────────────────────────
     school_district = models.CharField(max_length=255, blank=True)
@@ -60,52 +85,56 @@ class Rental(models.Model):
     middle_school = models.CharField(max_length=255, blank=True)
     high_school = models.CharField(max_length=255, blank=True)
 
-    # ── Availability ──────────────────────────────────────────────────────
-    available_date = models.DateField(null=True, blank=True)
+    # ── Open house ────────────────────────────────────────────────────────
     open_house_date = models.DateField(null=True, blank=True)
     open_house_start_time = models.TimeField(null=True, blank=True)
     open_house_end_time = models.TimeField(null=True, blank=True)
+    available_date = models.DateField(null=True, blank=True)
+
+    # ── Listing Agent ─────────────────────────────────────────────────────
+    listing_agent_name = models.CharField(max_length=255, blank=True)
+    listing_agent_email = models.EmailField(max_length=255, blank=True)
+    listing_agent_phone = models.CharField(max_length=50, blank=True)
+    listing_office_name = models.CharField(max_length=255, blank=True)
 
     # ── Media ─────────────────────────────────────────────────────────────
-    main_image_url = models.URLField(blank=True, null=True)
+    main_image_url = models.URLField(max_length=1000, blank=True)
+    image_urls = models.JSONField(default=list, blank=True)
     virtual_tour_url = models.URLField(max_length=1000, blank=True)
 
     # ── Listing metadata ──────────────────────────────────────────────────
-    status = models.CharField(
-        max_length=50,
-        default="active",
-        choices=[
-            ("active", "Active"),
-            ("leased", "Leased"),
-            ("inactive", "Inactive"),
-        ]
-    )
+    status = models.CharField(max_length=20, choices=MLS_STATUS_CHOICES, default="active")
     days_on_market = models.IntegerField(null=True, blank=True)
     description = models.TextField(blank=True)
     directions = models.TextField(blank=True)
 
     # ── Location ──────────────────────────────────────────────────────────
-    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
-    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
 
-    # ── Timestamps ────────────────────────────────────────────────────────
+    # ── Admin ─────────────────────────────────────────────────────────────
+    is_featured = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        ordering = ["-created_at"]
+
     def __str__(self):
-        return f"{self.title} - {self.city}"
+        return f"{self.title} — {self.city}, {self.state}"
 
     def get_absolute_url(self):
         return reverse("rentals:rental_detail", args=[self.pk])
 
-    def full_address(self):
-        return f"{self.street_address}, {self.city}, {self.state} {self.zip_code}"
-
     @property
     def price_per_sqft(self):
-        if self.rent and self.sqft and self.sqft > 0:
-            return round(self.rent / self.sqft, 2)
+        if self.price and self.sqft and self.sqft > 0:
+            return round(self.price / self.sqft)
         return None
+
+    @property
+    def full_address(self):
+        return f"{self.street_address}, {self.city}, {self.state} {self.zip_code}"
 
     def interior_features_list(self):
         return [f.strip() for f in self.interior_features.split(",") if f.strip()]
@@ -115,6 +144,9 @@ class Rental(models.Model):
 
     def community_features_list(self):
         return [f.strip() for f in self.community_features.split(",") if f.strip()]
+
+    def parking_features_list(self):
+        return [f.strip() for f in self.parking_features.split(",") if f.strip()]
 
     def appliances_list(self):
         return [f.strip() for f in self.appliances.split(",") if f.strip()]

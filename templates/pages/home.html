@@ -71,14 +71,19 @@
         <div class="hp-card-img">
           {% if l.main_image_url %}<img src="{{ l.main_image_url }}" alt="{{ l.title }}" loading="lazy">{% endif %}
           <span class="hp-card-badge badge-new">New</span>
-          <button class="hp-card-save" onclick="event.preventDefault();toggleSave(this)" aria-label="Save">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="1.8">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-            </svg>
-          </button>
         </div>
         <div class="hp-card-body">
-          <p class="hp-card-price">${{ l.price|floatformat:0|intcomma }}</p>
+          <div class="hp-card-price-row">
+            <p class="hp-card-price">${{ l.price|floatformat:0|intcomma }}</p>
+            <div class="hp-card-icons">
+              <button class="hp-icon-btn hp-icon-share" onclick="event.preventDefault();openShare('{{ l.street_address }}, {{ l.city }}, {{ l.state }}','{% url 'listings:listing_detail' l.id %}')" aria-label="Share">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              </button>
+              <button class="hp-icon-btn hp-icon-fav" onclick="event.preventDefault();handleFavorite(this,'{{ l.id }}')" aria-label="Save">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              </button>
+            </div>
+          </div>
           <div class="hp-card-specs">
             {% if l.beds  %}<span>{{ l.beds|floatformat:0 }} <strong>beds</strong></span>{% endif %}
             {% if l.baths %}<span>{{ l.baths|floatformat:0 }} <strong>baths</strong></span>{% endif %}
@@ -107,16 +112,19 @@
         <div class="hp-card-img">
           {% if r.main_image_url %}<img src="{{ r.main_image_url }}" alt="{{ r.title }}" loading="lazy">{% endif %}
           <span class="hp-card-badge badge-rent">For Rent</span>
-          <button class="hp-card-save" onclick="event.preventDefault();toggleSave(this)" aria-label="Save">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="1.8">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-            </svg>
-          </button>
         </div>
         <div class="hp-card-body">
-          <p class="hp-card-price">
-            ${{ r.price|floatformat:0|intcomma }}<span class="hp-price-unit">/mo</span>
-          </p>
+          <div class="hp-card-price-row">
+            <p class="hp-card-price">${{ r.price|floatformat:0|intcomma }}<span class="hp-price-unit">/mo</span></p>
+            <div class="hp-card-icons">
+              <button class="hp-icon-btn hp-icon-share" onclick="event.preventDefault();openShare('{{ r.street_address }}, {{ r.city }}, {{ r.state }}','{% url 'rentals:detail' r.id %}')" aria-label="Share">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              </button>
+              <button class="hp-icon-btn hp-icon-fav" onclick="event.preventDefault();handleFavorite(this,'{{ r.id }}')" aria-label="Save">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              </button>
+            </div>
+          </div>
           <div class="hp-card-specs">
             {% if r.beds  %}<span>{{ r.beds|floatformat:0 }} <strong>beds</strong></span>{% endif %}
             {% if r.baths %}<span>{{ r.baths|floatformat:0 }} <strong>baths</strong></span>{% endif %}
@@ -145,14 +153,19 @@
         <div class="hp-card-img">
           {% if l.main_image_url %}<img src="{{ l.main_image_url }}" alt="{{ l.title }}" loading="lazy">{% endif %}
           <span class="hp-card-badge badge-land">{{ l.property_type }}</span>
-          <button class="hp-card-save" onclick="event.preventDefault();toggleSave(this)" aria-label="Save">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="1.8">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-            </svg>
-          </button>
         </div>
         <div class="hp-card-body">
-          <p class="hp-card-price">${{ l.price|floatformat:0|intcomma }}</p>
+          <div class="hp-card-price-row">
+            <p class="hp-card-price">${{ l.price|floatformat:0|intcomma }}</p>
+            <div class="hp-card-icons">
+              <button class="hp-icon-btn hp-icon-share" onclick="event.preventDefault();openShare('{{ l.street_address }}, {{ l.city }}, {{ l.state }}','{% url 'listings:listing_detail' l.id %}')" aria-label="Share">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              </button>
+              <button class="hp-icon-btn hp-icon-fav" onclick="event.preventDefault();handleFavorite(this,'{{ l.id }}')" aria-label="Save">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              </button>
+            </div>
+          </div>
           <div class="hp-card-specs">
             {% if l.lot_size %}<span>{{ l.lot_size }} <strong>acres</strong></span>{% endif %}
             {% if l.sqft     %}<span>{{ l.sqft|intcomma }} <strong>sqft</strong></span>{% endif %}
@@ -211,10 +224,64 @@
 })();
 </script>
 
-<!-- Heart / save toggle (client-side; wire to your favourites endpoint as needed) -->
+<!-- ── SHARE MODAL ── -->
+<div id="share-modal" class="share-modal-overlay" onclick="if(event.target===this)closeShare()">
+  <div class="share-modal-box">
+    <button class="share-modal-close" onclick="closeShare()">×</button>
+    <h3 class="share-modal-title">Share this home</h3>
+    <p id="share-modal-address" class="share-modal-address"></p>
+    <div class="share-options">
+      <button class="share-opt" onclick="shareVia('copy')"><span class="share-opt-icon">🔗</span><span>Copy link</span></button>
+      <button class="share-opt" onclick="shareVia('email')"><span class="share-opt-icon">✉️</span><span>Email</span></button>
+      <button class="share-opt" onclick="shareVia('text')"><span class="share-opt-icon">💬</span><span>Text</span></button>
+      <button class="share-opt" onclick="shareVia('facebook')"><span class="share-opt-icon" style="background:#1877f2;color:#fff;border-radius:50%;font-weight:700;font-size:16px;">f</span><span>Facebook</span></button>
+      <button class="share-opt" onclick="shareVia('twitter')"><span class="share-opt-icon" style="background:#000;color:#fff;border-radius:50%;font-size:14px;font-weight:700;">𝕏</span><span>X / Twitter</span></button>
+      <button class="share-opt" onclick="shareVia('whatsapp')"><span class="share-opt-icon">📱</span><span>WhatsApp</span></button>
+    </div>
+    <div id="share-copy-confirm" class="share-copy-confirm" style="display:none;">✅ Link copied to clipboard!</div>
+  </div>
+</div>
+
+
+
 <script>
-function toggleSave(btn) {
-  btn.classList.toggle('saved');
+const IS_AUTHENTICATED = {% if request.user.is_authenticated %}true{% else %}false{% endif %};
+
+// ── Favorites ──
+function handleFavorite(btn, listingId) {
+  if (!IS_AUTHENTICATED) {
+    // Open the existing Register/Sign In modal from base.html
+    const modal = document.getElementById('login-modal');
+    if (modal) modal.style.display = 'flex';
+    return;
+  }
+  fetch('/accounts/favorite/' + listingId + '/', {
+    method: 'POST',
+    headers: { 'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json' }
+  })
+  .then(r => r.json())
+  .then(data => { btn.classList.toggle('saved', data.status === 'added'); });
+}
+
+// ── Share ──
+let _shareUrl = '', _shareAddress = '';
+function openShare(address, path) {
+  _shareAddress = address;
+  _shareUrl = window.location.origin + path;
+  document.getElementById('share-modal-address').textContent = address;
+  document.getElementById('share-copy-confirm').style.display = 'none';
+  document.getElementById('share-modal').style.display = 'flex';
+}
+function closeShare() { document.getElementById('share-modal').style.display = 'none'; }
+function shareVia(method) {
+  const url = encodeURIComponent(_shareUrl);
+  const text = encodeURIComponent('Check out this home: ' + _shareAddress);
+  if      (method === 'copy')     { navigator.clipboard.writeText(_shareUrl).then(() => { document.getElementById('share-copy-confirm').style.display='block'; setTimeout(()=>document.getElementById('share-copy-confirm').style.display='none',2500); }); }
+  else if (method === 'email')    { window.open('mailto:?subject=Check out this home&body=' + text + '%0A' + url); }
+  else if (method === 'text')     { window.open('sms:?body=' + text + '%20' + url); }
+  else if (method === 'facebook') { window.open('https://www.facebook.com/sharer/sharer.php?u=' + url, '_blank'); }
+  else if (method === 'twitter')  { window.open('https://twitter.com/intent/tweet?text=' + text + '&url=' + url, '_blank'); }
+  else if (method === 'whatsapp') { window.open('https://wa.me/?text=' + text + '%20' + url, '_blank'); }
 }
 </script>
 
