@@ -161,3 +161,25 @@ def listing_markers(request):
         })
 
     return JsonResponse(markers, safe=False)
+
+
+
+# In listings/views.py — add is_favorite to the listing_detail view context
+# Find your listing_detail view and update the return/render like this:
+
+def listing_detail(request, pk):
+    listing = get_object_or_404(Listing, pk=pk)
+
+    # ── Check if current user has favorited this listing ──
+    is_favorite = False
+    if request.user.is_authenticated:
+        is_favorite = request.user.favoritelisting_set.filter(listing=listing).exists()
+        # OR if your model is named differently, try:
+        # is_favorite = Favorite.objects.filter(user=request.user, listing=listing).exists()
+
+    return render(request, 'listings/listing_detail.html', {
+        'listing': listing,
+        'is_favorite': is_favorite,
+        # ... your other context vars
+    })
+
