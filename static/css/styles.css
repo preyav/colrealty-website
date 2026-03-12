@@ -1022,6 +1022,11 @@ body.page {
   display: block;
 }
 
+/* Main nav dropdowns open on hover — so clicking the link still navigates */
+.main-nav .nav-item:hover .mega-drop {
+  display: block;
+}
+
 .mega-drop-single {
   display: flex;
   flex-direction: column;

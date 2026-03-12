@@ -123,6 +123,34 @@ class ListingDetailView(DetailView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["GOOGLE_MAPS_API_KEY"] = settings.GOOGLE_MAPS_API_KEY
+
+        listing = self.object
+
+        # ── Is favorite ────────────────────────────────────────────────────
+        ctx["is_favorite"] = (
+            self.request.user.is_authenticated
+            and self.request.user.favorites.filter(listing=listing).exists()
+        )
+
+        # ── Similar listings: same city, similar price, exclude self ───────
+        if listing.price:
+            price_lo = listing.price * Decimal("0.75")
+            price_hi = listing.price * Decimal("1.25")
+            ctx["similar_listings"] = (
+                Listing.objects
+                .filter(
+                    status="active",
+                    property_type__in=BUY_TYPES,
+                    city=listing.city,
+                    price__gte=price_lo,
+                    price__lte=price_hi,
+                )
+                .exclude(pk=listing.pk)
+                .order_by("-id")[:8]
+            )
+        else:
+            ctx["similar_listings"] = []
+
         return ctx
 
 
@@ -164,22 +192,5 @@ def listing_markers(request):
 
 
 
-# In listings/views.py — add is_favorite to the listing_detail view context
-# Find your listing_detail view and update the return/render like this:
 
-def listing_detail(request, pk):
-    listing = get_object_or_404(Listing, pk=pk)
-
-    # ── Check if current user has favorited this listing ──
-    is_favorite = False
-    if request.user.is_authenticated:
-        is_favorite = request.user.favoritelisting_set.filter(listing=listing).exists()
-        # OR if your model is named differently, try:
-        # is_favorite = Favorite.objects.filter(user=request.user, listing=listing).exists()
-
-    return render(request, 'listings/listing_detail.html', {
-        'listing': listing,
-        'is_favorite': is_favorite,
-        # ... your other context vars
-    })
 

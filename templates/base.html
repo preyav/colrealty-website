@@ -42,12 +42,6 @@
       <!-- ③ All nav + sign-in grouped on the RIGHT -->
       <nav class="main-nav">
 
-        <!-- Home -->
-        <!-- 
-        <div class="nav-item">
-          <a class="nav-link" href="{% url 'pages:home' %}">Home</a>
-        </div>
-      -->
         <!-- Buy -->
         <div class="nav-item">
           <a class="nav-link" href="/listings/">Buy</a>
@@ -90,7 +84,7 @@
 
         <!-- Agents -->
         <div class="nav-item">
-          <a class="nav-link dropdown-toggle" href="{% url 'pages:agents' %}">Agents <span class="chevron">∨</span></a>
+          <a class="nav-link" href="{% url 'pages:agents' %}">Agents <span class="chevron">∨</span></a>
           <div class="mega-drop">
             <div class="mega-drop-single">
               <a class="mega-item" href="{% url 'pages:team' %}">Our Team</a>
@@ -101,11 +95,11 @@
 
       </nav>
 
-      <!-- ④ Right actions: avatar or sign-in — inside nav -->
+      <!-- ④ Right actions: avatar or sign-in -->
       <div class="header-actions">
         {% if request.user.is_authenticated %}
         <div class="nav-item drop-right">
-          <a class="nav-link dropdown-toggle nav-link--user" href="{% url 'accounts:overview' %}">
+          <a class="nav-link nav-link--user" href="#">
             <span class="user-avatar">{{ request.user.first_name|default:request.user.email|slice:":1"|upper }}</span>
             <span class="user-name">{{ request.user.first_name|default:request.user.email }}</span>
             <span class="chevron">▾</span>
@@ -203,42 +197,39 @@
   {% endif %}
 
   <script>
-    // Click-based nav dropdowns — stays open until you click elsewhere
+    // User dropdown (header-actions) is click-based
+    // Buy/Sell/Rent/Agents use CSS hover (see styles.css)
     document.addEventListener('DOMContentLoaded', function () {
-      const toggles = document.querySelectorAll('.main-nav .dropdown-toggle');
+      // Only wire click-toggle for the user avatar dropdown
+      document.querySelectorAll('.header-actions .nav-item').forEach(function (item) {
+        const toggle = item.querySelector('.nav-link');
+        const drop = item.querySelector('.simple-drop');
+        if (!toggle || !drop) return;
 
-      toggles.forEach(function (toggle) {
         toggle.addEventListener('click', function (e) {
           e.preventDefault();
           e.stopPropagation();
-          const item = toggle.closest('.nav-item');
           const isOpen = item.classList.contains('open');
-
-          // Close all open dropdowns first
-          document.querySelectorAll('.main-nav .nav-item.open').forEach(function (el) {
+          document.querySelectorAll('.nav-item.open').forEach(function (el) {
             el.classList.remove('open');
           });
-
-          // Toggle this one
-          if (!isOpen) {
-            item.classList.add('open');
-          }
+          if (!isOpen) item.classList.add('open');
         });
       });
 
-      // Close dropdowns when clicking anywhere outside the nav
+      // Close user dropdown when clicking outside
       document.addEventListener('click', function (e) {
-        if (!e.target.closest('.main-nav')) {
-          document.querySelectorAll('.main-nav .nav-item.open').forEach(function (el) {
+        if (!e.target.closest('.header-actions .nav-item')) {
+          document.querySelectorAll('.header-actions .nav-item.open').forEach(function (el) {
             el.classList.remove('open');
           });
         }
       });
 
-      // Close dropdown when a menu item is clicked (navigate away)
-      document.querySelectorAll('.mega-item, .simple-drop a').forEach(function (link) {
+      // Close user dropdown when a menu item is clicked
+      document.querySelectorAll('.simple-drop a').forEach(function (link) {
         link.addEventListener('click', function () {
-          document.querySelectorAll('.main-nav .nav-item.open').forEach(function (el) {
+          document.querySelectorAll('.nav-item.open').forEach(function (el) {
             el.classList.remove('open');
           });
         });

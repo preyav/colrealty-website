@@ -101,8 +101,26 @@ def rental_list(request):
 
 def rental_detail(request, pk):
     listing = get_object_or_404(Rental, pk=pk, status="active")
+
+    # FavoriteListing currently only supports Listing model, not Rental
+    is_favorite = False
+
+    if listing.price:
+        price_lo = listing.price * Decimal("0.75")
+        price_hi = listing.price * Decimal("1.25")
+        similar_listings = (
+            Rental.objects
+            .filter(status="active", city=listing.city, price__gte=price_lo, price__lte=price_hi)
+            .exclude(pk=listing.pk)
+            .order_by("-id")[:8]
+        )
+    else:
+        similar_listings = []
+
     return render(request, "rentals/detail.html", {
         "listing":             listing,
+        "is_favorite":         is_favorite,
+        "similar_listings":    similar_listings,
         "GOOGLE_MAPS_API_KEY": settings.GOOGLE_MAPS_API_KEY,
     })
 
