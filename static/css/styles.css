@@ -889,7 +889,6 @@ body.page {
 .main-nav .nav-link,
 .main-nav .nav-link:hover,
 .main-nav .nav-link:focus,
-.main-nav .nav-link:active,
 .main-nav .dropdown-toggle,
 .main-nav .dropdown-toggle:hover,
 .main-nav .dropdown-toggle:focus {
@@ -912,13 +911,17 @@ body.page {
 
 .main-nav .nav-link:hover,
 .main-nav .dropdown-toggle:hover {
-  color: #2563eb !important;
+  color: #111 !important;
   background: transparent;
+  border-bottom: 1px solid #111 !important;
+  padding-bottom: 4px;
 }
 
-/* Active page link — blue like Compass */
+/* Active page — underline indicator */
 .main-nav .nav-link.active {
-  color: #2563eb !important;
+  color: #111 !important;
+  border-bottom: 1px solid #111 !important;
+  padding-bottom: 4px;
 }
 
 .main-nav .dropdown-toggle::after {

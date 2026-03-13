@@ -44,7 +44,7 @@
 
         <!-- Buy -->
         <div class="nav-item">
-          <a class="nav-link" href="/listings/">Buy <span class="chevron">▾</span></a>
+          <a class="nav-link {% if '/listings' in request.path %}active{% endif %}" href="/listings/">Buy <span class="chevron">▾</span></a>
           <div class="mega-drop">
             <div class="mega-drop-single">
               <a class="mega-item" href="/listings/">All Homes</a>
@@ -59,7 +59,7 @@
 
         <!-- Sell -->
         <div class="nav-item">
-          <a class="nav-link" href="{% url 'pages:sell' %}">Sell <span class="chevron">▾</span></a>
+          <a class="nav-link {% if '/sell' in request.path %}active{% endif %}" href="{% url 'pages:sell' %}">Sell <span class="chevron">▾</span></a>
           <div class="mega-drop">
             <div class="mega-drop-single">
               <a class="mega-item" href="{% url 'pages:sell_valuation' %}">Home Valuation</a>
@@ -70,7 +70,7 @@
 
         <!-- Rent -->
         <div class="nav-item">
-          <a class="nav-link" href="/rentals/">Rent <span class="chevron">▾</span></a>
+          <a class="nav-link {% if '/rentals' in request.path %}active{% endif %}" href="/rentals/">Rent <span class="chevron">▾</span></a>
           <div class="mega-drop">
             <div class="mega-drop-single">
               <a class="mega-item" href="/rentals/">All Rentals</a>
@@ -82,7 +82,7 @@
 
         <!-- Agents -->
         <div class="nav-item">
-          <a class="nav-link" href="{% url 'pages:agents' %}">Agents <span class="chevron">▾</span></a>
+          <a class="nav-link {% if '/agents' in request.path %}active{% endif %}" href="{% url 'pages:agents' %}">Agents <span class="chevron">▾</span></a>
           <div class="mega-drop">
             <div class="mega-drop-single">
               <a class="mega-item" href="{% url 'pages:team' %}">Our Team</a>
@@ -91,10 +91,7 @@
           </div>
         </div>
 
-      </nav>
-
-      <!-- ④ Right actions: avatar or sign-in -->
-      <div class="header-actions">
+        <!-- User avatar or Sign In -->
         {% if request.user.is_authenticated %}
         <div class="nav-item drop-right">
           <a class="nav-link nav-link--user" href="#">
@@ -113,10 +110,11 @@
           </div>
         </div>
         {% else %}
-        <a class="btn-signin" href="#"
-          onclick="document.getElementById('login-modal').style.display='flex';return false;">Register / Sign In</a>
+        <a class="nav-link" href="#"
+          onclick="document.getElementById('login-modal').style.display='flex';return false;">Register / Sign In <span class="chevron">▾</span></a>
         {% endif %}
-      </div>
+
+      </nav>
 
     </div>
   </header>
@@ -199,7 +197,7 @@
     // Buy/Sell/Rent/Agents use CSS hover (see styles.css)
     document.addEventListener('DOMContentLoaded', function () {
       // Only wire click-toggle for the user avatar dropdown
-      document.querySelectorAll('.header-actions .nav-item').forEach(function (item) {
+      document.querySelectorAll('.nav-item.drop-right').forEach(function (item) {
         const toggle = item.querySelector('.nav-link');
         const drop = item.querySelector('.simple-drop');
         if (!toggle || !drop) return;
@@ -217,8 +215,8 @@
 
       // Close user dropdown when clicking outside
       document.addEventListener('click', function (e) {
-        if (!e.target.closest('.header-actions .nav-item')) {
-          document.querySelectorAll('.header-actions .nav-item.open').forEach(function (el) {
+        if (!e.target.closest('.nav-item.drop-right')) {
+          document.querySelectorAll('.nav-item.drop-right.open').forEach(function (el) {
             el.classList.remove('open');
           });
         }
