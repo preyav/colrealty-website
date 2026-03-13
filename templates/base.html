@@ -44,7 +44,7 @@
 
         <!-- Buy -->
         <div class="nav-item">
-          <a class="nav-link" href="/listings/">Buy</a>
+          <a class="nav-link" href="/listings/">Buy <span class="chevron">▾</span></a>
           <div class="mega-drop">
             <div class="mega-drop-single">
               <a class="mega-item" href="/listings/">All Homes</a>
@@ -59,32 +59,30 @@
 
         <!-- Sell -->
         <div class="nav-item">
-          <a class="nav-link" href="{% url 'pages:sell' %}">Sell</a>
+          <a class="nav-link" href="{% url 'pages:sell' %}">Sell <span class="chevron">▾</span></a>
           <div class="mega-drop">
             <div class="mega-drop-single">
               <a class="mega-item" href="{% url 'pages:sell_valuation' %}">Home Valuation</a>
               <a class="mega-item" href="{% url 'pages:sell_marketing' %}">Marketing Your Home</a>
-              <a class="mega-item" href="{% url 'pages:sell_concierge' %}">Concierge Service</a>
             </div>
           </div>
         </div>
 
         <!-- Rent -->
         <div class="nav-item">
-          <a class="nav-link" href="/rentals/">Rent</a>
+          <a class="nav-link" href="/rentals/">Rent <span class="chevron">▾</span></a>
           <div class="mega-drop">
             <div class="mega-drop-single">
               <a class="mega-item" href="/rentals/">All Rentals</a>
               <a class="mega-item" href="/rentals/?property_type=Residential+Lease">Residential Lease</a>
               <a class="mega-item" href="/rentals/?property_type=Commercial+Lease">Commercial Lease</a>
-              <a class="mega-item" href="{% url 'pages:rent_marketing' %}">List Your Rental</a>
             </div>
           </div>
         </div>
 
         <!-- Agents -->
         <div class="nav-item">
-          <a class="nav-link" href="{% url 'pages:agents' %}">Agents <span class="chevron">∨</span></a>
+          <a class="nav-link" href="{% url 'pages:agents' %}">Agents <span class="chevron">▾</span></a>
           <div class="mega-drop">
             <div class="mega-drop-single">
               <a class="mega-item" href="{% url 'pages:team' %}">Our Team</a>
