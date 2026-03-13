@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load humanize %}
 
 {% block title %}{{ agent.name }} | Col Realty{% endblock %}
 
@@ -128,20 +129,59 @@
           <!-- Listings -->
           <div class="content-card">
             <h2>Current Listings</h2>
-            <div class="listings-grid">
+            <div class="listing-grid">
               {% for listing in listings %}
-              <div class="listing-card">
-                <div class="listing-photo"><i class="fas fa-home"></i></div>
-                <div class="listing-info">
-                  <div class="listing-price">{{ listing.price }}</div>
-                  <div class="listing-address">{{ listing.address }}</div>
-                  <div class="listing-meta">
-                    <span><i class="fas fa-bed"></i> {{ listing.beds }} bd</span>
-                    <span><i class="fas fa-bath"></i> {{ listing.baths }} ba</span>
-                    <span><i class="fas fa-ruler-combined"></i> {{ listing.sqft }} sqft</span>
-                  </div>
-                </div>
-              </div>
+                {% if listing.property_type == "Residential Lease" or listing.property_type == "Commercial Lease" %}
+                  {# ── Rental-style card ── #}
+                  <a class="listing-card" href="{% url 'listings:listing_detail' listing.id %}">
+                    <div class="listing-image-wrap">
+                      {% if listing.main_image_url %}
+                        <img class="listing-image" src="{{ listing.main_image_url }}" alt="{{ listing.title }}">
+                      {% endif %}
+                      <div class="badge-strip">
+                        <span class="badge badge-status-active">{{ listing.status|title }}</span>
+                        {% if listing.property_type %}<span class="badge">{{ listing.property_type }}</span>{% endif %}
+                      </div>
+                    </div>
+                    <div class="listing-body">
+                      <div class="listing-price">
+                        <div class="price-main">${{ listing.price|floatformat:0|intcomma }}<span style="font-size:0.75rem;font-weight:400;">/mo</span></div>
+                      </div>
+                      <div class="listing-title">{{ listing.title }}</div>
+                      <div class="listing-location">{{ listing.street_address }}, {{ listing.city }}, {{ listing.state }} {{ listing.zip_code }}</div>
+                      <div class="listing-meta">
+                        {% if listing.beds %}<span class="meta-pill">{{ listing.beds }} bd</span>{% endif %}
+                        {% if listing.baths %}<span class="meta-pill">{{ listing.baths }} ba</span>{% endif %}
+                        {% if listing.sqft %}<span class="meta-pill">{{ listing.sqft|intcomma }} sqft</span>{% endif %}
+                      </div>
+                    </div>
+                  </a>
+                {% else %}
+                  {# ── Sale-style card ── #}
+                  <a class="listing-card" href="{% url 'listings:listing_detail' listing.id %}">
+                    <div class="listing-image-wrap">
+                      {% if listing.main_image_url %}
+                        <img class="listing-image" src="{{ listing.main_image_url }}" alt="{{ listing.title }}">
+                      {% endif %}
+                      <div class="badge-strip">
+                        <span class="badge badge-status-active">{{ listing.status|title }}</span>
+                        {% if listing.property_type %}<span class="badge">{{ listing.property_type }}</span>{% endif %}
+                      </div>
+                    </div>
+                    <div class="listing-body">
+                      <div class="listing-price">
+                        <div class="price-main">${{ listing.price|floatformat:0|intcomma }}</div>
+                      </div>
+                      <div class="listing-title">{{ listing.title }}</div>
+                      <div class="listing-location">{{ listing.street_address }}, {{ listing.city }}, {{ listing.state }} {{ listing.zip_code }}</div>
+                      <div class="listing-meta">
+                        {% if listing.beds %}<span class="meta-pill">{{ listing.beds }} bd</span>{% endif %}
+                        {% if listing.baths %}<span class="meta-pill">{{ listing.baths }} ba</span>{% endif %}
+                        {% if listing.sqft %}<span class="meta-pill">{{ listing.sqft|intcomma }} sqft</span>{% endif %}
+                      </div>
+                    </div>
+                  </a>
+                {% endif %}
               {% empty %}
               <p style="color:#aaa; font-size:13px; grid-column:1/-1;">No active listings at the moment.</p>
               {% endfor %}
