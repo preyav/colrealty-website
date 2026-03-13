@@ -996,12 +996,14 @@ body.page {
 /* ── Nav item / dropdowns ── */
 .nav-item {
   position: relative;
+  padding-bottom: 8px;
+  margin-bottom: -8px;
 }
 
 .mega-drop {
   display: none;
   position: absolute;
-  top: calc(100% + 10px);
+  top: calc(100%);
   left: 0;
   background: #fff;
   border-radius: 12px;
@@ -1040,7 +1042,7 @@ body.page {
   border-radius: 6px;
   text-decoration: none;
   color: #333;
-  font-size: 14px;
+  font-size: 17px;
   font-weight: 400;
   transition: background .1s;
   letter-spacing: 0;
@@ -1054,7 +1056,7 @@ body.page {
 .simple-drop {
   display: none;
   position: absolute;
-  top: calc(100% + 10px);
+  top: calc(100%);
   right: 0;
   background: #fff;
   border-radius: 12px;
