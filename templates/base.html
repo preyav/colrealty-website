@@ -99,14 +99,14 @@
             <span class="user-name">{{ request.user.first_name|default:request.user.email }}</span>
             <span class="chevron">▾</span>
           </a>
-          <div class="simple-drop">
-            <a href="{% url 'accounts:overview' %}">Overview</a>
-            <a href="{% url 'accounts:favorites' %}">Favorites</a>
-            <a href="{% url 'accounts:saved_searches' %}">Saved Searches</a>
-            <hr>
-            <a href="{% url 'accounts:settings' %}">Account Settings</a>
-            <hr>
-            <a href="{% url 'accounts:sign_out' %}">Sign Out</a>
+          <div class="mega-drop">
+            <div class="mega-drop-single">
+              <a class="mega-item" href="{% url 'accounts:overview' %}">Overview</a>
+              <a class="mega-item" href="{% url 'accounts:favorites' %}">Favorites</a>
+              <a class="mega-item" href="{% url 'accounts:saved_searches' %}">Saved Searches</a>
+              <a class="mega-item" href="{% url 'accounts:settings' %}">Account Settings</a>
+              <a class="mega-item" href="{% url 'accounts:sign_out' %}">Sign Out</a>
+            </div>
           </div>
         </div>
         {% else %}
@@ -199,7 +199,7 @@
       // Only wire click-toggle for the user avatar dropdown
       document.querySelectorAll('.nav-item.drop-right').forEach(function (item) {
         const toggle = item.querySelector('.nav-link');
-        const drop = item.querySelector('.simple-drop');
+        const drop = item.querySelector('.mega-drop, .simple-drop');
         if (!toggle || !drop) return;
 
         toggle.addEventListener('click', function (e) {
