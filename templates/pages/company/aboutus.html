@@ -1,2 +1,113 @@
 {% extends "base.html" %}
-{% block content %}<h1>About Us (Coming Soon)</h1>{% endblock %}
+{% load static %}
+
+{% block title %}About Us | Col Realty{% endblock %}
+
+{% block content %}
+<section class="about-page">
+    <section class="about-hero">
+        <div class="container about-actions-center">
+            <p class="about-eyebrow">About Col Realty</p>
+            <p class="hero-text">
+                Col Realty . Local Expertise . Trusted Guidance . Seemless Real Estate Experience
+            </p>
+            <p>
+            <h4>Our mission is to help you find your place in Austin</h4>
+            </p>
+        </div>
+    </section>
+
+    <section class="about-section about-section-soft">
+        <div class="container about-two-col">
+            <div>
+                <p class="about-section-label">Our Vision</p>
+                <h2 class="about-section-title">A modern real estate experience rooted in local knowledge.</h2>
+            </div>
+            <div>
+                <p class="about-copy">
+                    Col Realty was founded on the idea that the best guidance comes from deep local knowledge,
+                    trusted relationships, and a thoughtful, modern approach to the market.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section class="about-section">
+        <div class="container">
+            <div class="about-section-head about-center">
+                <p class="about-section-label">Our Values</p>
+                <h2 class="about-section-title">What guides the way we work</h2>
+            </div>
+
+            <div class="about-cards-4">
+                <article class="about-card">
+                    <h3>Local Expertise</h3>
+                    <p>We focus on the communities we know best and help clients make informed decisions with real
+                        neighborhood insight.</p>
+                </article>
+
+                <article class="about-card">
+                    <h3>Client First</h3>
+                    <p>Every decision we make is guided by what is best for our clients and their long-term goals.</p>
+                </article>
+
+                <article class="about-card">
+                    <h3>Transparency</h3>
+                    <p>Clear communication and honest advice are at the core of every relationship and transaction.</p>
+                </article>
+
+                <article class="about-card">
+                    <h3>Modern Approach</h3>
+                    <p>We combine real estate expertise with modern technology to create a smoother, smarter experience.
+                    </p>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="about-section about-section-soft">
+        <div class="container">
+            <div class="about-section-head about-center">
+                <p class="about-section-label">What We Do</p>
+                <h2 class="about-section-title">Tailored guidance for every stage of the journey</h2>
+            </div>
+
+            <div class="about-cards-3">
+                <article class="about-card">
+                    <h3>Buying</h3>
+                    <p>We help buyers navigate Austin’s competitive market with local insight, strategic negotiation,
+                        and personalized property searches.</p>
+                </article>
+
+                <article class="about-card">
+                    <h3>Selling</h3>
+                    <p>Our marketing approach combines accurate pricing, strong exposure, and modern presentation to
+                        position homes effectively.</p>
+                </article>
+
+                <article class="about-card">
+                    <h3>Investing</h3>
+                    <p>We help investors evaluate opportunities using local market knowledge, neighborhood trends, and
+                        long-term value analysis.</p>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="about-cta">
+        <div class="container about-narrow about-center">
+            <p class="about-section-label">Let’s Talk Real Estate</p>
+            <h2 class="about-section-title">Start your next move with confidence.</h2>
+            <p class="about-copy">
+                Whether you are buying your first home, selling a property, or investing in Austin real estate,
+                Col Realty is here to guide you every step of the way.
+            </p>
+
+            <div class="about-actions about-actions-center">
+                <a href="{% url 'pages:contact' %}" class="btn-primary about-btn-link">Contact Us</a>
+            </div>
+        </div>
+    </section>
+
+</section>
+{% endblock %}
