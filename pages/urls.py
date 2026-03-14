@@ -26,20 +26,22 @@ urlpatterns = [
     # PROPERTY MANAGEMENT
     path("propman/", views.propman, name="propman"),
 
-    # CONTACT
+     # CONTACT
     path("contact/", views.contact, name="contact"),
 
-    # portal
+    # PORTAL
     path("portal/", views.login, name="login"),
 
     # AGENTS
-
     path("agents/team/", views.agents, name="team"),
     path("agents/joincol/", views.agents_joincol, name="joincol"),
 
     path('agents/',                   views.agents,       name='agents'),
     path('agents/<slug:slug>/',       views.agent_detail, name='agent_detail'),
     path('agents/<slug:slug>/contact/', views.agent_contact, name='agent_contact'),
+
+   # ABOUT US
+    path("company/aboutus/", views.company_aboutus, name="aboutus"),
 
     # CONTACT US
     path("company/contactus/", views.company_contactus, name="contactus"),

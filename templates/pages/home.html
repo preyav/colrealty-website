@@ -105,7 +105,7 @@
     <div class="hp-section-head">
       <h3 class="hp-section-title">Homes for Rent</h3>
       <a href="{% url 'rentals:list' %}" class="hp-section-link">See all rentals →</a>
-    </div>
+    </div>New
     <div class="hp-grid">
       {% for r in recent_rentals %}
       <a class="hp-card" href="{% url 'rentals:detail' r.id %}">

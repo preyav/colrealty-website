@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}About Us | Col Realty{% endblock %}
+
+{% block content %}
+<section class="about-page">
+
+    <section class="about-hero">
+        <div class="container">
+            <div class="about-hero-inner">
+                <p class="about-eyebrow">About Col Realty</p>
+                <h1 class="hero-title">Helping You Find Your Place in Austin</h1>
+                <p class="hero-text">
+                    Col Realty is a locally rooted real estate brokerage delivering trusted guidance,
+                    local expertise, and a modern real estate experience across Austin and the surrounding communities.
+                </p>
+
+                <div class="about-actions">
+                    <a href="{% url 'pages:contact' %}" class="btn-secondary">Work With Us</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="about-local-strip">
+        <div class="container">
+            <div class="about-local-strip-inner">
+                <span class="about-local-label">Serving Austin &amp; Central Texas</span>
+                <span>Austin</span>
+                <span>Cedar Park</span>
+                <span>Round Rock</span>
+                <span>Pflugerville</span>
+                <span>Leander</span>
+                <span>Georgetown</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="about-section">
+        <div class="container about-narrow">
+            <p class="about-section-label">Our Mission</p>
+            <h2 class="about-section-title">
+                Our mission is to help clients make confident real estate decisions through local expertise,
+                thoughtful guidance, and a modern approach to buying, selling, and investing.
+            </h2>
+            <p class="about-copy">
+                At Col Realty, we believe real estate should feel transparent, informed, and personalized.
+                By combining local knowledge with modern tools and data-driven insight, we help clients
+                navigate the Austin market with clarity and confidence.
+            </p>
+        </div>
+    </section>
+
+    <section class="about-section about-section-soft">
+        <div class="container about-two-col">
+            <div>
+                <p class="about-section-label">Our Vision</p>
+                <h2 class="about-section-title">A modern real estate experience rooted in local knowledge.</h2>
+            </div>
+            <div>
+                <p class="about-copy">
+                    Austin is one of the most dynamic real estate markets in the country. As the region continues
+                    to grow, the real estate experience should evolve with it.
+                </p>
+                <p class="about-copy">
+                    Col Realty was founded on the idea that the best guidance comes from deep local knowledge,
+                    trusted relationships, and a thoughtful, modern approach to the market.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section class="about-section">
+        <div class="container">
+            <div class="about-section-head about-center">
+                <p class="about-section-label">Our Values</p>
+                <h2 class="about-section-title">What guides the way we work</h2>
+            </div>
+
+            <div class="about-cards-4">
+                <article class="about-card">
+                    <h3>Local Expertise</h3>
+                    <p>We focus on the communities we know best and help clients make informed decisions with real
+                        neighborhood insight.</p>
+                </article>
+
+                <article class="about-card">
+                    <h3>Client First</h3>
+                    <p>Every decision we make is guided by what is best for our clients and their long-term goals.</p>
+                </article>
+
+                <article class="about-card">
+                    <h3>Transparency</h3>
+                    <p>Clear communication and honest advice are at the core of every relationship and transaction.</p>
+                </article>
+
+                <article class="about-card">
+                    <h3>Modern Approach</h3>
+                    <p>We combine real estate expertise with modern technology to create a smoother, smarter experience.
+                    </p>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="about-section">
+        <div class="container about-two-col about-two-col-center">
+            <div>
+                <p class="about-section-label">Austin Market Expertise</p>
+                <h2 class="about-section-title">Deep roots in Austin and the surrounding communities.</h2>
+                <p class="about-copy">
+                    Austin and Central Texas continue to attract homeowners, entrepreneurs, and investors looking for
+                    growth,
+                    lifestyle, and long-term value.
+                </p>
+                <p class="about-copy">
+                    Because we live and work here, we bring real neighborhood perspective — not just listing data.
+                </p>
+            </div>
+
+            <div>
+                <div class="about-area-list">
+                    <span>Austin</span>
+                    <span>Cedar Park</span>
+                    <span>Round Rock</span>
+                    <span>Pflugerville</span>
+                    <span>Leander</span>
+                    <span>Georgetown</span>
+                    <span>Surrounding Central Texas communities</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="about-section about-section-soft">
+        <div class="container">
+            <div class="about-section-head about-center">
+                <p class="about-section-label">What We Do</p>
+                <h2 class="about-section-title">Tailored guidance for every stage of the journey</h2>
+            </div>
+
+            <div class="about-cards-3">
+                <article class="about-card">
+                    <h3>Buying</h3>
+                    <p>We help buyers navigate Austin’s competitive market with local insight, strategic negotiation,
+                        and personalized property searches.</p>
+                </article>
+
+                <article class="about-card">
+                    <h3>Selling</h3>
+                    <p>Our marketing approach combines accurate pricing, strong exposure, and modern presentation to
+                        position homes effectively.</p>
+                </article>
+
+                <article class="about-card">
+                    <h3>Investing</h3>
+                    <p>We help investors evaluate opportunities using local market knowledge, neighborhood trends, and
+                        long-term value analysis.</p>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="about-section">
+        <div class="container about-two-col about-two-col-center agent-layout">
+            <div class="agent-photo-wrap">
+                {% if agent.photo %}
+                <img src="{{ agent.photo.url }}" alt="{{ agent.name }}">
+                {% else %}
+                <div class="avatar-initials-large">{{ agent.initials }}</div>
+                {% endif %}
+            </div>
+
+            <div>
+                <p class="about-section-label">Meet the Broker</p>
+                <h2 class="about-section-title">Preya Sundaram</h2>
+                <p class="about-broker-role">Broker | Col Realty</p>
+
+                <p class="about-copy">
+                    Preya Sundaram is a Texas real estate broker with more than a decade of experience helping
+                    clients navigate residential and investment real estate transactions.
+                </p>
+                <p class="about-copy">
+                    Her background combines business strategy, technology, and real estate, bringing a thoughtful
+                    and analytical perspective to Austin’s rapidly evolving market.
+                </p>
+                <p class="about-copy">
+                    Preya believes the best real estate outcomes come from informed decisions, transparent
+                    communication,
+                    and trusted relationships.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section class="about-section">
+        <div class="container">
+            <div class="about-stats-grid">
+                <div class="about-stat-card">
+                    <h3>10+ Years</h3>
+                    <p>Real estate experience in the Austin market</p>
+                </div>
+                <div class="about-stat-card">
+                    <h3>Local Focus</h3>
+                    <p>Austin and surrounding Central Texas communities</p>
+                </div>
+                <div class="about-stat-card">
+                    <h3>Buy • Sell • Invest</h3>
+                    <p>Guidance tailored to each client’s goals</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="about-cta">
+        <div class="container about-narrow about-center">
+            <p class="about-section-label">Let’s Talk Real Estate</p>
+            <h2 class="about-section-title">Start your next move with confidence.</h2>
+            <p class="about-copy">
+                Whether you are buying your first home, selling a property, or investing in Austin real estate,
+                Col Realty is here to guide you every step of the way.
+            </p>
+
+            <div class="about-actions about-actions-center">
+                <a href="{% url 'pages:contact' %}" class="btn-primary about-btn-link">Contact Us</a>
+            </div>
+        </div>
+    </section>
+
+</section>
+{% endblock %}

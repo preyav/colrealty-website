@@ -324,6 +324,8 @@ def agents_joincol(request):
 # Company pages
 # ─────────────────────────────────────────────
 
+def company_aboutus(request):
+    return render(request, "pages/company/aboutus.html")
 
 def company_joinus(request):
     return render(request, "pages/company/joinus.html")

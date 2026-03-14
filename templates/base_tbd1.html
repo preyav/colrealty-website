@@ -1,0 +1,244 @@
+{% load static %}
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Col Realty{% endblock %}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  {% block extra_head %}{% endblock %}
+</head>
+
+<body class="page d-flex flex-column min-vh-100">
+
+  <header class="site-header">
+    <!--
+      Layout: [Logo] [Search pill]  ──────────────  [Buy][Sell][Rent][Agents] [Sign In]
+    -->
+    <div class="header-inner">
+
+      <!-- ① Logo — extreme left -->
+      <a href="/" class="brand">
+        <img src="{% static 'images/colrealty_logo.png' %}" alt="Col Realty">
+      </a>
+
+      <!-- ② Search pill — left side, right after logo -->
+      <div class="header-search">
+        <form action="/listings/" method="get">
+          <i class="fas fa-search h-search-icon"></i>
+          <input type="text" name="q" placeholder="City, Address, ZIP, Agent…" value="{{ request.GET.q|default:'' }}"
+            autocomplete="off">
+          <button type="submit" class="h-search-btn">
+            <i class="fas fa-arrow-right"></i>
+          </button>
+        </form>
+      </div>
+
+      <!-- ③ All nav + sign-in grouped on the RIGHT -->
+      <nav class="main-nav">
+
+        <!-- Buy -->
+        <div class="nav-item">
+          <a class="nav-link {% if '/listings' in request.path %}active{% endif %}" href="/listings/">Buy <span class="chevron">▾</span></a>
+          <div class="mega-drop">
+            <div class="mega-drop-single">
+              <a class="mega-item" href="/listings/">All Homes</a>
+              <a class="mega-item" href="/listings/?property_type=Residential">Residential</a>
+              <a class="mega-item" href="/listings/?property_type=Condo">Condos &amp; Townhomes</a>
+              <a class="mega-item" href="/listings/?property_type=Land">Land &amp; Lots</a>
+              <a class="mega-item" href="/listings/?property_type=Farm">Farms &amp; Ranches</a>
+              <a class="mega-item" href="/listings/?property_type=Commercial+Sale">Commercial</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sell -->
+        <div class="nav-item">
+          <a class="nav-link {% if '/sell' in request.path %}active{% endif %}" href="{% url 'pages:sell' %}">Sell <span class="chevron">▾</span></a>
+          <div class="mega-drop">
+            <div class="mega-drop-single">
+              <a class="mega-item" href="{% url 'pages:sell_valuation' %}">Home Valuation</a>
+              <a class="mega-item" href="{% url 'pages:sell_marketing' %}">Marketing Your Home</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rent -->
+        <div class="nav-item">
+          <a class="nav-link {% if '/rentals' in request.path %}active{% endif %}" href="/rentals/">Rent <span class="chevron">▾</span></a>
+          <div class="mega-drop">
+            <div class="mega-drop-single">
+              <a class="mega-item" href="/rentals/">All Rentals</a>
+              <a class="mega-item" href="/rentals/?property_type=Residential+Lease">Residential Lease</a>
+              <a class="mega-item" href="/rentals/?property_type=Commercial+Lease">Commercial Lease</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Agents -->
+        <div class="nav-item">
+          <a class="nav-link {% if '/agents' in request.path %}active{% endif %}" href="{% url 'pages:agents' %}">Agents <span class="chevron">▾</span></a>
+          <div class="mega-drop">
+            <div class="mega-drop-single">
+              <a class="mega-item" href="{% url 'pages:team' %}">Our Team</a>
+              <a class="mega-item" href="{% url 'pages:joincol' %}">Join as a Col Agent</a>
+            </div>
+          </div>
+        </div>
+
+      </nav>
+
+      <!-- ④ Right actions: avatar or sign-in -->
+      <div class="header-actions">
+        {% if request.user.is_authenticated %}
+        <div class="nav-item drop-right">
+          <a class="nav-link nav-link--user" href="#">
+            <span class="user-avatar">{{ request.user.first_name|default:request.user.email|slice:":1"|upper }}</span>
+            <span class="user-name">{{ request.user.first_name|default:request.user.email }}</span>
+            <span class="chevron">▾</span>
+          </a>
+          <div class="simple-drop">
+            <a href="{% url 'accounts:overview' %}">Overview</a>
+            <a href="{% url 'accounts:favorites' %}">Favorites</a>
+            <a href="{% url 'accounts:saved_searches' %}">Saved Searches</a>
+            <hr>
+            <a href="{% url 'accounts:settings' %}">Account Settings</a>
+            <hr>
+            <a href="{% url 'accounts:sign_out' %}">Sign Out</a>
+          </div>
+        </div>
+        {% else %}
+        <a class="btn-signin" href="#"
+          onclick="document.getElementById('login-modal').style.display='flex';return false;">Register / Sign In</a>
+        {% endif %}
+      </div>
+
+    </div>
+  </header>
+
+  <main class="page-main">
+    <div class="container">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+  {% include 'partials/_footer.html' %}
+
+  <!-- LOGIN MODAL -->
+  {% if not request.user.is_authenticated %}
+  <div id="login-modal" class="login-modal" onclick="if(event.target===this)this.style.display='none'">
+    <div class="login-modal-box">
+      <button class="login-modal-close" onclick="document.getElementById('login-modal').style.display='none'">×</button>
+
+      <!-- Step 1: Choose role -->
+      <div id="modal-step-1">
+        <div class="login-modal-icon">🏠</div>
+        <h2 class="login-modal-title">Register/Sign In</h2>
+        <p class="login-modal-subtitle">How would you like to use Col Realty?</p>
+        <div class="login-modal-role-list">
+          <button class="login-modal-role-btn" onclick="selectRole('agent')">Agent</button>
+          <button class="login-modal-role-btn" onclick="selectRole('buyer_seller')">Buyer or Seller</button>
+          <button class="login-modal-role-btn" onclick="selectRole('other')">Other</button>
+        </div>
+        <p class="login-modal-terms">By continuing, you agree to Col Realty's Terms of Service &amp; Privacy Policy</p>
+      </div>
+
+      <!-- Step 2: Sign in options -->
+      <div id="modal-step-2" style="display:none;">
+        <h2 class="login-modal-title">Sign In</h2>
+        <p id="modal-role-label" class="login-modal-role-label"></p>
+        <input type="hidden" id="selected-role" value="">
+        <a id="google-login-btn" href="/accounts/google/login/?next=/accounts/overview/"
+          class="login-modal-social-btn login-modal-social-btn--google">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" height="20"> Continue
+          with Google
+        </a>
+        <a href="/accounts/facebook/login/?next=/accounts/overview/"
+          class="login-modal-social-btn login-modal-social-btn--facebook">
+          <i class="fab fa-facebook login-modal-facebook-icon"></i> Continue with Facebook
+        </a>
+        <div class="login-modal-divider">
+          <hr>
+          <span class="login-modal-divider-label">or</span>
+        </div>
+        <form method="post" action="/accounts/login/">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="/accounts/overview/">
+          <input name="login" type="email" placeholder="Email address" class="login-modal-input">
+          <input name="password" type="password" placeholder="Password"
+            class="login-modal-input login-modal-input--last">
+          <button type="submit" class="login-modal-submit">Sign In</button>
+        </form>
+        <button class="login-modal-back"
+          onclick="document.getElementById('modal-step-1').style.display='block';document.getElementById('modal-step-2').style.display='none';">←
+          Back</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function selectRole(role) {
+      document.getElementById('selected-role').value = role;
+      const labels = { agent: 'Signing in as an Agent', buyer_seller: 'Signing in as a Buyer or Seller', other: 'Signing in' };
+      document.getElementById('modal-role-label').textContent = labels[role] || 'Signing in';
+      const next = '/accounts/select-type/?role=' + role;
+      document.getElementById('google-login-btn').href = '/accounts/google/login/?next=' + encodeURIComponent(next);
+      document.getElementById('modal-step-1').style.display = 'none';
+      document.getElementById('modal-step-2').style.display = 'block';
+    }
+  </script>
+  {% endif %}
+
+  <script>
+    // User dropdown (header-actions) is click-based
+    // Buy/Sell/Rent/Agents use CSS hover (see styles.css)
+    document.addEventListener('DOMContentLoaded', function () {
+      // Only wire click-toggle for the user avatar dropdown
+      document.querySelectorAll('.header-actions .nav-item').forEach(function (item) {
+        const toggle = item.querySelector('.nav-link');
+        const drop = item.querySelector('.simple-drop');
+        if (!toggle || !drop) return;
+
+        toggle.addEventListener('click', function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          const isOpen = item.classList.contains('open');
+          document.querySelectorAll('.nav-item.open').forEach(function (el) {
+            el.classList.remove('open');
+          });
+          if (!isOpen) item.classList.add('open');
+        });
+      });
+
+      // Close user dropdown when clicking outside
+      document.addEventListener('click', function (e) {
+        if (!e.target.closest('.header-actions .nav-item')) {
+          document.querySelectorAll('.header-actions .nav-item.open').forEach(function (el) {
+            el.classList.remove('open');
+          });
+        }
+      });
+
+      // Close user dropdown when a menu item is clicked
+      document.querySelectorAll('.simple-drop a').forEach(function (link) {
+        link.addEventListener('click', function () {
+          document.querySelectorAll('.nav-item.open').forEach(function (el) {
+            el.classList.remove('open');
+          });
+        });
+      });
+    });
+  </script>
+
+  {% block extra_js %}{% endblock %}
+
+  {% include "newsletter/_subscribe_modal.html" %}
+
+</body>
+
+</html>

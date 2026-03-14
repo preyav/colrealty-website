@@ -22,7 +22,7 @@ footer h4,footer h5,footer h6{color:#fff !important;}
 
 /* ── centered wrapper ─────────────────────────────────────── */
 .cr-wrap{
-  max-width:1100px;
+  max-width:1200px;
   margin:0 auto;
   padding:0 32px;
   box-sizing:border-box;
@@ -263,7 +263,7 @@ footer h4,footer h5,footer h6{color:#fff !important;}
           onclick="handleFavorite(this, '{{ listing.id }}')"
           aria-label="Favorite">
           <svg viewBox="0 0 24 24" fill="{% if is_favorite %}#e02020{% else %}none{% endif %}" stroke="{% if is_favorite %}#e02020{% else %}currentColor{% endif %}" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-          <span>Save</span>
+          <span>Favorite</span>
         </button>
         <button class="cr-action-btn cr-share-btn"
           onclick="openShare('{{ listing.street_address }}, {{ listing.city }}, {{ listing.state }}', '{{ request.path }}')"
@@ -294,7 +294,7 @@ footer h4,footer h5,footer h6{color:#fff !important;}
             onclick="handleFavorite(this, '{{ listing.id }}')"
             aria-label="Save">
             <svg viewBox="0 0 24 24" fill="{% if is_favorite %}#e02020{% else %}none{% endif %}" stroke="{% if is_favorite %}#e02020{% else %}currentColor{% endif %}" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-            <span>Save</span>
+            <span>Favorite</span>
           </button>
           <button class="cr-action-btn cr-share-btn"
             onclick="openShare('{{ listing.street_address }}, {{ listing.city }}, {{ listing.state }}', '{{ request.path }}')"
