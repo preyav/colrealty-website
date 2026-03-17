@@ -19,6 +19,7 @@ urlpatterns = [
     path("leads/",    include("leads.urls")),
     path("newsletter/", include(("newsletter.urls",
          "newsletter"), namespace="newsletter")),
+    path("ai/", include("ai_concierge.urls", namespace="ai_concierge")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

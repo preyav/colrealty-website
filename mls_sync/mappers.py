@@ -48,9 +48,31 @@ def safe_int(value, max_val=2147483647):
     except Exception:
         return None
 
+def normalize_listing_category(record: Dict[str, Any]) -> str:
+    """
+    Classify MLS record as sale vs lease using available source fields.
+    This is intentionally conservative and backend-driven.
+    """
+    raw_property_type = (record.get("PropertyType") or "").strip().lower()
+    raw_property_subtype = (record.get("PropertySubType") or "").strip().lower()
+    raw_standard_status = (record.get("StandardStatus") or "").strip().lower()
 
+    combined = " ".join([raw_property_type, raw_property_subtype, raw_standard_status])
+
+    lease_signals = [
+        "lease",
+        "rental",
+        "rent",
+        "for lease",
+    ]
+
+    if any(signal in combined for signal in lease_signals):
+        return "lease"
+
+    return "sale"
 
 def map_property_to_listing_data(record: Dict[str, Any]) -> Dict[str, Any]:
+    listing_category = normalize_listing_category(record)
     price = record.get("ListPrice")
     beds = record.get("BedroomsTotal")
     baths = record.get("BathroomsTotalDecimal")
@@ -97,6 +119,7 @@ def map_property_to_listing_data(record: Dict[str, Any]) -> Dict[str, Any]:
         "description": description,
         "status": status,
         "mls_modification_timestamp": modification_ts,
+        "listing_category": listing_category,
 
         # Address
         "street_address": street_address,

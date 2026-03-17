@@ -27,7 +27,8 @@
         <img src="{% static 'images/colrealty_logo.png' %}" alt="Col Realty">
       </a>
 
-      <!-- ② Search pill — left side, right after logo -->
+      <!-- ② Search pill — hidden on home page, shown on all other pages -->
+      {% if request.path != '/' %}
       <div class="header-search">
         <form action="/listings/" method="get">
           <i class="fas fa-search h-search-icon"></i>
@@ -38,7 +39,7 @@
           </button>
         </form>
       </div>
-
+      {% endif %}
       <!-- ③ All nav + sign-in grouped on the RIGHT -->
       <nav class="main-nav">
 

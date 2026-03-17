@@ -16,25 +16,20 @@
       Sell: plain <a> link — navigates directly to sell page, no JS involved.
     -->
     <div class="hp-tabs" role="tablist">
-      <button class="hp-tab active" data-mode="buy"  role="tab" aria-selected="true">Buy</button>
-      <a      class="hp-tab"        href="{% url 'pages:sell' %}">Sell</a>
-      <button class="hp-tab"        data-mode="rent" role="tab" aria-selected="false">Rent</button>
+      <button class="hp-tab active" data-mode="buy" role="tab" aria-selected="true">Buy</button>
+      <a class="hp-tab" href="{% url 'pages:sell' %}">Sell</a>
+      <button class="hp-tab" data-mode="rent" role="tab" aria-selected="false">Rent</button>
     </div>
 
     <!-- Form handles Buy and Rent only -->
     <form class="hp-search-box" id="hp-search-form" action="{% url 'listings:listing_list' %}" method="get">
-      <input
-        class="hp-search-input"
-        id="hp-search-input"
-        type="text"
-        name="q"
-        placeholder="City, Address, School, Agent, ZIP"
-        autocomplete="off"
-      >
+      <input class="hp-search-input" id="hp-search-input" type="text" name="q"
+        placeholder="City, Address, School, Agent, ZIP" autocomplete="off">
       <button type="submit" class="hp-search-btn" aria-label="Search">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="6"/>
-          <line x1="16.5" y1="16.5" x2="21" y2="21"/>
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"
+          stroke-linejoin="round">
+          <circle cx="11" cy="11" r="6" />
+          <line x1="16.5" y1="16.5" x2="21" y2="21" />
         </svg>
       </button>
     </form>
@@ -49,13 +44,13 @@
   <div class="hp-feed-header">
     <h2 class="hp-feed-title">Properties in Austin, TX</h2>
     <div class="hp-feed-pills">
-      <a href="{% url 'listings:listing_list' %}"                           class="hp-pill active">All</a>
-      <a href="{% url 'listings:listing_list' %}"                           class="hp-pill">New</a>
+      <a href="{% url 'listings:listing_list' %}" class="hp-pill active">All</a>
+      <a href="{% url 'listings:listing_list' %}" class="hp-pill">New</a>
       <a href="{% url 'listings:listing_list' %}?property_type=Residential" class="hp-pill">Residential</a>
-      <a href="{% url 'listings:listing_list' %}?property_type=Condo"       class="hp-pill">Condo</a>
-      <a href="{% url 'listings:listing_list' %}?property_type=Land"        class="hp-pill">Land</a>
-      <a href="{% url 'listings:listing_list' %}?property_type=Farm"        class="hp-pill">Farm</a>
-      <a href="{% url 'rentals:list' %}"                                    class="hp-pill">Rentals</a>
+      <a href="{% url 'listings:listing_list' %}?property_type=Condo" class="hp-pill">Condo</a>
+      <a href="{% url 'listings:listing_list' %}?property_type=Land" class="hp-pill">Land</a>
+      <a href="{% url 'listings:listing_list' %}?property_type=Farm" class="hp-pill">Farm</a>
+      <a href="{% url 'rentals:list' %}" class="hp-pill">Rentals</a>
     </div>
   </div>
 
@@ -76,18 +71,30 @@
           <div class="hp-card-price-row">
             <p class="hp-card-price">${{ l.price|floatformat:0|intcomma }}</p>
             <div class="hp-card-icons">
-              <button class="hp-icon-btn hp-icon-share" onclick="event.preventDefault();openShare('{{ l.street_address }}, {{ l.city }}, {{ l.state }}','{% url 'listings:listing_detail' l.id %}')" aria-label="Share">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              <button class="hp-icon-btn hp-icon-share"
+                onclick="event.preventDefault();openShare('{{ l.street_address }}, {{ l.city }}, {{ l.state }}','{% url 'listings:listing_detail' l.id %}')"
+                aria-label="Share">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="18" cy="5" r="3" />
+                  <circle cx="6" cy="12" r="3" />
+                  <circle cx="18" cy="19" r="3" />
+                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+                </svg>
               </button>
-              <button class="hp-icon-btn hp-icon-fav" onclick="event.preventDefault();handleFavorite(this,'{{ l.id }}')" aria-label="Save">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              <button class="hp-icon-btn hp-icon-fav" onclick="event.preventDefault();handleFavorite(this,'{{ l.id }}')"
+                aria-label="Save">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path
+                    d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                </svg>
               </button>
             </div>
           </div>
           <div class="hp-card-specs">
-            {% if l.beds  %}<span>{{ l.beds|floatformat:0 }} <strong>beds</strong></span>{% endif %}
+            {% if l.beds %}<span>{{ l.beds|floatformat:0 }} <strong>beds</strong></span>{% endif %}
             {% if l.baths %}<span>{{ l.baths|floatformat:0 }} <strong>baths</strong></span>{% endif %}
-            {% if l.sqft  %}<span>{{ l.sqft|intcomma }} <strong>sqft</strong></span>{% endif %}
+            {% if l.sqft %}<span>{{ l.sqft|intcomma }} <strong>sqft</strong></span>{% endif %}
           </div>
           <div class="hp-card-divider"></div>
           <p class="hp-card-addr">{{ l.street_address }}</p>
@@ -117,18 +124,30 @@
           <div class="hp-card-price-row">
             <p class="hp-card-price">${{ r.price|floatformat:0|intcomma }}<span class="hp-price-unit">/mo</span></p>
             <div class="hp-card-icons">
-              <button class="hp-icon-btn hp-icon-share" onclick="event.preventDefault();openShare('{{ r.street_address }}, {{ r.city }}, {{ r.state }}','{% url 'rentals:detail' r.id %}')" aria-label="Share">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              <button class="hp-icon-btn hp-icon-share"
+                onclick="event.preventDefault();openShare('{{ r.street_address }}, {{ r.city }}, {{ r.state }}','{% url 'rentals:detail' r.id %}')"
+                aria-label="Share">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="18" cy="5" r="3" />
+                  <circle cx="6" cy="12" r="3" />
+                  <circle cx="18" cy="19" r="3" />
+                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+                </svg>
               </button>
-              <button class="hp-icon-btn hp-icon-fav" onclick="event.preventDefault();handleFavorite(this,'{{ r.id }}')" aria-label="Save">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              <button class="hp-icon-btn hp-icon-fav" onclick="event.preventDefault();handleFavorite(this,'{{ r.id }}')"
+                aria-label="Save">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path
+                    d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                </svg>
               </button>
             </div>
           </div>
           <div class="hp-card-specs">
-            {% if r.beds  %}<span>{{ r.beds|floatformat:0 }} <strong>beds</strong></span>{% endif %}
+            {% if r.beds %}<span>{{ r.beds|floatformat:0 }} <strong>beds</strong></span>{% endif %}
             {% if r.baths %}<span>{{ r.baths|floatformat:0 }} <strong>baths</strong></span>{% endif %}
-            {% if r.sqft  %}<span>{{ r.sqft|intcomma }} <strong>sqft</strong></span>{% endif %}
+            {% if r.sqft %}<span>{{ r.sqft|intcomma }} <strong>sqft</strong></span>{% endif %}
           </div>
           <div class="hp-card-divider"></div>
           <p class="hp-card-addr">{{ r.street_address }}</p>
@@ -158,17 +177,29 @@
           <div class="hp-card-price-row">
             <p class="hp-card-price">${{ l.price|floatformat:0|intcomma }}</p>
             <div class="hp-card-icons">
-              <button class="hp-icon-btn hp-icon-share" onclick="event.preventDefault();openShare('{{ l.street_address }}, {{ l.city }}, {{ l.state }}','{% url 'listings:listing_detail' l.id %}')" aria-label="Share">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              <button class="hp-icon-btn hp-icon-share"
+                onclick="event.preventDefault();openShare('{{ l.street_address }}, {{ l.city }}, {{ l.state }}','{% url 'listings:listing_detail' l.id %}')"
+                aria-label="Share">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="18" cy="5" r="3" />
+                  <circle cx="6" cy="12" r="3" />
+                  <circle cx="18" cy="19" r="3" />
+                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+                </svg>
               </button>
-              <button class="hp-icon-btn hp-icon-fav" onclick="event.preventDefault();handleFavorite(this,'{{ l.id }}')" aria-label="Save">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              <button class="hp-icon-btn hp-icon-fav" onclick="event.preventDefault();handleFavorite(this,'{{ l.id }}')"
+                aria-label="Save">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path
+                    d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                </svg>
               </button>
             </div>
           </div>
           <div class="hp-card-specs">
             {% if l.lot_size %}<span>{{ l.lot_size }} <strong>acres</strong></span>{% endif %}
-            {% if l.sqft     %}<span>{{ l.sqft|intcomma }} <strong>sqft</strong></span>{% endif %}
+            {% if l.sqft %}<span>{{ l.sqft|intcomma }} <strong>sqft</strong></span>{% endif %}
           </div>
           <div class="hp-card-divider"></div>
           <p class="hp-card-addr">{{ l.street_address }}</p>
@@ -188,40 +219,40 @@
      Sell tab is an <a> link — handled by the browser.
 ══════════════════════════════════════════ -->
 <script>
-(function () {
-  const URLS = {
-    buy:  "{% url 'listings:listing_list' %}",
-    rent: "{% url 'rentals:list' %}"
-  };
+  (function () {
+    const URLS = {
+      buy: "{% url 'listings:listing_list' %}",
+      rent: "{% url 'rentals:list' %}"
+    };
 
-  const PLACEHOLDERS = {
-    buy:  "City, Address, School, Agent, ZIP",
-    rent: "City, Neighborhood, ZIP — find rentals"
-  };
+    const PLACEHOLDERS = {
+      buy: "City, Address, School, Agent, ZIP",
+      rent: "City, Neighborhood, ZIP — find rentals"
+    };
 
-  const form  = document.getElementById('hp-search-form');
-  const input = document.getElementById('hp-search-input');
+    const form = document.getElementById('hp-search-form');
+    const input = document.getElementById('hp-search-input');
 
-  // Only select button tabs (excludes the Sell <a> link)
-  const tabs  = document.querySelectorAll('.hp-tab[data-mode]');
+    // Only select button tabs (excludes the Sell <a> link)
+    const tabs = document.querySelectorAll('.hp-tab[data-mode]');
 
-  function activate(newMode) {
-    // Highlight the clicked tab; leave Sell <a> unstyled
-    tabs.forEach(t => {
-      const on = t.dataset.mode === newMode;
-      t.classList.toggle('active', on);
-      t.setAttribute('aria-selected', String(on));
-    });
+    function activate(newMode) {
+      // Highlight the clicked tab; leave Sell <a> unstyled
+      tabs.forEach(t => {
+        const on = t.dataset.mode === newMode;
+        t.classList.toggle('active', on);
+        t.setAttribute('aria-selected', String(on));
+      });
 
-    // Swap form action + placeholder
-    form.action       = URLS[newMode];
-    input.placeholder = PLACEHOLDERS[newMode];
-    input.name        = 'q';
-  }
+      // Swap form action + placeholder
+      form.action = URLS[newMode];
+      input.placeholder = PLACEHOLDERS[newMode];
+      input.name = 'q';
+    }
 
-  // Wire only the button tabs (Buy, Rent)
-  tabs.forEach(t => t.addEventListener('click', () => activate(t.dataset.mode)));
-})();
+    // Wire only the button tabs (Buy, Rent)
+    tabs.forEach(t => t.addEventListener('click', () => activate(t.dataset.mode)));
+  })();
 </script>
 
 <!-- ── SHARE MODAL ── -->
@@ -231,12 +262,19 @@
     <h3 class="share-modal-title">Share this home</h3>
     <p id="share-modal-address" class="share-modal-address"></p>
     <div class="share-options">
-      <button class="share-opt" onclick="shareVia('copy')"><span class="share-opt-icon">🔗</span><span>Copy link</span></button>
-      <button class="share-opt" onclick="shareVia('email')"><span class="share-opt-icon">✉️</span><span>Email</span></button>
-      <button class="share-opt" onclick="shareVia('text')"><span class="share-opt-icon">💬</span><span>Text</span></button>
-      <button class="share-opt" onclick="shareVia('facebook')"><span class="share-opt-icon" style="background:#1877f2;color:#fff;border-radius:50%;font-weight:700;font-size:16px;">f</span><span>Facebook</span></button>
-      <button class="share-opt" onclick="shareVia('twitter')"><span class="share-opt-icon" style="background:#000;color:#fff;border-radius:50%;font-size:14px;font-weight:700;">𝕏</span><span>X / Twitter</span></button>
-      <button class="share-opt" onclick="shareVia('whatsapp')"><span class="share-opt-icon">📱</span><span>WhatsApp</span></button>
+      <button class="share-opt" onclick="shareVia('copy')"><span class="share-opt-icon">🔗</span><span>Copy
+          link</span></button>
+      <button class="share-opt" onclick="shareVia('email')"><span
+          class="share-opt-icon">✉️</span><span>Email</span></button>
+      <button class="share-opt" onclick="shareVia('text')"><span
+          class="share-opt-icon">💬</span><span>Text</span></button>
+      <button class="share-opt" onclick="shareVia('facebook')"><span class="share-opt-icon"
+          style="background:#1877f2;color:#fff;border-radius:50%;font-weight:700;font-size:16px;">f</span><span>Facebook</span></button>
+      <button class="share-opt" onclick="shareVia('twitter')"><span class="share-opt-icon"
+          style="background:#000;color:#fff;border-radius:50%;font-size:14px;font-weight:700;">𝕏</span><span>X /
+          Twitter</span></button>
+      <button class="share-opt" onclick="shareVia('whatsapp')"><span
+          class="share-opt-icon">📱</span><span>WhatsApp</span></button>
     </div>
     <div id="share-copy-confirm" class="share-copy-confirm" style="display:none;">✅ Link copied to clipboard!</div>
   </div>
@@ -245,44 +283,44 @@
 
 
 <script>
-const IS_AUTHENTICATED = {% if request.user.is_authenticated %}true{% else %}false{% endif %};
+  const IS_AUTHENTICATED = {% if request.user.is_authenticated %}true{% else %} false{% endif %};
 
-// ── Favorites ──
-function handleFavorite(btn, listingId) {
-  if (!IS_AUTHENTICATED) {
-    // Open the existing Register/Sign In modal from base.html
-    const modal = document.getElementById('login-modal');
-    if (modal) modal.style.display = 'flex';
-    return;
+  // ── Favorites ──
+  function handleFavorite(btn, listingId) {
+    if (!IS_AUTHENTICATED) {
+      // Open the existing Register/Sign In modal from base.html
+      const modal = document.getElementById('login-modal');
+      if (modal) modal.style.display = 'flex';
+      return;
+    }
+    fetch('/accounts/favorite/' + listingId + '/', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json' }
+    })
+      .then(r => r.json())
+      .then(data => { btn.classList.toggle('saved', data.status === 'added'); });
   }
-  fetch('/accounts/favorite/' + listingId + '/', {
-    method: 'POST',
-    headers: { 'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json' }
-  })
-  .then(r => r.json())
-  .then(data => { btn.classList.toggle('saved', data.status === 'added'); });
-}
 
-// ── Share ──
-let _shareUrl = '', _shareAddress = '';
-function openShare(address, path) {
-  _shareAddress = address;
-  _shareUrl = window.location.origin + path;
-  document.getElementById('share-modal-address').textContent = address;
-  document.getElementById('share-copy-confirm').style.display = 'none';
-  document.getElementById('share-modal').style.display = 'flex';
-}
-function closeShare() { document.getElementById('share-modal').style.display = 'none'; }
-function shareVia(method) {
-  const url = encodeURIComponent(_shareUrl);
-  const text = encodeURIComponent('Check out this home: ' + _shareAddress);
-  if      (method === 'copy')     { navigator.clipboard.writeText(_shareUrl).then(() => { document.getElementById('share-copy-confirm').style.display='block'; setTimeout(()=>document.getElementById('share-copy-confirm').style.display='none',2500); }); }
-  else if (method === 'email')    { window.open('mailto:?subject=Check out this home&body=' + text + '%0A' + url); }
-  else if (method === 'text')     { window.open('sms:?body=' + text + '%20' + url); }
-  else if (method === 'facebook') { window.open('https://www.facebook.com/sharer/sharer.php?u=' + url, '_blank'); }
-  else if (method === 'twitter')  { window.open('https://twitter.com/intent/tweet?text=' + text + '&url=' + url, '_blank'); }
-  else if (method === 'whatsapp') { window.open('https://wa.me/?text=' + text + '%20' + url, '_blank'); }
-}
+  // ── Share ──
+  let _shareUrl = '', _shareAddress = '';
+  function openShare(address, path) {
+    _shareAddress = address;
+    _shareUrl = window.location.origin + path;
+    document.getElementById('share-modal-address').textContent = address;
+    document.getElementById('share-copy-confirm').style.display = 'none';
+    document.getElementById('share-modal').style.display = 'flex';
+  }
+  function closeShare() { document.getElementById('share-modal').style.display = 'none'; }
+  function shareVia(method) {
+    const url = encodeURIComponent(_shareUrl);
+    const text = encodeURIComponent('Check out this home: ' + _shareAddress);
+    if (method === 'copy') { navigator.clipboard.writeText(_shareUrl).then(() => { document.getElementById('share-copy-confirm').style.display = 'block'; setTimeout(() => document.getElementById('share-copy-confirm').style.display = 'none', 2500); }); }
+    else if (method === 'email') { window.open('mailto:?subject=Check out this home&body=' + text + '%0A' + url); }
+    else if (method === 'text') { window.open('sms:?body=' + text + '%20' + url); }
+    else if (method === 'facebook') { window.open('https://www.facebook.com/sharer/sharer.php?u=' + url, '_blank'); }
+    else if (method === 'twitter') { window.open('https://twitter.com/intent/tweet?text=' + text + '&url=' + url, '_blank'); }
+    else if (method === 'whatsapp') { window.open('https://wa.me/?text=' + text + '%20' + url, '_blank'); }
+  }
 </script>
 
 {% endblock %}

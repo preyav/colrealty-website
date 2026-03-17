@@ -132,6 +132,7 @@ INSTALLED_APPS = [
     "rentals",
     "pages",
     "portal",
+    "ai_concierge",
 ]
 
 

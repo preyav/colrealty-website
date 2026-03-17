@@ -9,10 +9,23 @@ class Listing(models.Model):
         ("sold", "Sold"),
     ]
 
+    LISTING_CATEGORY_CHOICES = [
+        ("sale", "Sale"),
+        ("lease", "Lease"),
+    ]
+
     # ── Core MLS fields ───────────────────────────────────────────────────
     mls_id = models.CharField(max_length=128, unique=True, db_index=True)
     mls_modification_timestamp = models.DateTimeField(null=True, blank=True)
     title = models.CharField(max_length=512)
+
+    # ---- NEW -------------------------------------------------------------
+    listing_category = models.CharField(
+        max_length=20, 
+        choices=LISTING_CATEGORY_CHOICES, 
+        default="sale",
+        db_index=True,
+    )
 
     # ── Address ───────────────────────────────────────────────────────────
     street_address = models.CharField(max_length=255)

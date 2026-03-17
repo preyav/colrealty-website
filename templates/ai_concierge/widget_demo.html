@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Col Concierge Demo{% endblock %}
+
+{% block content %}
+<section class="ai-demo-page">
+    <div class="container">
+        <div class="ai-demo-header">
+            <p class="about-section-label">Col Concierge</p>
+            <h1 class="about-section-title">AI Concierge Demo</h1>
+            <p class="about-copy">
+                This is the Phase 1 foundation for Col Realty’s agentic assistant.
+            </p>
+        </div>
+
+        <div class="ai-chat-shell">
+            <div id="ai-chat-messages" class="ai-chat-messages">
+                <div class="ai-msg ai-msg-assistant">
+                    Hi — I’m Col Concierge. I can help with buying, renting, selling, investing, and narrowing your home
+                    search. What are you looking for?
+                </div>
+            </div>
+
+            <form id="ai-chat-form" class="ai-chat-form">
+                <input id="ai-chat-input" type="text"
+                    placeholder="Try: I’m looking to buy a 3-bedroom home in Cedar Park under 650k"
+                    autocomplete="off" />
+                <button type="submit" class="btn-primary about-btn-link">Send</button>
+            </form>
+        </div>
+    </div>
+</section>
+
+<script>
+    (function () {
+        const form = document.getElementById("ai-chat-form");
+        const input = document.getElementById("ai-chat-input");
+        const messages = document.getElementById("ai-chat-messages");
+
+        function addMessage(text, role) {
+            const el = document.createElement("div");
+            el.className = `ai-msg ${role === "user" ? "ai-msg-user" : "ai-msg-assistant"}`;
+            el.textContent = text;
+            messages.appendChild(el);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        form.addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const text = input.value.trim();
+            if (!text) return;
+
+            addMessage(text, "user");
+            input.value = "";
+
+            try {
+                const response = await fetch("{% url 'ai_concierge:chat' %}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        message: text,
+                        page_context: {
+                            page_type: "demo"
+                        }
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    addMessage(data.error || "Something went wrong.", "assistant");
+                    return;
+                }
+
+                addMessage(data.reply, "assistant");
+            } catch (err) {
+                addMessage("Sorry, I hit a connection issue.", "assistant");
+            }
+        });
+    })();
+</script>
+{% endblock %}
