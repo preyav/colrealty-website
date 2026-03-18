@@ -16,12 +16,10 @@ class ListingListView(ListView):
     paginate_by = 42
 
     def get_queryset(self):
-        active_property_types = get_listing_property_types(active_only=True, listing_category="sale")
-
         qs = Listing.objects.filter(
             status="active",
-            listing_category="sale",
-            property_type__in=active_property_types,
+        ).exclude(
+            property_type__in=["Residential Lease", "Commercial Lease"]
         )
         return apply_listing_filters(qs, self.request.GET).order_by("-id")
 
@@ -62,7 +60,6 @@ class ListingDetailView(DetailView):
         ctx["GOOGLE_MAPS_API_KEY"] = settings.GOOGLE_MAPS_API_KEY
 
         listing = self.object
-        active_property_types = get_listing_property_types(active_only=True, listing_category="sale")
 
         ctx["is_favorite"] = (
             self.request.user.is_authenticated
@@ -75,12 +72,11 @@ class ListingDetailView(DetailView):
             ctx["similar_listings"] = (
                 Listing.objects.filter(
                     status="active",
-                    listing_category="sale",
-                    property_type__in=active_property_types,
                     city=listing.city,
                     price__gte=price_lo,
                     price__lte=price_hi,
                 )
+                .exclude(property_type__in=["Residential Lease", "Commercial Lease"])
                 .exclude(pk=listing.pk)
                 .order_by("-id")[:8]
             )
@@ -92,25 +88,15 @@ class ListingDetailView(DetailView):
 
 @require_GET
 def listing_markers(request):
-    active_property_types = get_listing_property_types(active_only=True, listing_category="sale")
-
     qs = Listing.objects.filter(
         status="active",
-        listing_category="sale",
-        property_type__in=active_property_types,
         latitude__isnull=False,
         longitude__isnull=False,
+    ).exclude(
+        property_type__in=["Residential Lease", "Commercial Lease"]
     ).only(
-        "id",
-        "title",
-        "price",
-        "street_address",
-        "city",
-        "state",
-        "zip_code",
-        "latitude",
-        "longitude",
-        "main_image_url",
+        "id", "title", "price", "street_address", "city", "state",
+        "zip_code", "latitude", "longitude", "main_image_url",
     )
 
     qs = apply_listing_filters(qs, request.GET).order_by("-id")[:3000]
@@ -123,27 +109,16 @@ def listing_markers(request):
         except (TypeError, ValueError):
             continue
 
-        markers.append(
-            {
-                "id": listing.id,
-                "title": listing.title,
-                "price": str(listing.price),
-                "address": f"{listing.street_address}, {listing.city}, {listing.state} {listing.zip_code}",
-                "lat": lat,
-                "lng": lng,
-                "image": listing.main_image_url,
-                "url": f"/listings/{listing.id}/",
-            }
-        )
+        markers.append({
+            "id": listing.id,
+            "title": listing.title,
+            "price": str(listing.price),
+            "address": f"{listing.street_address}, {listing.city}, {listing.state} {listing.zip_code}",
+            "lat": lat,
+            "lng": lng,
+            "image": listing.main_image_url,
+            "url": f"/listings/{listing.id}/",
+        })
 
     return JsonResponse(markers, safe=False)
-
-    ctx["has_active_filters"] = any([
-    ctx["search_q"],
-    ctx["search_price_min"],
-    ctx["search_price_max"],
-    ctx["search_beds_min"],
-    ctx["search_baths_min"],
-    ctx["search_property_type"],
-])
 
