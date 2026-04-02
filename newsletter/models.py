@@ -16,7 +16,7 @@ class NewsletterIssue(models.Model):
     status = models.CharField(max_length=12, choices=STATUS_CHOICES, default="draft")
     sent_at = models.DateTimeField(null=True, blank=True)
     sent_count = models.PositiveIntegerField(default=0)
-
+    body_html = models.TextField(blank=True)
     hero_title = models.CharField(max_length=220, blank=True)
     hero_subtitle = models.CharField(max_length=300, blank=True)
 
