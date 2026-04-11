@@ -99,7 +99,10 @@ if not DEBUG:
     if not os.environ.get("DJANGO_ALLOWED_HOSTS"):
         _require_env("DJANGO_ALLOWED_HOSTS")
 
-    CSRF_TRUSTED_ORIGINS = env.list("DJANGO_CSRF_TRUSTED_ORIGINS", default=[])
+CSRF_TRUSTED_ORIGINS = env.list("DJANGO_CSRF_TRUSTED_ORIGINS", default=[])
+
+# Only enforce for web server (not cron / commands)
+if not DEBUG and os.environ.get("RENDER_SERVICE_TYPE") == "web":
     if not CSRF_TRUSTED_ORIGINS:
         _require_env("DJANGO_CSRF_TRUSTED_ORIGINS")
 
