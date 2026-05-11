@@ -99,10 +99,7 @@ if not DEBUG:
     if not os.environ.get("DJANGO_ALLOWED_HOSTS"):
         _require_env("DJANGO_ALLOWED_HOSTS")
 
-CSRF_TRUSTED_ORIGINS = env.list("DJANGO_CSRF_TRUSTED_ORIGINS", default=[])
-
-# Only enforce for web server (not cron / commands)
-if not DEBUG and os.environ.get("RENDER_SERVICE_TYPE") == "web":
+    CSRF_TRUSTED_ORIGINS = env.list("DJANGO_CSRF_TRUSTED_ORIGINS", default=[])
     if not CSRF_TRUSTED_ORIGINS:
         _require_env("DJANGO_CSRF_TRUSTED_ORIGINS")
 
@@ -136,6 +133,7 @@ INSTALLED_APPS = [
     "pages",
     "portal",
     "ai_concierge",
+    "common",
 ]
 
 
@@ -357,7 +355,7 @@ CELERY_TASK_QUEUES = (
     Queue("hubspot"),
 )
 
-SITE_ID = 2
+SITE_ID = 1
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
     "allauth.account.auth_backends.AuthenticationBackend",

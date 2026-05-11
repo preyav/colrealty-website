@@ -1,24 +1,319 @@
 {% extends "base.html" %}
 {% load humanize %}
 {% block title %}Saved Searches | Col Realty{% endblock %}
+
 {% block content %}
-<div style="max-width:700px;margin:0 auto;padding:32px 24px;">
-  <div style="display:flex;border-bottom:1px solid #e5e7eb;margin-bottom:32px;">
-    <a href="{% url 'accounts:overview' %}" style="padding:12px 24px;font-size:14px;font-weight:500;color:#888;text-decoration:none;border-bottom:2px solid transparent;margin-bottom:-1px;">Overview</a>
-    <a href="{% url 'accounts:favorites' %}" style="padding:12px 24px;font-size:14px;font-weight:500;color:#888;text-decoration:none;border-bottom:2px solid transparent;margin-bottom:-1px;">Favorites</a>
-    <a href="{% url 'accounts:saved_searches' %}" style="padding:12px 24px;font-size:14px;font-weight:500;color:#111;text-decoration:none;border-bottom:2px solid #111;margin-bottom:-1px;">Saved Searches</a>
-    <a href="{% url 'accounts:settings' %}" style="padding:12px 24px;font-size:14px;font-weight:500;color:#888;text-decoration:none;border-bottom:2px solid transparent;margin-bottom:-1px;">Account Settings</a>
+<section class="cr-saved-shell">
+  <div class="cr-saved-tabs">
+    <a href="{% url 'accounts:overview' %}" class="cr-saved-tab">Overview</a>
+
+    <a href="{% url 'accounts:saved_searches' %}" class="cr-saved-tab active">Saved Searches</a>
+    <a href="{% url 'accounts:favorites' %}" class="cr-saved-tab">Favorites</a>
   </div>
-  <h1 style="font-size:24px;font-weight:700;margin-bottom:24px;">Saved Searches</h1>
-  <div style="background:#fff;border-radius:14px;border:1px solid #e5e7eb;padding:8px;">
+
+  <div class="cr-saved-header">
+    <h1>Saved Searches <span>({{ saved_searches|length }})</span></h1>
+  </div>
+
+  <div class="cr-saved-list">
     {% for s in saved_searches %}
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #f0f0f0;">
-      <a href="{{ s.query_url }}" style="font-size:14px;font-weight:500;color:#111;text-decoration:none;">{{ s.name }}</a>
-      <span style="font-size:12px;color:#aaa;">{{ s.created_at|naturalday }}</span>
-    </div>
+    <article class="cr-saved-row">
+      <a href="{% url 'accounts:saved_search_detail' s.pk %}" class="cr-saved-row-main">
+        <div class="cr-saved-thumb">
+          {% if s.cover_image %}
+          <img src="{{ s.cover_image }}" alt="{{ s.name }}">
+          {% elif s.preview_listing and s.preview_listing.main_image_url %}
+          <img src="{{ s.preview_listing.main_image_url }}" alt="{{ s.name }}">
+          {% else %}
+          <div class="cr-saved-thumb-placeholder">CR</div>
+          {% endif %}
+        </div>
+
+        <div class="cr-saved-copy">
+          <h2>{{ s.name }}</h2>
+          <p>
+            {% if s.location_label %}{{ s.location_label }}{% endif %}
+            {% if s.location_label and s.search_type %} | {% endif %}
+            {% if s.search_type %}{{ s.search_type }}{% else %}Sales{% endif %}
+            {% if s.summary_line %} | {{ s.summary_line }}{% endif %}
+          </p>
+        </div>
+      </a>
+
+      <div class="cr-saved-actions">
+        <button class="cr-kebab-btn" type="button" aria-label="More actions"
+          onclick="toggleSavedMenu('menu-{{ s.pk }}')">
+          &#8226;&#8226;&#8226;
+        </button>
+
+        <div id="menu-{{ s.pk }}" class="cr-saved-menu">
+          <a href="{% url 'accounts:saved_search_detail' s.pk %}">Open</a>
+          <a href="{{ s.query_url }}">Run Search</a>
+          <form method="post" action="{% url 'accounts:delete_saved_search' s.pk %}">
+            {% csrf_token %}
+            <button type="submit">Delete</button>
+          </form>
+        </div>
+      </div>
+    </article>
     {% empty %}
-    <p style="padding:24px;color:#888;text-align:center;">No saved searches yet.</p>
+    <div class="cr-empty-state">
+      <h2>No saved searches yet</h2>
+      <p>Apply filters on your listings page and click Save Search.</p>
+      <a href="{% url 'listings:list' %}" class="cr-primary-btn">Browse Listings</a>
+    </div>
     {% endfor %}
   </div>
-</div>
+</section>
+
+<script>
+  function toggleSavedMenu(menuId) {
+    document.querySelectorAll('.cr-saved-menu').forEach(menu => {
+      if (menu.id !== menuId) menu.classList.remove('show');
+    });
+    const menu = document.getElementById(menuId);
+    if (menu) menu.classList.toggle('show');
+  }
+
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('.cr-saved-actions')) {
+      document.querySelectorAll('.cr-saved-menu').forEach(menu => menu.classList.remove('show'));
+    }
+  });
+</script>
+
+<style>
+  .cr-saved-shell {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px 60px;
+  }
+
+  .cr-saved-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 48px;
+    border-bottom: 1px solid #e8e8e8;
+    padding: 18px 0 0;
+    margin-bottom: 34px;
+    overflow-x: auto;
+  }
+
+  .cr-saved-tab {
+    padding: 0 0 18px;
+    text-decoration: none;
+    color: #5f6368;
+    font-size: 15px;
+    font-weight: 500;
+    border-bottom: 3px solid transparent;
+    white-space: nowrap;
+  }
+
+  .cr-saved-tab.active {
+    color: #174ea6;
+    border-bottom-color: #174ea6;
+  }
+
+  .cr-saved-header {
+    margin-bottom: 28px;
+  }
+
+  .cr-saved-header h1 {
+    margin: 0;
+    font-size: 32px;
+    font-weight: 700;
+    color: #111;
+  }
+
+  .cr-saved-header h1 span {
+    color: #7a7a7a;
+    font-weight: 500;
+  }
+
+  .cr-saved-list {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .cr-saved-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    background: #fff;
+    border: 1px solid #e7e7e7;
+    border-radius: 4px;
+    padding: 0;
+    position: relative;
+    overflow: visible;
+  }
+
+  .cr-saved-row-main {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex: 1;
+    text-decoration: none;
+    color: inherit;
+    padding: 0;
+    min-height: 110px;
+  }
+
+  .cr-saved-thumb {
+    width: 110px;
+    height: 110px;
+    flex: 0 0 110px;
+    background: #f1f1f1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .cr-saved-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .cr-saved-thumb-placeholder {
+    font-size: 22px;
+    font-weight: 700;
+    color: #9aa0a6;
+  }
+
+  .cr-saved-copy {
+    padding-right: 16px;
+  }
+
+  .cr-saved-copy h2 {
+    margin: 0 0 6px;
+    font-size: 22px;
+    line-height: 1.2;
+    font-weight: 700;
+    color: #111;
+  }
+
+  .cr-saved-copy p {
+    margin: 0;
+    font-size: 15px;
+    color: #6b7280;
+    line-height: 1.5;
+  }
+
+  .cr-saved-actions {
+    position: relative;
+    padding-right: 16px;
+    flex: 0 0 auto;
+  }
+
+  .cr-kebab-btn {
+    border: none;
+    background: transparent;
+    font-size: 24px;
+    line-height: 1;
+    color: #111;
+    cursor: pointer;
+    padding: 8px 10px;
+  }
+
+  .cr-saved-menu {
+    position: absolute;
+    top: 44px;
+    right: 0;
+    min-width: 170px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, .12);
+    display: none;
+    z-index: 20;
+    overflow: hidden;
+  }
+
+  .cr-saved-menu.show {
+    display: block;
+  }
+
+  .cr-saved-menu a,
+  .cr-saved-menu button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 12px 14px;
+    background: #fff;
+    border: none;
+    color: #111;
+    text-decoration: none;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  .cr-saved-menu a:hover,
+  .cr-saved-menu button:hover {
+    background: #f7f7f7;
+  }
+
+  .cr-empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #fff;
+  }
+
+  .cr-empty-state h2 {
+    margin: 0 0 10px;
+    font-size: 24px;
+    color: #111;
+  }
+
+  .cr-empty-state p {
+    margin: 0 0 20px;
+    color: #6b7280;
+  }
+
+  .cr-primary-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 18px;
+    background: #174ea6;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+  }
+
+  @media (max-width: 768px) {
+    .cr-saved-shell {
+      padding: 0 16px 40px;
+    }
+
+    .cr-saved-tabs {
+      justify-content: flex-start;
+      gap: 26px;
+    }
+
+    .cr-saved-row-main {
+      align-items: flex-start;
+    }
+
+    .cr-saved-thumb {
+      width: 88px;
+      height: 88px;
+      flex-basis: 88px;
+    }
+
+    .cr-saved-copy h2 {
+      font-size: 18px;
+    }
+
+    .cr-saved-copy p {
+      font-size: 14px;
+    }
+  }
+</style>
 {% endblock %}

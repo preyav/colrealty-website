@@ -14,10 +14,6 @@ class NewsletterIssueAdmin(admin.ModelAdmin):
     search_fields = ("title", "edition_label", "slug")
     prepopulated_fields = {"slug": ("title", "edition_label")}
 
-    # 👇 KEEP sections but make them optional
-    inlines = [NewsletterSectionInline]
-
-    # 👇 THIS is the key upgrade
     fieldsets = (
         ("Basic Info", {
             "fields": (
@@ -26,9 +22,10 @@ class NewsletterIssueAdmin(admin.ModelAdmin):
                 "slug",
                 "published_date",
                 "status",
+                "sent_at",
+                "sent_count",
             )
         }),
-
         ("Hero Section", {
             "fields": (
                 "hero_title",
@@ -36,12 +33,13 @@ class NewsletterIssueAdmin(admin.ModelAdmin):
                 "meta_description",
             )
         }),
-
-        ("🚀 Full HTML Newsletter (FAST METHOD)", {
+        ("Full HTML Newsletter", {
             "fields": ("body_html",),
-            "description": "Paste your entire newsletter HTML here. If filled, this will override section-based content.",
+            "description": "Paste the full newsletter HTML here. If this field is filled, it will be used instead of the section-by-section content.",
         }),
     )
+
+    inlines = [NewsletterSectionInline]
 
 
 @admin.register(Subscriber)

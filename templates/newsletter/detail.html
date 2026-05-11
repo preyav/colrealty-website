@@ -27,11 +27,11 @@
 
       <div class="newsletter-sidebar-content">
         <h1 class="newsletter-cover-title">
-          {{ issue.hero_title|default:issue.title }}
+          Spring Is Here — And So Is the Market
         </h1>
 
         <p class="newsletter-cover-subtitle">
-          {{ issue.hero_subtitle|default:"Your monthly real estate update for Austin and Central Texas." }}
+          Your monthly real estate update for Austin and Central Texas.
         </p>
       </div>
     </aside>
@@ -63,22 +63,22 @@
         </section>
       {% else %}
         {% for section in issue.sections.all %}
-        <section class="newsletter-section-card">
-          <h3 class="newsletter-section-title">
-            {% if section.icon_emoji %}{{ section.icon_emoji }} {% endif %}
-            {{ section.heading }}
-          </h3>
+          <section class="newsletter-section-card">
+            <h3 class="newsletter-section-title">
+              {% if section.icon_emoji %}{{ section.icon_emoji }} {% endif %}
+              {{ section.heading }}
+            </h3>
 
-          {% if section.show_mls_stats %}
-          {% include "newsletter/mls_stats_block.html" %}
-          {% endif %}
+            {% if section.show_mls_stats %}
+              {% include "newsletter/mls_stats_block.html" %}
+            {% endif %}
 
-          {% if section.body %}
-          <div class="newsletter-section-body">
-            {{ section.body|linebreaks }}
-          </div>
-          {% endif %}
-        </section>
+            {% if section.body %}
+              <div class="newsletter-section-body">
+                {{ section.body|linebreaks }}
+              </div>
+            {% endif %}
+          </section>
         {% endfor %}
       {% endif %}
     </main>
@@ -178,14 +178,12 @@
     line-height: 1.35;
     font-weight: 700;
     color: #212529;
-    margin: 0 0 14px 0;
   }
 
   .newsletter-cover-subtitle {
     color: #6c757d;
     font-size: 15px;
     line-height: 1.7;
-    margin: 0;
   }
 
   .newsletter-main {
@@ -200,7 +198,7 @@
     gap: 20px;
     padding: 36px 42px 30px;
     border-bottom: 1px solid #e5e7eb;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
   }
 
   .newsletter-edition {
@@ -217,7 +215,6 @@
     font-size: 28px;
     font-weight: 700;
     color: #212529;
-    margin: 0 0 10px 0;
   }
 
   .newsletter-main-subtitle {
@@ -226,17 +223,12 @@
     margin: 0;
   }
 
-.newsletter-meta-right {
-  margin-top: 6px;
-  margin-left: auto;       /* 🔥 pushes it to the far right */
-  text-align: right;
-  min-width: 180px;
-  flex-shrink: 0;          /* 🔥 prevents it from dropping */
-}
-
-.newsletter-meta-left {
-  max-width: 75%;
-}
+  .newsletter-meta-right {
+    text-align: right;
+    min-width: 180px;
+    color: #6b7280;
+    font-size: 15px;
+  }
 
   .newsletter-published-label {
     display: block;
@@ -267,64 +259,15 @@
   }
 
   .newsletter-section-body {
+    color: #374151;
+    font-size: 17px;
+    line-height: 1.9;
+  }
+
+  .newsletter-section-body {
     font-size: 16px;
     line-height: 1.7;
     color: #495057;
-  }
-
-  .newsletter-html-content {
-    padding-top: 32px;
-    padding-bottom: 32px;
-  }
-
-  .newsletter-html-body h1,
-  .newsletter-html-body h2,
-  .newsletter-html-body h3,
-  .newsletter-html-body h4 {
-    color: #212529;
-    margin-top: 0;
-  }
-
-  .newsletter-html-body h2 {
-    font-size: 26px;
-    margin-bottom: 16px;
-  }
-
-  .newsletter-html-body h3 {
-    font-size: 22px;
-    margin-top: 28px;
-    margin-bottom: 14px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #ececec;
-  }
-
-  .newsletter-html-body p {
-    margin: 0 0 16px 0;
-  }
-
-  .newsletter-html-body ul,
-  .newsletter-html-body ol {
-    margin: 0 0 18px 22px;
-    padding: 0;
-  }
-
-  .newsletter-html-body li {
-    margin-bottom: 10px;
-  }
-
-  .newsletter-html-body hr {
-    border: 0;
-    border-top: 1px solid #ececec;
-    margin: 28px 0;
-  }
-
-  .newsletter-html-body a {
-    color: #28a745;
-    text-decoration: none;
-  }
-
-  .newsletter-html-body a:hover {
-    text-decoration: underline;
   }
 
   @media (max-width: 992px) {
@@ -339,7 +282,6 @@
 
     .newsletter-header-card,
     .newsletter-section-card {
-      flex-wrap: wrap;
       padding: 28px 22px;
     }
 
@@ -350,14 +292,13 @@
       color: #212529;
     }
 
-  .newsletter-meta-right {
-    text-align: left;
-    margin-left: 0;
-  }
-
+    .newsletter-meta-right {
+      text-align: left;
+    }
   }
 
   @media print {
+
     .newsletter-topbar,
     header,
     footer {

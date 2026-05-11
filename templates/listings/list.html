@@ -13,24 +13,35 @@
     <div class="listings-top">
       <div class="listings-top-header">
         <h1 class="hero-title">Homes for Sale in Central Texas</h1>
-        <p class="hero-text">Browse active homes for sale. Click a pin on the map to view details.</p>
+        <button type="button" id="save-search-btn" class="btn-secondary">Save Search</button>
       </div>
 
-      <form method="get" action="" id="search-form" class="inline-search-form">
+      <div id="search-form" class="inline-search-form">
         <div class="inline-search-row">
 
           <div class="inline-search-field">
-            <input class="input-field" type="number" name="price_min" placeholder="Min Price" min="0"
-              value="{{ search_price_min }}">
+            <select class="input-field" name="price_min" form="listing-search-form" class="input-field price-select"
+              id="price-min-select">
+              <option value="">No Min</option>
+            </select>
           </div>
 
-          <div class="inline-search-field">
-            <input class="input-field" type="number" name="price_max" placeholder="Max Price" min="0"
-              value="{{ search_price_max }}">
-          </div>
+          <span class="range-sep">-</span>
 
           <div class="inline-search-field">
-            <select class="input-field" name="beds_min">
+            <select class="input-field" name="price_max" form="listing-search-form" class="input-field price-select"
+              id="price-max-select">
+              <option value="">No Max</option>
+            </select>
+          </div>
+
+          <button type="button" class="filters-toggle-btn" id="filters-toggle-btn" aria-expanded="false"
+            aria-controls="advanced-filters-panel">
+            Filters
+          </button>
+
+          <div class="inline-search-field">
+            <select class="input-field" name="beds_min" form="listing-search-form">
               <option value="">Beds</option>
               {% for n in "1234" %}
               <option value="{{ n }}" {% if search_beds_min == n %}selected{% endif %}>{{ n }}+ bd</option>
@@ -40,7 +51,7 @@
           </div>
 
           <div class="inline-search-field">
-            <select class="input-field" name="baths_min">
+            <select class="input-field" name="baths_min" form="listing-search-form">
               <option value="">Baths</option>
               <option value="1" {% if search_baths_min == "1" %}selected{% endif %}>1+</option>
               <option value="1.5" {% if search_baths_min == "1.5" %}selected{% endif %}>1.5+</option>
@@ -50,7 +61,7 @@
           </div>
 
           <div class="inline-search-field">
-            <select class="input-field" name="property_type">
+            <select class="input-field" name="property_type" form="listing-search-form">
               <option value="">All Types</option>
               {% for pt in PROPERTY_TYPE_CHOICES %}
               <option value="{{ pt }}" {% if search_property_type == pt %}selected{% endif %}>{{ pt }}</option>
@@ -58,15 +69,17 @@
             </select>
           </div>
 
-          <button type="submit" class="btn-primary">Search</button>
           {% if has_active_filters %}
-          <a href="{% url 'listings:listing_list' %}" class="btn-secondary">Clear</a>
+          <a href="{% url 'listings:listing_list' %}{% if search_q %}?q={{ search_q|urlencode }}{% endif %}"
+            class="btn-tertiary">
+            Clear
+          </a>
           {% endif %}
-
         </div>
 
         {% if has_active_filters %}
         <div style="margin-top:8px; font-size:0.82rem;">
+          {% if search_q %}<span class="filter-tag">{{ search_q }}</span>{% endif %}
           {% if search_price_min %}<span class="filter-tag">Min ${{ search_price_min|intcomma }}</span>{% endif %}
           {% if search_price_max %}<span class="filter-tag">Max ${{ search_price_max|intcomma }}</span>{% endif %}
           {% if search_beds_min %}<span class="filter-tag">{{ search_beds_min }}+ bd</span>{% endif %}
@@ -75,7 +88,7 @@
         </div>
         {% endif %}
 
-      </form>
+      </div>
     </div>
 
     <!-- Result count -->
@@ -120,16 +133,21 @@
     <nav aria-label="Pagination" style="margin-top:20px;">
       <ul class="pagination">
         {% if page_obj.has_previous %}
-        <li class="page-item"><a class="page-link" href="?{{ query_string }}&page={{ page_obj.previous_page_number }}">←
-            Previous</a></li>
+        <li class="page-item">
+          <a class="page-link" href="?{{ query_string }}&page={{ page_obj.previous_page_number }}">← Previous</a>
+        </li>
         {% else %}
         <li class="page-item disabled"><span class="page-link">← Previous</span></li>
         {% endif %}
-        <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ paginator.num_pages
-            }}</span></li>
+
+        <li class="page-item disabled">
+          <span class="page-link">Page {{ page_obj.number }} of {{ paginator.num_pages }}</span>
+        </li>
+
         {% if page_obj.has_next %}
-        <li class="page-item"><a class="page-link" href="?{{ query_string }}&page={{ page_obj.next_page_number }}">Next
-            →</a></li>
+        <li class="page-item">
+          <a class="page-link" href="?{{ query_string }}&page={{ page_obj.next_page_number }}">Next →</a>
+        </li>
         {% else %}
         <li class="page-item disabled"><span class="page-link">Next →</span></li>
         {% endif %}
@@ -149,31 +167,343 @@
 <script src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&v=weekly" defer></script>
 <script>
   window.addEventListener("load", () => {
+    // -------------------------------
+    // Price dropdown logic
+    // -------------------------------
+    const minSelect = document.getElementById("price-min-select");
+    const maxSelect = document.getElementById("price-max-select");
+    const listingSearchForm = document.getElementById("listing-search-form");
+
+    if (minSelect && maxSelect) {
+      const MIN_PRICE = 100000;
+      const MAX_PRICE = 25000000;
+      const STEP = 25000;
+
+      const currentMin = "{{ search_price_min|default:''|escapejs }}";
+      const currentMax = "{{ search_price_max|default:''|escapejs }}";
+
+      function formatPrice(value) {
+        const n = Number(value);
+
+        if (n >= 1000000) {
+          const millions = n / 1000000;
+          return `${millions.toFixed(3).replace(/\.?0+$/, "")}M`;
+        }
+
+        return `${Math.round(n / 1000)}K`;
+      }
+
+      function buildPriceValues() {
+        const values = [];
+
+        // 100K → 500K (25K)
+        for (let v = 100000; v <= 500000; v += 25000) {
+          values.push(v);
+        }
+
+        // 500K → 1M (50K)
+        for (let v = 550000; v <= 1000000; v += 50000) {
+          values.push(v);
+        }
+
+        // 1M → 5M (250K)
+        for (let v = 1250000; v <= 5000000; v += 250000) {
+          values.push(v);
+        }
+
+        // 5M → 10M (1M)
+        for (let v = 6000000; v <= 10000000; v += 1000000) {
+          values.push(v);
+        }
+
+        // 10M → 25M (2.5M)
+        for (let v = 12500000; v <= 25000000; v += 2500000) {
+          values.push(v);
+        }
+
+        return values;
+      }
+
+      const allValues = buildPriceValues();
+
+      function refillMinOptions(selectedMax, selectedMin) {
+        minSelect.innerHTML = "";
+
+        const noMin = document.createElement("option");
+        noMin.value = "";
+        noMin.textContent = "No Min";
+        minSelect.appendChild(noMin);
+
+        const maxNum = selectedMax ? Number(selectedMax) : null;
+
+        allValues.forEach(value => {
+          if (!maxNum || value < maxNum) {
+            const opt = document.createElement("option");
+            opt.value = String(value);
+            opt.textContent = formatPrice(value);
+            if (String(value) === String(selectedMin)) {
+              opt.selected = true;
+            }
+            minSelect.appendChild(opt);
+          }
+        });
+
+        if (selectedMin && !Array.from(minSelect.options).some(o => o.value === String(selectedMin))) {
+          minSelect.value = "";
+        }
+      }
+
+      function refillMaxOptions(selectedMin, selectedMax) {
+        maxSelect.innerHTML = "";
+
+        const noMax = document.createElement("option");
+        noMax.value = "";
+        noMax.textContent = "No Max";
+        maxSelect.appendChild(noMax);
+
+        const minNum = selectedMin ? Number(selectedMin) : null;
+
+        allValues.forEach(value => {
+          if (!minNum || value > minNum) {
+            const opt = document.createElement("option");
+            opt.value = String(value);
+            opt.textContent = formatPrice(value);
+            if (String(value) === String(selectedMax)) {
+              opt.selected = true;
+            }
+            maxSelect.appendChild(opt);
+          }
+        });
+
+        if (selectedMax && !Array.from(maxSelect.options).some(o => o.value === String(selectedMax))) {
+          maxSelect.value = "";
+        }
+      }
+
+      function syncPriceSelects() {
+        const selectedMin = currentMin || "";
+        const selectedMax = currentMax || "";
+        refillMinOptions(selectedMax, selectedMin);
+        refillMaxOptions(selectedMin, selectedMax);
+      }
+
+      syncPriceSelects();
+
+      minSelect.addEventListener("change", function () {
+        refillMaxOptions(minSelect.value, maxSelect.value);
+      });
+
+      maxSelect.addEventListener("change", function () {
+        refillMinOptions(maxSelect.value, minSelect.value);
+      });
+    }
+
+    function submitListingSearch() {
+      if (listingSearchForm) {
+        listingSearchForm.requestSubmit();
+      }
+    }
+
+    if (minSelect) {
+      minSelect.addEventListener("change", submitListingSearch);
+      minSelect.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          submitListingSearch();
+        }
+      });
+    }
+
+    if (maxSelect) {
+      maxSelect.addEventListener("change", submitListingSearch);
+      maxSelect.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          submitListingSearch();
+        }
+      });
+    }
+
+    document.querySelectorAll(
+      '#search-form select[form="listing-search-form"], #search-form input[form="listing-search-form"]'
+    ).forEach(el => {
+      el.addEventListener("change", submitListingSearch);
+
+      el.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          submitListingSearch();
+        }
+      });
+    });
+
+    // -------------------------------
+    // Save Search Logic
+    // -------------------------------
+    const saveSearchBtn = document.getElementById("save-search-btn");
+
+    function buildSavedSearchName(filters) {
+      const parts = [];
+
+      if (filters.q) {
+        parts.push(filters.q);
+      } else if (filters.zip_code) {
+        parts.push(filters.zip_code);
+      } else if (filters.city) {
+        parts.push(filters.city);
+      } else {
+        parts.push("Central Texas");
+      }
+
+      if (filters.property_type) {
+        parts.push(filters.property_type);
+      }
+
+      if (filters.price_min && filters.price_max) {
+        const minK = Math.round(Number(filters.price_min) / 1000);
+        const maxK = Math.round(Number(filters.price_max) / 1000);
+        parts.push(`$${minK}K-$${maxK}K`);
+      } else if (filters.price_min) {
+        const minK = Math.round(Number(filters.price_min) / 1000);
+        parts.push(`$${minK}K+`);
+      } else if (filters.price_max) {
+        const maxK = Math.round(Number(filters.price_max) / 1000);
+        parts.push(`Up to $${maxK}K`);
+      }
+
+      return parts.join(", ");
+    }
+
+    if (saveSearchBtn) {
+      saveSearchBtn.addEventListener("click", function () {
+        const isAuthenticated = "{{ request.user.is_authenticated|yesno:'true,false' }}" === "true";
+
+        if (!isAuthenticated) {
+          const modal = document.getElementById("login-modal");
+          if (modal) {
+            modal.style.display = "flex";
+          }
+          return;
+        }
+
+        const params = new URLSearchParams(window.location.search);
+
+        const filters = {
+          q: params.get("q") || "",
+          city: params.get("city") || "",
+          zip_code: params.get("zip_code") || "",
+          price_min: params.get("price_min") || "",
+          price_max: params.get("price_max") || "",
+          beds_min: params.get("beds_min") || "",
+          baths_min: params.get("baths_min") || "",
+          property_type: params.get("property_type") || "",
+          status: params.get("status") || "",
+          sort: params.get("sort") || ""
+        };
+
+        const queryUrl = window.location.pathname + window.location.search;
+        const name = buildSavedSearchName(filters);
+
+        fetch("{% url 'accounts:save_search' %}", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+            "X-CSRFToken": "{{ csrf_token }}",
+            "X-Requested-With": "XMLHttpRequest"
+          },
+          body: new URLSearchParams({
+            name: name,
+            query_url: queryUrl,
+            q: filters.q,
+            city: filters.city,
+            zip_code: filters.zip_code,
+            price_min: filters.price_min,
+            price_max: filters.price_max,
+            beds_min: filters.beds_min,
+            baths_min: filters.baths_min,
+            property_type: filters.property_type,
+            status: filters.status,
+            sort: filters.sort
+          }).toString()
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data.status === "saved" || data.success) {
+              saveSearchBtn.innerText = "Saved ✓";
+              saveSearchBtn.disabled = true;
+
+              setTimeout(() => {
+                saveSearchBtn.innerText = "Save Search";
+                saveSearchBtn.disabled = false;
+              }, 1800);
+            } else {
+              console.error("Unexpected save response:", data);
+            }
+          })
+          .catch(err => {
+            console.error("Save search failed:", err);
+          });
+      });
+    }
+
+    // -------------------------------
+    // Map logic
+    // -------------------------------
     const mapEl = document.getElementById("map");
     if (!mapEl) return;
+
     const fallback = { lat: 30.2672, lng: -97.7431 };
-    const map = new google.maps.Map(mapEl, { center: fallback, zoom: 9 });
+    const map = new google.maps.Map(mapEl, {
+      center: fallback,
+      zoom: 9
+    });
+
     const info = new google.maps.InfoWindow();
     const bounds = new google.maps.LatLngBounds();
+
     fetch("{% url 'listings:markers' %}" + window.location.search)
       .then(res => res.json())
       .then(markers => {
         if (!Array.isArray(markers) || markers.length === 0) return;
+
         let hasAny = false;
+
         markers.forEach(m => {
           if (typeof m.lat !== "number" || typeof m.lng !== "number") return;
+
           hasAny = true;
           const pos = { lat: m.lat, lng: m.lng };
           bounds.extend(pos);
-          const marker = new google.maps.Marker({ map, position: pos, title: m.title || "" });
+
+          const marker = new google.maps.Marker({
+            map,
+            position: pos,
+            title: m.title || ""
+          });
+
           marker.addListener("click", () => {
-            const img = m.image ? `<img src="${m.image}" style="width:100%;max-width:220px;border-radius:10px;margin:6px 0;" />` : "";
-            info.setContent(`<div style="max-width:240px"><div style="font-weight:700;margin-bottom:4px">${m.title || ""}</div><div style="margin-bottom:4px;color:#555;font-size:0.85rem">${m.address || ""}</div><div style="margin-bottom:8px"><b>$${Number(m.price).toLocaleString()}</b></div>${img}<a href="${m.url || "#"}" style="color:#2563eb;">View listing →</a></div>`);
+            const img = m.image
+              ? `<img src="${m.image}" style="width:100%;max-width:220px;border-radius:10px;margin:6px 0;" />`
+              : "";
+
+            info.setContent(`
+              <div style="max-width:240px">
+                <div style="font-weight:700;margin-bottom:4px">${m.title || ""}</div>
+                <div style="margin-bottom:4px;color:#555;font-size:0.85rem">${m.address || ""}</div>
+                <div style="margin-bottom:8px"><b>$${Number(m.price).toLocaleString()}</b></div>
+                ${img}
+                <a href="${m.url || "#"}" style="color:#2563eb;">View listing →</a>
+              </div>
+            `);
             info.open(map, marker);
           });
         });
+
         if (hasAny) {
-          if (map.getZoom() > 16) map.setZoom(16);
+          map.fitBounds(bounds);
+          google.maps.event.addListenerOnce(map, "bounds_changed", function () {
+            if (map.getZoom() > 16) map.setZoom(16);
+          });
         }
       })
       .catch(err => console.error("Failed to load markers:", err));

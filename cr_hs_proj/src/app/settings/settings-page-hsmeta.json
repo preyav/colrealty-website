@@ -1,7 +1,0 @@
-{
-  "uid": "cr_hs_proj_settings",
-  "type": "settings",
-  "config": {
-    "entrypoint": "/app/settings/SettingsPage.tsx"
-  }
-}

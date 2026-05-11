@@ -46,12 +46,29 @@ def get_listing_cities(active_only: bool = True, listing_category: str = "sale")
 
 def apply_listing_filters(qs, params: dict):
     q = (params.get("q") or "").strip()
-    price_min = (params.get("price_min") or "").strip()
-    price_max = (params.get("price_max") or "").strip()
-    beds_min = (params.get("beds_min") or "").strip()
-    baths_min = (params.get("baths_min") or "").strip()
-    property_type = (params.get("property_type") or "").strip()
+    price_min = params.get("price_min")
+    price_max = params.get("price_max")
+    beds_min = params.get("beds_min")
+    beds_max = params.get("beds_max")
+    baths_min = params.get("baths_min")
+    baths_max = params.get("baths_max")
+    property_type = params.get("property_type")
+    status = params.get("status")
 
+    sqft_min = params.get("sqft_min")
+    sqft_max = params.get("sqft_max")
+    lot_min = params.get("lot_min")
+    lot_max = params.get("lot_max")
+    year_min = params.get("year_min")
+    year_max = params.get("year_max")
+    stories_min = params.get("stories_min")
+    stories_max = params.get("stories_max")
+    parking_min = params.get("parking_min")
+    hoa_max = params.get("hoa_max")
+
+    keywords = params.get("keywords")
+
+    # --- Keyword search ---
     if q:
         q_zip = re.sub(r"\D", "", q)
         normalized_q = q.strip().lower()
@@ -79,25 +96,87 @@ def apply_listing_filters(qs, params: dict):
                 | Q(listing_office_name__icontains=q)
             )
 
-    min_v = to_decimal(price_min)
-    max_v = to_decimal(price_max)
+    # --- Price ---
+    if price_min:
+        qs = qs.filter(price__gte=Decimal(price_min))
+    if price_max:
+        qs = qs.filter(price__lte=Decimal(price_max))
 
-    if min_v is not None:
-        qs = qs.filter(price__gte=min_v)
+    # --- Beds / Baths ---
+    if beds_min:
+        qs = qs.filter(beds__gte=beds_min)
+    if beds_max:
+        qs = qs.filter(beds__lte=beds_max)
 
-    if max_v is not None:
-        qs = qs.filter(price__lte=max_v)
+    if baths_min:
+        qs = qs.filter(baths__gte=baths_min)
+    if baths_max:
+        qs = qs.filter(baths__lte=baths_max)
 
-    beds_v = to_decimal(beds_min)
-    if beds_v is not None:
-        qs = qs.filter(beds__gte=beds_v)
-
-    baths_v = to_decimal(baths_min)
-    if baths_v is not None:
-        qs = qs.filter(baths__gte=baths_v)
-
-    allowed_property_types = set(get_listing_property_types(active_only=True, listing_category="sale"))
-    if property_type and property_type in allowed_property_types:
+    # --- Type / Status ---
+    if property_type:
         qs = qs.filter(property_type=property_type)
 
-    return qs
+    if status:
+        qs = qs.filter(status=status)
+
+    # --- Property facts ---
+    if sqft_min:
+        qs = qs.filter(sqft__gte=sqft_min)
+    if sqft_max:
+        qs = qs.filter(sqft__lte=sqft_max)
+
+    if lot_min:
+        qs = qs.filter(lot_size__gte=lot_min)
+    if lot_max:
+        qs = qs.filter(lot_size__lte=lot_max)
+
+    if year_min:
+        qs = qs.filter(year_built__gte=year_min)
+    if year_max:
+        qs = qs.filter(year_built__lte=year_max)
+
+    if stories_min:
+        qs = qs.filter(stories__gte=stories_min)
+    if stories_max:
+        qs = qs.filter(stories__lte=stories_max)
+
+    if parking_min:
+        qs = qs.filter(parking_total__gte=parking_min)
+
+    if hoa_max:
+        qs = qs.filter(hoa_fee__lte=hoa_max)
+
+    # --- Amenities ---
+    if params.get("has_pool"):
+        qs = qs.filter(has_pool=True)
+
+    if params.get("has_garage"):
+        qs = qs.filter(has_garage=True)
+
+    if params.get("is_waterfront"):
+        qs = qs.filter(is_waterfront=True)
+
+    if params.get("is_new_construction"):
+        qs = qs.filter(is_new_construction=True)
+
+    if params.get("has_fireplace"):
+        qs = qs.filter(has_fireplace=True)
+
+    if params.get("has_ac"):
+        qs = qs.exclude(cooling="")
+
+    # --- Keywords (deep search) ---
+    if keywords:
+        qs = qs.filter(
+            Q(description__icontains=keywords) |
+            Q(interior_features__icontains=keywords) |
+            Q(exterior_features__icontains=keywords) |
+            Q(community_features__icontains=keywords)
+        )
+
+    # --- Open house ---
+    if params.get("open_house"):
+        qs = qs.filter(open_house_date__isnull=False)
+
+    return qs.distinct()

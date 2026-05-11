@@ -5,6 +5,7 @@ Downloads MLS photos and stores them permanently in Django media storage
 (local /media/ in dev, S3 in production). Returns permanent URLs that
 never expire, replacing the short-lived signed MLS URLs.
 """
+import random
 import os
 import hashlib
 import logging
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 # Download timeout per image
 REQUEST_TIMEOUT = 15
-
+REQUEST_DELAY = 1.0
 # Only re-download if the file doesn't already exist
 # (avoids re-downloading on every sync for unchanged listings)
 
@@ -48,12 +49,14 @@ def _download_and_store(url: str, rel_path: str) -> str | None:
     if default_storage.exists(rel_path):
         return default_storage.url(rel_path)
 
-    for attempt in range(3):
+    for attempt in range(5):
         try:
             resp = requests.get(url, timeout=REQUEST_TIMEOUT, stream=True)
             if resp.status_code == 429:
-                wait = 2 ** attempt  # 1s, 2s, 4s backoff
-                logger.warning(f"Image cache: 429 rate limit — waiting {wait}s before retry {attempt+1}/3")
+                wait = (2 ** attempt) + random.uniform(0, 1)  # jitter added
+                logger.warning(
+                    f"Image cache: 429 rate limit — waiting {wait:.1f}s before retry {attempt+1}/3"
+                )
                 time.sleep(wait)
                 continue
             resp.raise_for_status()
@@ -90,7 +93,7 @@ def cache_listing_photos(mls_id: str, image_urls: list[str]) -> tuple[str, list[
         cached = _download_and_store(url, rel_path)
         # Use cached URL if successful, otherwise keep original as fallback
         permanent_urls.append(cached if cached else url)
-        time.sleep(0.3)  # 300ms pause between images to avoid 429s
+        time.sleep(REQUEST_DELAY)  # 300ms pause between images to avoid 429s
 
     main = permanent_urls[0] if permanent_urls else ""
     return main, permanent_urls

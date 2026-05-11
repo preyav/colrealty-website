@@ -30,12 +30,11 @@
       <!-- ② Search pill — hidden on home page, shown on all other pages -->
       {% if request.path != '/' %}
       <div class="header-search">
-        <form action="/listings/" method="get">
-          <i class="fas fa-search h-search-icon"></i>
-          <input type="text" name="q" placeholder="City, Address, ZIP, Agent…" value="{{ request.GET.q|default:'' }}"
-            autocomplete="off">
-          <button type="submit" class="h-search-btn">
-            <i class="fas fa-arrow-right"></i>
+        <form id="listing-search-form" action="{% url 'listings:listing_list' %}" method="get">
+          <input type="text" name="q" placeholder="City, Neighborhood, Address, School, ZIP, Agent…"
+            value="{{ request.GET.q|default:'' }}" autocomplete="off">
+          <button type="submit" class="search-btn">
+            <i class="fas fa-search h-search-icon"></i>
           </button>
         </form>
       </div>
@@ -45,7 +44,8 @@
 
         <!-- Buy -->
         <div class="nav-item">
-          <a class="nav-link {% if '/listings' in request.path %}active{% endif %}" href="/listings/">Buy <span class="chevron">▾</span></a>
+          <a class="nav-link {% if '/listings' in request.path %}active{% endif %}" href="/listings/">Buy <span
+              class="chevron">▾</span></a>
           <div class="mega-drop">
             <div class="mega-drop-single">
               <a class="mega-item" href="/listings/">All Homes</a>
@@ -60,7 +60,8 @@
 
         <!-- Sell -->
         <div class="nav-item">
-          <a class="nav-link {% if '/sell' in request.path %}active{% endif %}" href="{% url 'pages:sell' %}">Sell <span class="chevron">▾</span></a>
+          <a class="nav-link {% if '/sell' in request.path %}active{% endif %}" href="{% url 'pages:sell' %}">Sell <span
+              class="chevron">▾</span></a>
           <div class="mega-drop">
             <div class="mega-drop-single">
               <a class="mega-item" href="{% url 'pages:sell_valuation' %}">Home Valuation</a>
@@ -71,7 +72,8 @@
 
         <!-- Rent -->
         <div class="nav-item">
-          <a class="nav-link {% if '/rentals' in request.path %}active{% endif %}" href="/rentals/">Rent <span class="chevron">▾</span></a>
+          <a class="nav-link {% if '/rentals' in request.path %}active{% endif %}" href="/rentals/">Rent <span
+              class="chevron">▾</span></a>
           <div class="mega-drop">
             <div class="mega-drop-single">
               <a class="mega-item" href="/rentals/">All Rentals</a>
@@ -83,7 +85,8 @@
 
         <!-- Agents -->
         <div class="nav-item">
-          <a class="nav-link {% if '/agents' in request.path %}active{% endif %}" href="{% url 'pages:agents' %}">Agents <span class="chevron">▾</span></a>
+          <a class="nav-link {% if '/agents' in request.path %}active{% endif %}" href="{% url 'pages:agents' %}">Agents
+            <span class="chevron">▾</span></a>
           <div class="mega-drop">
             <div class="mega-drop-single">
               <a class="mega-item" href="{% url 'pages:team' %}">Our Team</a>
@@ -112,7 +115,8 @@
         </div>
         {% else %}
         <a class="nav-link" href="#"
-          onclick="document.getElementById('login-modal').style.display='flex';return false;">Register / Sign In <span class="chevron">▾</span></a>
+          onclick="document.getElementById('login-modal').style.display='flex';return false;">Register / Sign In <span
+            class="chevron">▾</span></a>
         {% endif %}
 
       </nav>

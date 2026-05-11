@@ -1,0 +1,695 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}{{ saved_search.name }} | Saved Search{% endblock %}
+
+{% block content %}
+<section class="ssd-page">
+  <div class="ssd-topbar">
+    <a href="{% url 'accounts:saved_searches' %}" class="ssd-back-link">
+      <span aria-hidden="true">←</span> Back to Saved Searches
+    </a>
+  </div>
+
+  <div class="ssd-shell">
+    <div class="ssd-header">
+      <div class="ssd-header-copy">
+        <h1>{{ saved_search.name }}</h1>
+        <p>
+          {% if saved_search.search_type %}{{ saved_search.search_type }}{% else %}Sales{% endif %}
+          {% if saved_search.summary_line %} | {{ saved_search.summary_line }}{% endif %}
+        </p>
+      </div>
+
+      <div class="ssd-header-actions">
+        <a href="{{ saved_search.query_url }}" class="ssd-btn ssd-btn-primary">
+          Edit Search Filters
+        </a>
+
+        <form method="post" action="{% url 'accounts:delete_saved_search' saved_search.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="ssd-btn ssd-btn-icon" title="Delete Saved Search">
+            ⚙
+          </button>
+        </form>
+      </div>
+    </div>
+    <div class="ssd-workspace">
+      <div class="ssd-results-column">
+        <div class="ssd-toolbar">
+          <div class="ssd-toolbar-left">
+            <button type="button" class="ssd-checkbox-btn" aria-label="Select">
+              <span></span>
+            </button>
+            <button type="button" class="ssd-dropdown-btn" aria-label="Options">▾</button>
+            <span class="ssd-results-count">{{ listings|length }} Results</span>
+          </div>
+
+          <div class="ssd-toolbar-right">
+            <button type="button" class="ssd-view-btn active" id="grid-view-btn" aria-label="Grid View">▥</button>
+            <button type="button" class="ssd-view-btn" id="list-view-btn" aria-label="List View">☰</button>
+
+            <label class="ssd-map-toggle">
+              <span>Map</span>
+              <input type="checkbox" id="map-toggle">
+              <span class="ssd-switch"></span>
+            </label>
+          </div>
+        </div>
+
+        <div id="saved-search-results" class="ssd-grid">
+          {% for listing in listings %}
+          <article class="ssd-card">
+            <button type="button" class="ssd-card-link ssd-preview-trigger"
+              data-preview-url="{% url 'accounts:saved_search_listing_preview' listing.pk %}">
+              <div class="ssd-card-media">
+                {% if listing.main_image_url %}
+                <img src="{{ listing.main_image_url }}" alt="{{ listing.title|default:listing.street_address }}">
+                {% else %}
+                <div class="ssd-card-placeholder">
+                  <span>No Image</span>
+                </div>
+                {% endif %}
+
+                {% if listing.standard_status %}
+                <span class="ssd-status-badge">{{ listing.standard_status }}</span>
+                {% endif %}
+
+                <span class="ssd-card-check"></span>
+              </div>
+
+              <div class="ssd-card-body">
+                <div class="ssd-card-price">
+                  {% if listing.price %}
+                  ${{ listing.price|floatformat:0|intcomma }}
+                  {% else %}
+                  Price on request
+                  {% endif %}
+                </div>
+
+                <div class="ssd-card-meta">
+                  {% if listing.bedrooms %}<span>{{ listing.bedrooms }} beds</span>{% endif %}
+                  {% if listing.bathrooms %}<span>{{ listing.bathrooms }} baths</span>{% endif %}
+                  {% if listing.living_area %}
+                  <span>{{ listing.living_area|intcomma }} sqft</span>
+                  {% elif listing.square_feet %}
+                  <span>{{ listing.square_feet|intcomma }} sqft</span>
+                  {% endif %}
+                  {% if listing.lot_size_acres %}
+                  <span>{{ listing.lot_size_acres }} acres</span>
+                  {% endif %}
+                </div>
+
+                <div class="ssd-card-address">
+                  {{ listing.street_address }}
+                  {% if listing.city %},{{ listing.city }}{% endif %}
+                  {% if listing.state %},{{ listing.state }}{% endif %}
+                  {% if listing.zip_code %} {{ listing.zip_code }}{% endif %}
+                </div>
+              </div>
+            </button>
+          </article>
+          {% empty %}
+          <div class="ssd-empty">
+            <h2>No current matches</h2>
+            <p>There are no listings matching this saved search right now.</p>
+            <a href="{{ saved_search.query_url }}" class="ssd-btn ssd-btn-primary">Edit Search Filters</a>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <aside class="ssd-preview-column" id="ssd-preview-column" hidden>
+        <div id="listing-preview-panel" class="ssd-preview-panel">
+          <div class="ssd-preview-empty">
+            <h3>Select a property</h3>
+            <p>Click any property card to preview its details here.</p>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<style>
+  .ssd-page {
+    background: #f6f6f6;
+    min-height: 100vh;
+    padding-bottom: 48px;
+  }
+
+  .ssd-topbar {
+    padding: 16px 24px;
+    border-bottom: 1px solid #e7e7e7;
+    background: #f6f6f6;
+  }
+
+  .ssd-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #111;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .ssd-shell {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 22px 24px 0;
+  }
+
+  .ssd-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+
+  .ssd-header-copy h1 {
+    margin: 0 0 8px;
+    font-size: 28px;
+    line-height: 1.15;
+    font-weight: 700;
+    color: #111;
+  }
+
+  .ssd-header-copy p {
+    margin: 0;
+    font-size: 14px;
+    color: #6b7280;
+  }
+
+  .ssd-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  .ssd-container {
+    max-width: 1320px;
+  }
+
+  .ssd-results-grid {
+    justify-content: center;
+  }
+
+  .ssd-btn {
+    border: none;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 38px;
+    padding: 0 16px;
+  }
+
+  .ssd-btn-primary {
+    background: #2563eb;
+    color: #fff;
+  }
+
+  .ssd-btn-primary:hover {
+    background: #1d4ed8;
+  }
+
+  .ssd-btn-icon {
+    width: 38px;
+    min-width: 38px;
+    padding: 0;
+    background: #fff;
+    border: 1px solid #d7d7d7;
+    color: #111;
+  }
+
+  .ssd-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.85fr) minmax(380px, 1fr);
+    gap: 18px;
+    align-items: start;
+  }
+
+  .ssd-results-column {
+    min-width: 0;
+  }
+
+  .ssd-preview-column {
+    position: sticky;
+    top: 20px;
+    align-self: start;
+  }
+
+  .ssd-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 16px;
+  }
+
+  .ssd-toolbar-left,
+  .ssd-toolbar-right {
+    display: flex;
+    align-items: center;
+  }
+
+  .ssd-checkbox-btn,
+  .ssd-dropdown-btn,
+  .ssd-view-btn {
+    height: 32px;
+    border: 1px solid #d6d6d6;
+    background: #fff;
+    color: #333;
+    cursor: pointer;
+  }
+
+  .ssd-checkbox-btn {
+    width: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-right: none;
+  }
+
+  .ssd-checkbox-btn span {
+    width: 14px;
+    height: 14px;
+    border: 1px solid #cfcfcf;
+    display: block;
+    background: #fff;
+  }
+
+  .ssd-dropdown-btn {
+    width: 30px;
+    margin-right: 14px;
+  }
+
+  .ssd-results-count {
+    font-size: 15px;
+    color: #222;
+  }
+
+  .ssd-view-btn {
+    width: 36px;
+    margin-right: 4px;
+  }
+
+  .ssd-view-btn.active {
+    border-color: #2563eb;
+    color: #2563eb;
+  }
+
+  .ssd-map-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: 10px;
+    font-size: 15px;
+    color: #111;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .ssd-map-toggle input {
+    display: none;
+  }
+
+  .ssd-switch {
+    width: 42px;
+    height: 24px;
+    border-radius: 999px;
+    background: #ddd;
+    position: relative;
+    display: inline-block;
+    transition: .2s ease;
+  }
+
+  .ssd-switch::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .12);
+    transition: .2s ease;
+  }
+
+  .ssd-map-toggle input:checked+.ssd-switch {
+    background: #2563eb;
+  }
+
+  .ssd-map-toggle input:checked+.ssd-switch::after {
+    transform: translateX(18px);
+  }
+
+  .ssd-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .ssd-card {
+    background: #fff;
+    border: 1px solid #d9dfe6;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .08);
+    transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+  }
+
+  .ssd-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, .08);
+  }
+
+  .ssd-card.active-preview {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, .15);
+  }
+
+  .ssd-card-link {
+    border: none;
+    background: none;
+    padding: 0;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    display: block;
+  }
+
+  .ssd-card-media {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    background: #ececec;
+    overflow: hidden;
+  }
+
+  .ssd-card-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .ssd-card-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #888;
+    font-size: 14px;
+  }
+
+  .ssd-status-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: #4f46e5;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    padding: 6px 8px;
+    border-radius: 3px;
+  }
+
+  .ssd-card-check {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 18px;
+    height: 18px;
+    background: #fff;
+    border: 1px solid #d3d3d3;
+    border-radius: 2px;
+  }
+
+  .ssd-card-body {
+    padding: 12px 12px 14px;
+  }
+
+  .ssd-card-price {
+    margin-bottom: 10px;
+    font-size: 18px;
+    font-weight: 700;
+    color: #111;
+  }
+
+  .ssd-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 13px;
+    color: #4b5563;
+    margin-bottom: 8px;
+  }
+
+  .ssd-card-address {
+    font-size: 13px;
+    color: #6b7280;
+    line-height: 1.45;
+  }
+
+  .ssd-preview-panel {
+    background: #fff;
+    border: 1px solid #d9dfe6;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .08);
+    min-height: 520px;
+  }
+
+  .ssd-preview-empty,
+  .ssd-preview-loading {
+    padding: 40px 24px;
+    text-align: center;
+    color: #6b7280;
+  }
+
+  .ssd-preview-empty h3 {
+    margin: 0 0 8px;
+    color: #111;
+  }
+
+  .ssd-empty {
+    grid-column: 1 / -1;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 48px 24px;
+    text-align: center;
+  }
+
+  .ssd-empty h2 {
+    margin: 0 0 10px;
+    font-size: 24px;
+    color: #111;
+  }
+
+  .ssd-empty p {
+    margin: 0 0 18px;
+    color: #6b7280;
+  }
+
+  .ssd-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .ssd-list .ssd-card {
+    display: flex;
+    flex-direction: row;
+  }
+
+  .ssd-list .ssd-card-link {
+    display: flex;
+    width: 100%;
+  }
+
+  .ssd-list .ssd-card-media {
+    width: 300px;
+    min-width: 300px;
+    aspect-ratio: auto;
+    height: 200px;
+  }
+
+  .ssd-list .ssd-card-body {
+    flex: 1;
+    padding: 18px;
+  }
+
+  @media (max-width: 1400px) {
+    .ssd-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 1200px) {
+    .ssd-workspace {
+      grid-template-columns: 1fr;
+    }
+
+    .ssd-preview-column {
+      position: static;
+    }
+  }
+
+  @media (max-width: 900px) {
+    .ssd-shell {
+      padding: 22px 16px 0;
+    }
+
+    .ssd-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .ssd-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 640px) {
+    .ssd-toolbar {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .ssd-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .ssd-list .ssd-card,
+    .ssd-list .ssd-card-link {
+      display: block;
+    }
+
+    .ssd-list .ssd-card-media {
+      width: 100%;
+      min-width: 100%;
+      height: auto;
+      aspect-ratio: 4 / 3;
+    }
+  }
+</style>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const resultsWrap = document.getElementById("saved-search-results");
+    const gridBtn = document.getElementById("grid-view-btn");
+    const listBtn = document.getElementById("list-view-btn");
+    const previewPanel = document.getElementById("listing-preview-panel");
+    const previewTriggers = document.querySelectorAll(".ssd-preview-trigger");
+    const previewColumn = document.getElementById("ssd-preview-column");
+    const workspace = document.querySelector(".ssd-workspace");
+
+    if (gridBtn && listBtn && resultsWrap) {
+      gridBtn.addEventListener("click", function () {
+        resultsWrap.classList.remove("ssd-list");
+        resultsWrap.classList.add("ssd-grid");
+        gridBtn.classList.add("active");
+        listBtn.classList.remove("active");
+      });
+
+      listBtn.addEventListener("click", function () {
+        resultsWrap.classList.remove("ssd-grid");
+        resultsWrap.classList.add("ssd-list");
+        listBtn.classList.add("active");
+        gridBtn.classList.remove("active");
+      });
+    }
+
+    async function loadPreview(url, clickedCard = null) {
+      if (!previewPanel || !url) return;
+
+      if (previewColumn) previewColumn.hidden = false;
+      if (workspace) workspace.classList.add("has-preview");
+
+      previewPanel.innerHTML = `
+        <div class="ssd-preview-loading">
+          <p>Loading property details...</p>
+        </div>
+      `;
+
+      try {
+        const response = await fetch(url, {
+          method: "GET",
+          headers: {
+            "X-Requested-With": "XMLHttpRequest",
+            "Accept": "text/html"
+          },
+          credentials: "same-origin"
+        });
+
+        const html = await response.text();
+
+        if (!response.ok) {
+          console.error("Preview response failed:", response.status, html);
+          throw new Error(`Preview request failed with status ${response.status}`);
+        }
+
+        if (!html.trim()) {
+          throw new Error("Empty preview response");
+        }
+
+        previewPanel.innerHTML = html;
+
+        document.querySelectorAll(".ssd-card").forEach(card => {
+          card.classList.remove("active-preview");
+        });
+
+        if (clickedCard) {
+          const card = clickedCard.closest(".ssd-card");
+          if (card) card.classList.add("active-preview");
+        }
+
+        bindPreviewClose();
+      } catch (error) {
+        console.error("Preview load error:", error);
+        previewPanel.innerHTML = `
+          <div class="ssd-preview-empty">
+            <h3>Unable to load property</h3>
+            <p>Please try again.</p>
+          </div>
+        `;
+      }
+    }
+
+    function bindPreviewClose() {
+      const closeBtn = document.getElementById("ssp-close-preview");
+      if (!closeBtn) return;
+
+      closeBtn.addEventListener("click", function () {
+        if (previewColumn) previewColumn.hidden = true;
+        if (workspace) workspace.classList.remove("has-preview");
+
+        document.querySelectorAll(".ssd-card").forEach(card => {
+          card.classList.remove("active-preview");
+        });
+      });
+    }
+
+    previewTriggers.forEach(trigger => {
+      trigger.addEventListener("click", function () {
+        loadPreview(this.dataset.previewUrl, this);
+      });
+    });
+
+    if (previewTriggers.length) {
+      loadPreview(previewTriggers[0].dataset.previewUrl, previewTriggers[0]);
+    }
+  });
+</script>
+{% endblock %}

@@ -16,12 +16,14 @@ class NewsletterIssue(models.Model):
     status = models.CharField(max_length=12, choices=STATUS_CHOICES, default="draft")
     sent_at = models.DateTimeField(null=True, blank=True)
     sent_count = models.PositiveIntegerField(default=0)
-    body_html = models.TextField(blank=True)
+
     hero_title = models.CharField(max_length=220, blank=True)
     hero_subtitle = models.CharField(max_length=300, blank=True)
 
     # Optional: used for SEO / share
     meta_description = models.CharField(max_length=160, blank=True)
+
+    body_html = models.TextField(blank=True, default="")
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -52,7 +54,7 @@ class NewsletterSection(models.Model):
     order = models.PositiveIntegerField(default=1)
 
     # CMS-managed rich content:
-    body = models.TextField(blank=True)
+    body_html = models.TextField(blank=True, default="")
 
     # Optional: allow a section to show MLS stats block automatically
     show_mls_stats = models.BooleanField(default=False)

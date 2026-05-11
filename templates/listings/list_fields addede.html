@@ -1,0 +1,348 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Buy | Col Realty{% endblock %}
+
+{% block content %}
+
+<div class="split-view-container">
+
+  <!-- ── LEFT: Search + Listings ────────────────────────────────────────── -->
+  <div class="listings-column">
+
+    <!-- ── Hero + Search stacked at top of listings column ─────────────── -->
+    <div class="listings-top">
+      <div class="listings-top-header">
+        <h1 class="hero-title">Homes for Sale in Central Texas</h1>
+        <p class="hero-text">Browse active homes for sale. Click a pin on the map to view details.</p>
+      </div>
+
+      <div id="search-form" class="inline-search-form">
+        <div class="listing-filters-shell">
+
+          <!-- Compact row -->
+          <div class="compact-filters-row">
+            <input class="input-field" type="number" name="price_min" form="listing-search-form"
+              placeholder="$ Min Price" min="0" value="{{ search_price_min }}">
+
+            <span class="range-sep">–</span>
+
+            <input class="input-field" type="number" name="price_max" form="listing-search-form"
+              placeholder="$ Max Price" min="0" value="{{ search_price_max }}">
+
+            <button type="button" class="filters-toggle-btn" id="filters-toggle-btn" aria-expanded="false"
+              aria-controls="advanced-filters-panel">
+              Filters
+            </button>
+          </div>
+
+          <!-- Advanced panel -->
+          <div class="advanced-filters-panel" id="advanced-filters-panel" hidden>
+            <div class="advanced-filters-header">
+              <h3>Filters</h3>
+              <button type="button" class="filters-close-btn" id="filters-close-btn">Close</button>
+            </div>
+
+            <div class="advanced-filters-grid">
+
+              <!-- Beds / Baths -->
+              <section class="filter-section">
+                <h4>Beds</h4>
+                <div class="range-grid">
+                  <select name="beds_min" form="listing-search-form" class="input-field">
+                    <option value="">No Min</option>
+                    <option value="1" {% if search_beds_mi == "1" %}selected{% endif %}>1+</option>
+                    <option value="2" {% if search_beds_min == "2" %}selected{% endif %}>2+</option>
+                    <option value="3" {% if search_beds_min == "3" %}selected{% endif %}>3+</option>
+                    <option value="4" {% if search_beds_min == "4" %}selected{% endif %}>4+</option>
+                    <option value="5" {% if search_beds_min == "5" %}selected{% endif %}>5+</option>
+                  </select>
+
+                  <select name="beds_max" form="listing-search-form" class="input-field">
+                    <option value="">No Max</option>
+                    <option value="1" {% if search_beds_max == "1" %}selected{% endif %}>1</option>
+                    <option value="2" {% if search_beds_max == "2" %}selected{% endif %}>2</option>
+                    <option value="3" {% if search_beds_max == "3" %}selected{% endif %}>3</option>
+                    <option value="4" {% if search_beds_max == "4" %}selected{% endif %}>4</option>
+                    <option value="5" {% if search_beds_max == "5" %}selected{% endif %}>5+</option>
+                  </select>
+                </div>
+              </section>
+
+              <section class="filter-section">
+                <h4>Baths</h4>
+                <div class="range-grid">
+                  <select name="baths_min" form="listing-search-form" class="input-field">
+                    <option value="">No Min</option>
+                    <option value="1" {% if search_baths_min == "1" %}selected{% endif %}>1+</option>
+                    <option value="1.5" {% if search_baths_min == "1.5" %}selected{% endif %}>1.5+</option>
+                    <option value="2" {% if search_baths_min == "2" %}selected{% endif %}>2+</option>
+                    <option value="3" {% if search_baths_min == "3" %}selected{% endif %}>3+</option>
+                    <option value="4" {% if search_baths_min == "4" %}selected{% endif %}>4+</option>
+                  </select>
+
+                  <select name="baths_max" form="listing-search-form" class="input-field">
+                    <option value="">No Max</option>
+                    <option value="1" {% if search_baths_max == "1" %}selected{% endif %}>1</option>
+                    <option value="1.5" {% if search_baths_max == "1.5" %}selected{% endif %}>1.5</option>
+                    <option value="2" {% if search_baths_max == "2" %}selected{% endif %}>2</option>
+                    <option value="3" {% if search_baths_max == "3" %}selected{% endif %}>3</option>
+                    <option value="4" {% if search_baths_max == "4" %}selected{% endif %}>4+</option>
+                  </select>
+                </div>
+              </section>
+
+              <!-- Property Type / Status -->
+              <section class="filter-section">
+                <h4>Property Type</h4>
+                <select name="property_type" form="listing-search-form" class="input-field">
+                  <option value="">All Types</option>
+                  {% for pt in PROPERTY_TYPE_CHOICES %}
+                  <option value="{{ pt }}" {% if search_property_type == pt %}selected{% endif %}>{{ pt }}</option>
+                  {% endfor %}
+                </select>
+              </section>
+
+              <section class="filter-section">
+                <h4>Status</h4>
+                <select name="status" form="listing-search-form" class="input-field">
+                  <option value="">Any Status</option>
+                  <option value="active" {% if search_status == "active" %}selected{% endif %}>Active</option>
+                  <option value="pending" {% if search_status == "pending" %}selected{% endif %}>Pending</option>
+                  <option value="sold" {% if search_status == "sold" %}selected{% endif %}>Sold</option>
+                </select>
+              </section>
+
+              <!-- Property Facts -->
+              <section class="filter-section">
+                <h4>Square Feet</h4>
+                <div class="range-grid">
+                  <input type="number" name="sqft_min" form="listing-search-form" class="input-field"
+                    placeholder="No Min" value="{{ search_sqft_min }}">
+                  <input type="number" name="sqft_max" form="listing-search-form" class="input-field"
+                    placeholder="No Max" value="{{ search_sqft_max }}">
+                </div>
+              </section>
+
+              <section class="filter-section">
+                <h4>Lot Size (acres)</h4>
+                <div class="range-grid">
+                  <input type="number" step="0.01" name="lot_min" form="listing-search-form" class="input-field"
+                    placeholder="No Min" value="{{ search_lot_min }}">
+                  <input type="number" step="0.01" name="lot_max" form="listing-search-form" class="input-field"
+                    placeholder="No Max" value="{{ search_lot_max }}">
+                </div>
+              </section>
+
+              <section class="filter-section">
+                <h4>Year Built</h4>
+                <div class="range-grid">
+                  <input type="number" name="year_min" form="listing-search-form" class="input-field"
+                    placeholder="No Min" value="{{ search_year_min }}">
+                  <input type="number" name="year_max" form="listing-search-form" class="input-field"
+                    placeholder="No Max" value="{{ search_year_max }}">
+                </div>
+              </section>
+
+              <section class="filter-section">
+                <h4>Stories</h4>
+                <div class="range-grid">
+                  <input type="number" name="stories_min" form="listing-search-form" class="input-field"
+                    placeholder="No Min" value="{{ search_stories_min }}">
+                  <input type="number" name="stories_max" form="listing-search-form" class="input-field"
+                    placeholder="No Max" value="{{ search_stories_max }}">
+                </div>
+              </section>
+
+              <section class="filter-section">
+                <h4>Parking Spaces</h4>
+                <input type="number" name="parking_min" form="listing-search-form" class="input-field"
+                  placeholder="No Min" value="{{ search_parking_min }}">
+              </section>
+
+              <section class="filter-section">
+                <h4>Max HOA Fee</h4>
+                <input type="number" name="hoa_max" form="listing-search-form" class="input-field" placeholder="No Max"
+                  value="{{ search_hoa_max }}">
+              </section>
+
+              <!-- Amenities -->
+              <section class="filter-section full-span">
+                <h4>Amenities</h4>
+                <div class="checkbox-grid">
+                  <label><input type="checkbox" name="has_pool" value="1" form="listing-search-form" {% if search_has_pool %}checked{% endif %}> Pool</label>
+                  <label><input type="checkbox" name="has_garage" value="1" form="listing-search-form" {% if search_has_garage %}checked{% endif %}> Garage</label>
+                  <label><input type="checkbox" name="is_waterfront" value="1" form="listing-search-form" {% if search_is_waterfront %}checked{% endif %}> Waterfront</label>
+                  <label><input type="checkbox" name="is_new_construction" value="1" form="listing-search-form" {% if search_is_new_construction %}checked{% endif %}> New Construction</label>
+                  <label><input type="checkbox" name="has_fireplace" value="1" form="listing-search-form" {% if search_has_fireplace %}checked{% endif %}> Fireplace</label>
+                  <label><input type="checkbox" name="has_ac" value="1" form="listing-search-form" {% if search_has_ac %}checked{% endif %}> Air Conditioning</label>
+                  <label><input type="checkbox" name="open_house" value="1" form="listing-search-form" {% if search_open_house %}checked{% endif %}> Open House</label>
+                </div>
+              </section>
+
+              <!-- Keywords -->
+              <section class="filter-section full-span">
+                <h4>Keywords</h4>
+                <input type="text" name="keywords" form="listing-search-form" class="input-field"
+                  placeholder="Try waterfront, renovated, corner lot" value="{{ search_keywords }}">
+              </section>
+            </div>
+
+            <div class="advanced-filters-footer">
+              <a href="{% url 'listings:listing_list' %}{% if search_q %}?q={{ search_q|urlencode }}{% endif %}"
+                class="filters-reset-btn">
+                Reset
+              </a>
+              <button type="submit" form="listing-search-form" class="filters-apply-btn">
+                See Results
+              </button>
+            </div>
+          </div>
+
+          {% if has_active_filters %}
+          <div class="active-filter-chips">
+            {% if search_q %}<span class="filter-tag">{{ search_q }}</span>{% endif %}
+            {% if search_price_min %}<span class="filter-tag">Min ${{ search_price_min }}</span>{% endif %}
+            {% if search_price_max %}<span class="filter-tag">Max ${{ search_price_max }}</span>{% endif %}
+            {% if search_status %}<span class="filter-tag">{{ search_status|title }}</span>{% endif %}
+            {% if search_property_type %}<span class="filter-tag">{{ search_property_type }}</span>{% endif %}
+            {% if search_keywords %}<span class="filter-tag">{{ search_keywords }}</span>{% endif %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Result count -->
+      <p class="results-count">{{ paginator.count }} listing{{ paginator.count|pluralize }} found</p>
+
+      <!-- Listing Grid -->
+      <div class="listing-grid">
+        {% for l in listings %}
+        <a class="listing-card" href="{% url 'listings:listing_detail' l.id %}">
+          <div class="listing-image-wrap">
+            {% if l.main_image_url %}
+            <img class="listing-image" src="{{ l.main_image_url }}" alt="{{ l.title }}">
+            {% endif %}
+            <div class="badge-strip">
+              <span class="badge badge-status-active">{{ l.status|default:"active"|title }}</span>
+              {% if l.property_type %}<span class="badge">{{ l.property_type }}</span>{% endif %}
+            </div>
+          </div>
+          <div class="listing-body">
+            <div class="listing-price">
+              <div class="price-main">${{ l.price|floatformat:0|intcomma }}</div>
+            </div>
+            <div class="listing-title">{{ l.title }}</div>
+            <div class="listing-location">{{ l.street_address }}, {{ l.city }}, {{ l.state }} {{ l.zip_code }}</div>
+            <div class="listing-meta">
+              {% if l.beds %}<span class="meta-pill">{{ l.beds }} bd</span>{% endif %}
+              {% if l.baths %}<span class="meta-pill">{{ l.baths }} ba</span>{% endif %}
+              {% if l.sqft %}<span class="meta-pill">{{ l.sqft|intcomma }} sqft</span>{% endif %}
+            </div>
+          </div>
+        </a>
+        {% empty %}
+        <div style="padding:24px 0; color:#888;">
+          <p>No active homes matched your filters.</p>
+          <a href="{% url 'listings:listing_list' %}">Clear all filters →</a>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Pagination -->
+      {% if is_paginated %}
+      <nav aria-label="Pagination" style="margin-top:20px;">
+        <ul class="pagination">
+          {% if page_obj.has_previous %}
+          <li class="page-item"><a class="page-link"
+              href="?{{ query_string }}&page={{ page_obj.previous_page_number }}">←
+              Previous</a></li>
+          {% else %}
+          <li class="page-item disabled"><span class="page-link">← Previous</span></li>
+          {% endif %}
+          <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ paginator.num_pages
+              }}</span></li>
+          {% if page_obj.has_next %}
+          <li class="page-item"><a class="page-link"
+              href="?{{ query_string }}&page={{ page_obj.next_page_number }}">Next
+              →</a></li>
+          {% else %}
+          <li class="page-item disabled"><span class="page-link">Next →</span></li>
+          {% endif %}
+        </ul>
+      </nav>
+      {% endif %}
+
+    </div>
+
+    <!-- ── RIGHT: Map ─────────────────────────────────────────────────────── -->
+    <div class="map-column">
+      <div id="map" style="height:100%; width:100%;"></div>
+    </div>
+
+  </div>
+
+  <script src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&v=weekly" defer></script>
+  <script>
+    window.addEventListener("load", () => {
+      const mapEl = document.getElementById("map");
+      if (!mapEl) return;
+      const fallback = { lat: 30.2672, lng: -97.7431 };
+      const map = new google.maps.Map(mapEl, { center: fallback, zoom: 9 });
+      const info = new google.maps.InfoWindow();
+      const bounds = new google.maps.LatLngBounds();
+      fetch("{% url 'listings:markers' %}" + window.location.search)
+        .then(res => res.json())
+        .then(markers => {
+          if (!Array.isArray(markers) || markers.length === 0) return;
+          let hasAny = false;
+          markers.forEach(m => {
+            if (typeof m.lat !== "number" || typeof m.lng !== "number") return;
+            hasAny = true;
+            const pos = { lat: m.lat, lng: m.lng };
+            bounds.extend(pos);
+            const marker = new google.maps.Marker({ map, position: pos, title: m.title || "" });
+            marker.addListener("click", () => {
+              const img = m.image ? `<img src="${m.image}" style="width:100%;max-width:220px;border-radius:10px;margin:6px 0;" />` : "";
+              info.setContent(`<div style="max-width:240px"><div style="font-weight:700;margin-bottom:4px">${m.title || ""}</div><div style="margin-bottom:4px;color:#555;font-size:0.85rem">${m.address || ""}</div><div style="margin-bottom:8px"><b>$${Number(m.price).toLocaleString()}</b></div>${img}<a href="${m.url || "#"}" style="color:#2563eb;">View listing →</a></div>`);
+              info.open(map, marker);
+            });
+          });
+          if (hasAny) {
+            if (map.getZoom() > 16) map.setZoom(16);
+          }
+        })
+        .catch(err => console.error("Failed to load markers:", err));
+    });
+  </script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const toggleBtn = document.getElementById("filters-toggle-btn");
+      const closeBtn = document.getElementById("filters-close-btn");
+      const panel = document.getElementById("advanced-filters-panel");
+
+      if (toggleBtn && panel) {
+        toggleBtn.addEventListener("click", function () {
+          const isHidden = panel.hasAttribute("hidden");
+          if (isHidden) {
+            panel.removeAttribute("hidden");
+            toggleBtn.setAttribute("aria-expanded", "true");
+            toggleBtn.textContent = "Close Filters";
+          } else {
+            panel.setAttribute("hidden", "");
+            toggleBtn.setAttribute("aria-expanded", "false");
+            toggleBtn.textContent = "Filters";
+          }
+        });
+      }
+
+      if (closeBtn && panel && toggleBtn) {
+        closeBtn.addEventListener("click", function () {
+          panel.setAttribute("hidden", "");
+          toggleBtn.setAttribute("aria-expanded", "false");
+          toggleBtn.textContent = "Filters";
+        });
+      }
+    });
+  </script>
+  {% endblock %}
