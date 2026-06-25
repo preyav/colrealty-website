@@ -110,7 +110,17 @@ def map_property_to_listing_data(record: Dict[str, Any]) -> Dict[str, Any]:
 
     # ── Status ────────────────────────────────────────────────────────────
     raw_status = (record.get("StandardStatus") or "Active").lower()
-    status = "active" if "active" in raw_status else ("pending" if "pending" in raw_status else ("sold" if "sold" in raw_status or "closed" in raw_status else "active"))
+    status = "active" if "active" in raw_status else ("pending" if "pending" in raw_status else ("sold" if "sold" in raw_status or "closed" in raw_status else "active"))    # ── Status ────────────────────────────────────────────────────────────
+    raw_status = (record.get("StandardStatus") or "").strip().lower()
+
+    if raw_status == "active":
+        status = "active"
+    elif raw_status in ["pending", "active under contract"]:
+        status = "pending"
+    elif raw_status in ["closed", "sold", "leased"]:
+        status = "sold"
+    else:
+        status = "inactive"
 
     return {
         # Core

@@ -278,9 +278,11 @@ def agent_detail(request, slug):
         is_active=True,
     )
     listings = Listing.objects.filter(
-        listing_agent_email__iexact=agent.email,
-        status="active"
-    ).order_by("-created_at")
+	status="active"
+    ).filter(		
+        Q(listing_agent_email__iexact=agent.email) |
+	Q(listing_agent_name__iexact=agent.name)
+    ).order_by("-updated_at")
 
     return render(request, "pages/agents/detail.html", {
         "agent": agent,

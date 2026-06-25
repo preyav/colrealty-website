@@ -32,6 +32,10 @@ def sync_mls_listings(updated_since: Optional[str] = None) -> int:
     """
     Fetch listings from MLS Grid, cache photos permanently, and upsert
     into the Listing model.
+
+    Important:
+    - If an existing listing already has S3 image URLs, preserve them.
+    - Do not overwrite permanent S3 URLs with temporary MLSGrid URLs.
     """
     client = MLSClient()
 
@@ -49,22 +53,45 @@ def sync_mls_listings(updated_since: Optional[str] = None) -> int:
     for record in client.iter_properties(updated_since=updated_since):
         data = map_property_to_listing_data(record)
         mls_id = data.pop("mls_id", None)
+
         if not mls_id:
             logger.warning("Skipping record without ListingKey: %s", record)
             continue
 
-        # ── Cache photos permanently so MLS signed URLs don't expire ──────
-        raw_image_urls = data.get("image_urls") or []
-        if raw_image_urls:
-            try:
-                main_url, cached_urls = cache_listing_photos(mls_id, raw_image_urls)
-                data["main_image_url"] = main_url
-                data["image_urls"] = cached_urls
-            except Exception as e:
-                # Photo caching failed — keep original MLS URLs as fallback
-                # so the listing still syncs even if image download breaks
-                logger.warning("Photo cache failed for %s: %s", mls_id, e)
-        # ──────────────────────────────────────────────────────────────────
+        existing = Listing.objects.filter(mls_id=mls_id).first()
+
+        existing_has_s3_images = (
+            existing
+            and existing.main_image_url
+            and "colrealty-media.s3" in existing.main_image_url
+        )
+
+        if existing_has_s3_images:
+            # Preserve permanent S3 images already cached.
+            data["main_image_url"] = existing.main_image_url
+            data["image_urls"] = existing.image_urls or []
+
+        else:
+            # Cache MLSGrid photos permanently into Django default storage.
+            # In production, default_storage is S3.
+            raw_image_urls = data.get("image_urls") or []
+
+            if raw_image_urls:
+                try:
+                    main_url, cached_urls = cache_listing_photos(mls_id, raw_image_urls)
+
+                    # Only replace with cached URLs if caching actually produced S3/permanent URLs.
+                    if main_url and "colrealty-media.s3" in main_url:
+                        data["main_image_url"] = main_url
+                        data["image_urls"] = cached_urls
+                    else:
+                        logger.warning(
+                            "Photo cache did not produce S3 URL for %s; keeping MLSGrid URLs temporarily.",
+                            mls_id,
+                        )
+
+                except Exception as e:
+                    logger.warning("Photo cache failed for %s: %s", mls_id, e)
 
         with transaction.atomic():
             Listing.objects.update_or_create(
