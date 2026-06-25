@@ -22,3 +22,5 @@ token.json
 
 "colrealty-prod.pem" 
 "colrealty-prod.pem" 
+media/listings/
+media_backup_*/
