@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Our Agents | Col Realty{% endblock %}
+
+
+
+{% block content %}
+
+<!-- Hero — full width, sits outside Bootstrap container -->
+<section class="agents-hero-full">
+  <div class="container">
+    <div class="agents-hero">
+      <h1>Our Agents</h1>
+      <p>
+        Dedicated real estate professionals helping you buy, sell, and invest with confidence across the Austin and
+        Dallas-Fort Worth areas.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- Agent Cards -->
+<section class="agents-section">
+  <div class="container">
+    <div class="agents-grid">
+
+      {% for agent in agents %}
+      <div class="agent-card">
+        <a href="{% url 'pages:agent_detail' agent.slug %}" style="text-decoration:none;">
+          <div class="card-photo" style="cursor:pointer;">
+            {% if agent.photo %}
+            <img src="{{ agent.photo.url }}" alt="{{ agent.name }}">
+            {% else %}
+            <div class="avatar-fallback">
+              <div class="avatar-initials">{{ agent.initials }}</div>
+            </div>
+            {% endif %}
+          </div>
+        </a>
+        <div class="card-body-area">
+          <div class="agent-role-label">{{ agent.get_role_display }}</div>
+          <h2>
+            <a href="{% url 'pages:agent_detail' agent.slug %}" style="color:#111;text-decoration:none;">
+              {{ agent.name }}
+            </a>
+          </h2>
+          <div class="agent-location"><i class="fas fa-map-marker-alt"></i> {{ agent.location }}</div>
+          <div class="card-divider"></div>
+          <div class="specialties">
+            {% for spec in agent.specialties.all %}
+            <span class="tag">{{ spec.name }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="card-footer-area">
+          <div class="contact-row">
+            <a href="mailto:{{ agent.email }}" class="contact-item">
+              <i class="fas fa-envelope"></i> {{ agent.email }}
+            </a>
+            {% if agent.phone %}
+            <a href="tel:{{ agent.phone_raw }}" class="contact-item">
+              <i class="fas fa-phone"></i> {{ agent.phone }}
+            </a>
+            {% endif %}
+          </div>
+          <a href="{% url 'pages:agent_detail' agent.slug %}" class="btn-contact">
+            Contact {{ agent.first_name }}
+          </a>
+        </div>
+      </div>
+      {% empty %}
+      <p style="color:#aaa; font-size:14px;">No agents found.</p>
+      {% endfor %}
+
+    </div>
+  </div>
+</section>
+
+{% endblock %}
