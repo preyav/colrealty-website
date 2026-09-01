@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 # Download timeout per image
 REQUEST_TIMEOUT = 15
-REQUEST_DELAY = 1.0
+REQUEST_DELAY = 0.3
 # Only re-download if the file doesn't already exist
 # (avoids re-downloading on every sync for unchanged listings)
 
