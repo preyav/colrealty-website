@@ -37,63 +37,113 @@ def _get_cache_path(mls_id: str, index: int, url: str) -> str:
     return f"listings/{mls_id}/photo_{index:03d}{ext}"
 
 
-def _download_and_store(url: str, rel_path: str) -> str | None:
+def _download_and_store(url: str, rel_path: str, max_attempts: int = 5) -> str | None:
     """
-    Download url and save to Django default storage at rel_path.
-    Returns the public URL, or None on failure.
+    Download URL and save it to Django default storage.
+
+    Returns the permanent storage URL on success, or None on failure.
     """
     from django.core.files.base import ContentFile
     from django.core.files.storage import default_storage
 
-    # Already cached — return existing URL
+    # Already cached — no MLS request needed.
     if default_storage.exists(rel_path):
         return default_storage.url(rel_path)
 
-    for attempt in range(5):
+    for attempt in range(max_attempts):
         try:
-            resp = requests.get(url, timeout=REQUEST_TIMEOUT, stream=True)
+            resp = requests.get(
+                url,
+                timeout=REQUEST_TIMEOUT,
+                stream=True,
+            )
+
             if resp.status_code == 429:
-                wait = (2 ** attempt) + random.uniform(0, 1)  # jitter added
+                wait = min(30, (2 ** attempt) + random.uniform(0, 1))
+
                 logger.warning(
-                    f"Image cache: 429 rate limit — waiting {wait:.1f}s before retry {attempt+1}/3"
+                    "Image cache: 429 rate limit — waiting %.1fs "
+                    "before retry %s/%s",
+                    wait,
+                    attempt + 1,
+                    max_attempts,
                 )
+
                 time.sleep(wait)
                 continue
+
             resp.raise_for_status()
+
             data = resp.content
-            if len(data) < 1000:          # suspiciously small = probably an error page
+
+            if len(data) < 1000:
+                logger.warning(
+                    "Image cache: suspiciously small response for %s",
+                    rel_path,
+                )
                 return None
-            default_storage.save(rel_path, ContentFile(data))
-            return default_storage.url(rel_path)
+
+            saved_path = default_storage.save(
+                rel_path,
+                ContentFile(data),
+            )
+
+            return default_storage.url(saved_path)
+
         except Exception as e:
-            logger.warning(f"Image cache: failed to download {url[:80]}… — {e}")
-            if attempt < 2:
-                time.sleep(2 ** attempt)
-            else:
-                return None
+            logger.warning(
+                "Image cache: failed to download %s — %s",
+                url[:80],
+                e,
+            )
+
+            if attempt < max_attempts - 1:
+                wait = min(30, (2 ** attempt) + random.uniform(0, 1))
+                time.sleep(wait)
+
     return None
 
 
-def cache_listing_photos(mls_id: str, image_urls: list[str]) -> tuple[str, list[str]]:
+def cache_listing_photos(
+    mls_id: str,
+    image_urls: list[str],
+) -> tuple[str, list[str]]:
     """
-    Download and permanently store all photos for a listing.
+    Download and permanently store MLS photos.
 
-    Returns (main_image_url, image_urls) with permanent URLs.
-    Falls back to original MLS URL if download fails so the page still
-    shows something (even if it expires later).
+    The primary image receives additional retry attempts because it is
+    used on listing cards and search results.
+
+    Successfully cached images use permanent storage URLs.
+    Failed images retain their original MLS URL as a temporary fallback.
     """
     if not image_urls:
         return "", []
 
     permanent_urls = []
+
     for i, url in enumerate(image_urls):
         if not url:
             continue
+
         rel_path = _get_cache_path(mls_id, i, url)
-        cached = _download_and_store(url, rel_path)
-        # Use cached URL if successful, otherwise keep original as fallback
-        permanent_urls.append(cached if cached else url)
-        time.sleep(REQUEST_DELAY)  # 300ms pause between images to avoid 429s
+
+        # Main listing image is especially important.
+        max_attempts = 7 if i == 0 else 5
+
+        cached = _download_and_store(
+            url,
+            rel_path,
+            max_attempts=max_attempts,
+        )
+
+        permanent_urls.append(
+            cached if cached else url
+        )
+
+        # Give MLS Grid more breathing room.
+        time.sleep(REQUEST_DELAY)
 
     main = permanent_urls[0] if permanent_urls else ""
+
     return main, permanent_urls
