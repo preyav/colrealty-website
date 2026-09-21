@@ -128,9 +128,16 @@ def cache_listing_photos(
     if not image_urls:
         return "", []
 
-    permanent_urls = []
+    # Preserve the original MLS image ordering, but cache the main image
+    # last so MLS Grid gets some breathing room before photo_000.
+    permanent_urls = list(image_urls)
 
-    for i, url in enumerate(image_urls):
+    image_order = list(range(1, len(image_urls)))
+    image_order.append(0)
+
+    for i in image_order:
+        url = image_urls[i]
+
         if not url:
             continue
 
@@ -145,9 +152,7 @@ def cache_listing_photos(
             max_attempts=max_attempts,
         )
 
-        permanent_urls.append(
-            cached if cached else url
-        )
+        permanent_urls[i] = cached if cached else url
 
         # Give MLS Grid more breathing room.
         time.sleep(REQUEST_DELAY)
