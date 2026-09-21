@@ -59,12 +59,21 @@ def _download_and_store(url: str, rel_path: str, max_attempts: int = 5) -> str |
             )
 
             if resp.status_code == 429:
-                # MLS Grid is actively throttling us. Do not spend minutes
-                # retrying the same image during this run.
+                # Record MLS Grid's rate-limit guidance without exposing
+                # the signed image URL/token.
+                retry_after = resp.headers.get("Retry-After", "not provided")
+
+                logger.warning(
+                    "Image cache: 429 for %s | Retry-After: %s",
+                    rel_path,
+                    retry_after,
+                )
+
+                # Do not spend minutes retrying the same image during this run.
                 if attempt >= 1:
                     logger.warning(
-                        "Image cache: 429 rate limit — giving up on %s "
-                        "after 2 attempts; will retry on a future run",
+                        "Image cache: giving up on %s after 2 attempts; "
+                        "will retry on a future run",
                         rel_path,
                     )
                     return None
@@ -72,8 +81,7 @@ def _download_and_store(url: str, rel_path: str, max_attempts: int = 5) -> str |
                 wait = 3 + random.uniform(0, 2)
 
                 logger.warning(
-                    "Image cache: 429 rate limit — waiting %.1fs "
-                    "before one retry",
+                    "Image cache: waiting %.1fs before one retry",
                     wait,
                 )
 
@@ -101,7 +109,7 @@ def _download_and_store(url: str, rel_path: str, max_attempts: int = 5) -> str |
         except Exception as e:
             logger.warning(
                 "Image cache: failed to download %s — %s",
-                url[:80],
+                rel_path,
                 e,
             )
 
