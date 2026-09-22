@@ -29,6 +29,8 @@ logger = logging.getLogger(__name__)
 NOT_FOUND_FILE = Path("logs/cache_images_not_found.json")
 NOT_FOUND_COOLDOWN_DAYS = 7
 
+MAIN_IMAGE_COOLDOWN_FILE = Path("logs/cache_images_main_cooldown.json")
+MAIN_IMAGE_COOLDOWN_HOURS = 12
 
 def load_not_found_cache():
     if not NOT_FOUND_FILE.exists():
@@ -47,6 +49,22 @@ def save_not_found_cache(data):
     with NOT_FOUND_FILE.open("w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, sort_keys=True)
 
+def load_main_image_cooldown():
+    if not MAIN_IMAGE_COOLDOWN_FILE.exists():
+        return {}
+
+    try:
+        with MAIN_IMAGE_COOLDOWN_FILE.open("r", encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def save_main_image_cooldown(data):
+    MAIN_IMAGE_COOLDOWN_FILE.parent.mkdir(parents=True, exist_ok=True)
+
+    with MAIN_IMAGE_COOLDOWN_FILE.open("w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, sort_keys=True)
 
 class Command(BaseCommand):
     help = "Cache MLS images permanently for listings/rentals with non-S3 images"
@@ -146,6 +164,37 @@ class Command(BaseCommand):
                 f"Skipping {len(cooldown_ids)} MLS IDs still within "
                 f"{NOT_FOUND_COOLDOWN_DAYS}-day not-found cooldown."
             )
+        # Load listings whose main image recently failed to cache.
+        # These are temporarily excluded so nearly-complete listings
+        # do not consume the hourly cache slots repeatedly.
+        main_image_cooldown = load_main_image_cooldown()
+
+        main_cooldown_cutoff = (
+            datetime.now(timezone.utc)
+            - timedelta(hours=MAIN_IMAGE_COOLDOWN_HOURS)
+        )
+
+        main_cooldown_ids = []
+
+        for mid, timestamp in main_image_cooldown.items():
+            try:
+                failed_at = datetime.fromisoformat(timestamp)
+
+                if failed_at >= main_cooldown_cutoff:
+                    main_cooldown_ids.append(mid)
+
+            except (TypeError, ValueError):
+                continue
+
+        # A manually requested --mls-id should always bypass cooldown.
+        if main_cooldown_ids and not mls_id:
+            qs = qs.exclude(mls_id__in=main_cooldown_ids)
+
+            self.stdout.write(
+                f"Skipping {len(main_cooldown_ids)} MLS IDs still within "
+                f"{MAIN_IMAGE_COOLDOWN_HOURS}-hour main-image cooldown."
+            )
+
 
         total = qs.count()
 
@@ -308,6 +357,25 @@ class Command(BaseCommand):
                                 f"main image NOT cached"
                             )
                         )
+
+                        # If all secondary images are cached and only the main
+                        # image remains, cool this listing down before retrying.
+                        secondary_count = max(0, len(image_urls) - 1)
+
+                        if cached_count >= secondary_count:
+                            main_image_cooldown[listing_key] = datetime.now(
+                                timezone.utc
+                            ).isoformat()
+
+                            save_main_image_cooldown(
+                                main_image_cooldown
+                            )
+
+                            self.stdout.write(
+                                f"  Main image retry deferred for "
+                                f"{MAIN_IMAGE_COOLDOWN_HOURS} hours."
+                            )
+
                         skipped += 1
 
                 except Exception as e:
