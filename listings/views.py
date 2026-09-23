@@ -138,7 +138,7 @@ def listing_markers(request):
         property_type__in=["Residential Lease", "Commercial Lease"]
     ).only(
         "id", "title", "price", "street_address", "city", "state",
-        "zip_code", "latitude", "longitude", "main_image_url",
+        "zip_code", "latitude", "longitude", "main_image_url", "image_urls",
     )
 
     qs = apply_listing_filters(qs, request.GET).order_by("-id")[:3000]
@@ -158,7 +158,7 @@ def listing_markers(request):
             "address": f"{listing.street_address}, {listing.city}, {listing.state} {listing.zip_code}",
             "lat": lat,
             "lng": lng,
-            "image": listing.main_image_url,
+            "image": listing.display_image_url,
             "url": f"/listings/{listing.id}/",
         })
 

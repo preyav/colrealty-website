@@ -99,8 +99,8 @@
       {% for l in listings %}
       <a class="listing-card" href="{% url 'listings:listing_detail' l.id %}">
         <div class="listing-image-wrap">
-          {% if l.main_image_url %}
-          <img class="listing-image" src="{{ l.main_image_url }}" alt="{{ l.title }}">
+          {% if l.display_image_url %}
+          <img class="listing-image" src="{{ l.display_image_url }}" alt="{{ l.title }}">
           {% endif %}
           <div class="badge-strip">
             <span class="badge badge-status-active">{{ l.status|default:"active"|title }}</span>

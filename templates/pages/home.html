@@ -64,7 +64,7 @@
       {% for l in new_listings %}
       <a class="hp-card" href="{% url 'listings:listing_detail' l.id %}">
         <div class="hp-card-img">
-          {% if l.main_image_url %}<img src="{{ l.main_image_url }}" alt="{{ l.title }}" loading="lazy">{% endif %}
+          {% if l.display_image_url %}<img src="{{ l.display_image_url }}" alt="{{ l.title }}" loading="lazy">{% endif %}
           <span class="hp-card-badge badge-new">New</span>
         </div>
         <div class="hp-card-body">
@@ -170,7 +170,7 @@
       {% for l in land_listings %}
       <a class="hp-card" href="{% url 'listings:listing_detail' l.id %}">
         <div class="hp-card-img">
-          {% if l.main_image_url %}<img src="{{ l.main_image_url }}" alt="{{ l.title }}" loading="lazy">{% endif %}
+          {% if l.display_image_url %}<img src="{{ l.display_image_url }}" alt="{{ l.title }}" loading="lazy">{% endif %}
           <span class="hp-card-badge badge-land">{{ l.property_type }}</span>
         </div>
         <div class="hp-card-body">

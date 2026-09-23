@@ -147,6 +147,29 @@ class Listing(models.Model):
     def full_address(self):
         return f"{self.street_address}, {self.city}, {self.state} {self.zip_code}"
 
+    @property
+    def display_image_url(self):
+        """
+        Best available image for cards, maps, and search results.
+
+        Prefer the true main image when it has been permanently cached.
+        If the main image is still an MLS Grid URL, use the first
+        permanently cached secondary image as a temporary display fallback.
+
+        This does not modify main_image_url or image_urls, so the image
+        cacher can continue retrying the true MLS main image.
+        """
+        s3_marker = "colrealty-media.s3"
+
+        if self.main_image_url and s3_marker in self.main_image_url:
+            return self.main_image_url
+
+        for url in self.image_urls or []:
+            if url and s3_marker in url:
+                return url
+
+        return self.main_image_url or ""
+
     def interior_features_list(self):
         return [f.strip() for f in self.interior_features.split(",") if f.strip()]
 

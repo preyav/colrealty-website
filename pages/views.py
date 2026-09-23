@@ -55,7 +55,7 @@ def _build_listing_markers(qs):
             "address":       f"{l.street_address}, {l.city}, {l.state} {l.zip_code}",
             "lat":           float(l.latitude),
             "lng":           float(l.longitude),
-            "image":         l.main_image_url,
+            "image":         l.display_image_url,
             "status":        l.status,
             "property_type": l.property_type,
             "url":           reverse("listings:listing_detail", kwargs={"pk": l.pk}),
