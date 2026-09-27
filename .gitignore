@@ -26,3 +26,5 @@ media_backup_*/
 # Local uploads and review archives
 media/maintenance/
 *.zip
+
+db.sqlite3
