@@ -1,0 +1,210 @@
+{% extends "portal/base.html" %}
+
+{% block title %}{{ owner }} | Col Realty Portal{% endblock %}
+{% block page_title %}Owner 360{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom:18px;">
+  <a href="{% url 'portal:owners' %}"
+     style="color:#2563eb;text-decoration:none;font-size:0.85rem;">
+    ← Back to Owners
+  </a>
+</div>
+
+<div class="stat-grid">
+
+  <div class="stat-card {% if owner.is_active %}green{% endif %}">
+    <div class="stat-label">Status</div>
+    <div class="stat-value" style="font-size:1.4rem;">
+      {% if owner.is_active %}Active{% else %}Inactive{% endif %}
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-label">Owner Type</div>
+    <div class="stat-value" style="font-size:1.2rem;">
+      {{ owner.get_owner_type_display }}
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-label">Properties</div>
+    <div class="stat-value">
+      {{ owner.property_ownerships.count }}
+    </div>
+  </div>
+
+</div>
+
+<div class="card">
+
+  <div class="card-header">
+
+    <h2>{{ owner }}</h2>
+
+    <a href="{% url 'portal:edit_owner' owner.id %}"
+       class="btn btn-primary btn-sm">
+      Edit Owner
+    </a>
+
+  </div>
+
+  <div style="
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:20px;
+      padding:20px;">
+
+    <div>
+      <div class="stat-label">Name</div>
+
+      {% if owner.owner_type == "entity" %}
+        <strong>{{ owner.entity_name }}</strong>
+      {% else %}
+        <strong>{{ owner.first_name }} {{ owner.last_name }}</strong>
+      {% endif %}
+    </div>
+
+    <div>
+      <div class="stat-label">Email</div>
+      {{ owner.email|default:"—" }}
+    </div>
+
+    <div>
+      <div class="stat-label">Phone</div>
+      {{ owner.phone|default:"—" }}
+    </div>
+
+    <div>
+      <div class="stat-label">Mailing Address</div>
+      {{ owner.mailing_address|default:"—" }}
+    </div>
+
+    <div>
+      <div class="stat-label">City / State / ZIP</div>
+      {{ owner.mailing_city|default:"" }}
+      {{ owner.mailing_state|default:"" }}
+      {{ owner.mailing_zip_code|default:"" }}
+    </div>
+
+    <div>
+      <div class="stat-label">Created</div>
+      {{ owner.created_at|date:"M d, Y" }}
+    </div>
+
+  </div>
+
+  <div style="padding:0 20px 20px;">
+    <div class="stat-label">Notes</div>
+    <div style="margin-top:6px;line-height:1.6;">
+      {{ owner.notes|default:"—"|linebreaksbr }}
+    </div>
+  </div>
+
+</div>
+
+<div class="card">
+
+  <div class="card-header">
+    <h2>Properties Owned</h2>
+  </div>
+
+  <table class="data-table">
+
+    <thead>
+      <tr>
+        <th>Property</th>
+        <th>Ownership</th>
+        <th>Primary Contact</th>
+        <th>Start</th>
+        <th>End</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+
+    <tbody>
+
+      {% for ownership in owner.property_ownerships.all %}
+
+      <tr>
+
+        <td>
+          <a href="{% url 'portal:property_detail' ownership.property.id %}">
+            {{ ownership.property.street_address }}
+          </a>
+        </td>
+
+        <td>
+          {{ ownership.ownership_percentage }}%
+        </td>
+
+        <td>
+          {% if ownership.is_primary_contact %}
+            <span class="badge badge-green">Yes</span>
+          {% else %}
+            —
+          {% endif %}
+        </td>
+
+        <td>
+          {{ ownership.start_date|date:"M d, Y"|default:"—" }}
+        </td>
+
+        <td>
+          {{ ownership.end_date|date:"M d, Y"|default:"—" }}
+        </td>
+
+        <td>
+          <div style="display:flex;gap:8px;align-items:center;">
+
+            <a href="{% url 'portal:edit_property_ownership' ownership.property.id ownership.id %}"
+              class="btn btn-sm"
+              style="background:#f1f5f9;">
+              Edit
+            </a>
+
+            <form method="post"
+                  action="{% url 'portal:remove_property_ownership' ownership.property.id ownership.id %}"
+                  style="margin:0;"
+                  onsubmit="return confirm(
+                    'Remove this ownership association? The owner and property will not be deleted.'
+                  );">
+
+              {% csrf_token %}
+
+              <button type="submit"
+                      class="btn btn-sm"
+                      style="
+                        background:#fee2e2;
+                        color:#b91c1c;
+                        border:1px solid #fecaca;
+                      ">
+                Remove
+              </button>
+
+            </form>
+
+          </div>
+        </td>
+
+      </tr>
+
+      {% empty %}
+
+      <tr>
+        <td colspan="6"
+            style="text-align:center;color:#94a3b8;padding:24px;">
+          No properties linked to this owner.
+        </td>
+      </tr>
+
+      {% endfor %}
+
+    </tbody>
+
+  </table>
+
+</div>
+
+{% endblock %}

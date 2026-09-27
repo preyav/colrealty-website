@@ -1,0 +1,357 @@
+{% extends "portal/base.html" %}
+
+{% block title %}{{ vendor }} | Col Realty Portal{% endblock %}
+{% block page_title %}Vendor 360{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom:18px;">
+  <a href="{% url 'portal:vendors' %}"
+     style="color:#2563eb;text-decoration:none;font-size:0.85rem;">
+    ← Back to Vendors
+  </a>
+</div>
+
+
+<!-- SUMMARY -->
+
+<div class="stat-grid">
+
+  <div class="stat-card
+      {% if vendor.status == 'active' %}green
+      {% elif vendor.status == 'pending' %}orange
+      {% else %}gray{% endif %}">
+
+    <div class="stat-label">Status</div>
+
+    <div class="stat-value" style="font-size:1.4rem;">
+      {{ vendor.get_status_display }}
+    </div>
+
+  </div>
+
+
+  <div class="stat-card">
+    <div class="stat-label">Assignments</div>
+
+    <div class="stat-value" style="font-size:1.4rem;">
+      {{ vendor.work_order_assignments.count }}
+    </div>
+  </div>
+
+
+  <div class="stat-card">
+    <div class="stat-label">Estimates</div>
+
+    <div class="stat-value" style="font-size:1.4rem;">
+      {{ vendor.estimates.count }}
+    </div>
+  </div>
+
+
+  <div class="stat-card">
+    <div class="stat-label">Invoices</div>
+
+    <div class="stat-value" style="font-size:1.4rem;">
+      {{ vendor.invoices.count }}
+    </div>
+  </div>
+
+</div>
+
+
+<!-- VENDOR DETAILS -->
+
+<div class="card">
+
+  <div class="card-header">
+
+    <h2>{{ vendor }}</h2>
+
+    <a href="{% url 'portal:edit_vendor' vendor.id %}"
+       class="btn btn-primary btn-sm">
+      Edit Vendor
+    </a>
+
+  </div>
+
+  <div style="padding:20px;">
+
+    <div style="
+        display:grid;
+        grid-template-columns:repeat(3,1fr);
+        gap:20px;">
+
+      <div>
+        <div class="stat-label">Contact Name</div>
+        <strong>{{ vendor.name }}</strong>
+      </div>
+
+      <div>
+        <div class="stat-label">Company</div>
+        {{ vendor.company_name|default:"—" }}
+      </div>
+
+      <div>
+        <div class="stat-label">Status</div>
+        {{ vendor.get_status_display }}
+      </div>
+
+      <div>
+        <div class="stat-label">Email</div>
+        {{ vendor.email|default:"—" }}
+      </div>
+
+      <div>
+        <div class="stat-label">Phone</div>
+        {{ vendor.phone|default:"—" }}
+      </div>
+
+      <div>
+        <div class="stat-label">Created</div>
+        {{ vendor.created_at|date:"M d, Y" }}
+      </div>
+
+    </div>
+
+    <div style="margin-top:24px;">
+      <div class="stat-label">Trades / Specialties</div>
+
+      <div style="margin-top:8px;">
+        {% for trade in vendor.trades.all %}
+          <span class="badge badge-gray">
+            {{ trade.get_trade_display }}
+          </span>
+        {% empty %}
+          —
+        {% endfor %}
+      </div>
+    </div>
+
+    <div style="margin-top:24px;">
+      <div class="stat-label">Notes</div>
+
+      <div style="margin-top:6px;line-height:1.6;">
+        {{ vendor.notes|default:"—"|linebreaksbr }}
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- WORK ORDER HISTORY -->
+
+<div class="card">
+
+  <div class="card-header">
+    <h2>Work Order History</h2>
+  </div>
+
+  <table class="data-table">
+
+    <thead>
+      <tr>
+        <th>Work Order</th>
+        <th>Property</th>
+        <th>Status</th>
+        <th>Assigned</th>
+        <th>Scheduled</th>
+        <th>Completed</th>
+      </tr>
+    </thead>
+
+    <tbody>
+
+      {% for assignment in vendor.work_order_assignments.all %}
+
+      <tr>
+
+        <td>
+          <a href="{% url 'portal:work_order_detail' assignment.work_order.id %}">
+            #{{ assignment.work_order.id }} - {{ assignment.work_order.title }}
+          </a>
+        </td>
+
+        <td>
+          {{ assignment.work_order.unit.property.street_address }}
+        </td>
+
+        <td>
+          {{ assignment.get_status_display }}
+        </td>
+
+        <td>
+          {{ assignment.assigned_at|date:"M d, Y" }}
+        </td>
+
+        <td>
+          {{ assignment.scheduled_for|date:"M d, Y g:i A"|default:"—" }}
+        </td>
+
+        <td>
+          {{ assignment.completed_at|date:"M d, Y g:i A"|default:"—" }}
+        </td>
+
+      </tr>
+
+      {% empty %}
+
+      <tr>
+        <td colspan="6"
+            style="text-align:center;color:#94a3b8;padding:24px;">
+          No work orders assigned.
+        </td>
+      </tr>
+
+      {% endfor %}
+
+    </tbody>
+
+  </table>
+
+</div>
+
+
+<!-- ESTIMATES -->
+
+<div class="card">
+
+  <div class="card-header">
+    <h2>Estimate History</h2>
+  </div>
+
+  <table class="data-table">
+
+    <thead>
+      <tr>
+        <th>Work Order</th>
+        <th>Amount</th>
+        <th>Status</th>
+        <th>Submitted</th>
+        <th>Approved</th>
+      </tr>
+    </thead>
+
+    <tbody>
+
+      {% for estimate in vendor.estimates.all %}
+
+      <tr>
+
+        <td>
+          <a href="{% url 'portal:work_order_detail' estimate.work_order.id %}">
+            #{{ estimate.work_order.id }} - {{ estimate.work_order.title }}
+          </a>
+        </td>
+
+        <td>
+          <strong>${{ estimate.amount|floatformat:2 }}</strong>
+        </td>
+
+        <td>
+          {{ estimate.get_status_display }}
+        </td>
+
+        <td>
+          {{ estimate.submitted_at|date:"M d, Y" }}
+        </td>
+
+        <td>
+          {{ estimate.approved_at|date:"M d, Y"|default:"—" }}
+        </td>
+
+      </tr>
+
+      {% empty %}
+
+      <tr>
+        <td colspan="5"
+            style="text-align:center;color:#94a3b8;padding:24px;">
+          No estimates submitted.
+        </td>
+      </tr>
+
+      {% endfor %}
+
+    </tbody>
+
+  </table>
+
+</div>
+
+
+<!-- INVOICES -->
+
+<div class="card">
+
+  <div class="card-header">
+    <h2>Invoice History</h2>
+  </div>
+
+  <table class="data-table">
+
+    <thead>
+      <tr>
+        <th>Work Order</th>
+        <th>Invoice #</th>
+        <th>Amount</th>
+        <th>Status</th>
+        <th>Invoice Date</th>
+        <th>Paid</th>
+      </tr>
+    </thead>
+
+    <tbody>
+
+      {% for invoice in vendor.invoices.all %}
+
+      <tr>
+
+        <td>
+          <a href="{% url 'portal:work_order_detail' invoice.work_order.id %}">
+            #{{ invoice.work_order.id }} - {{ invoice.work_order.title }}
+          </a>
+        </td>
+
+        <td>
+          {{ invoice.invoice_number|default:"—" }}
+        </td>
+
+        <td>
+          <strong>${{ invoice.amount|floatformat:2 }}</strong>
+        </td>
+
+        <td>
+          {{ invoice.get_status_display }}
+        </td>
+
+        <td>
+          {{ invoice.invoice_date|date:"M d, Y"|default:"—" }}
+        </td>
+
+        <td>
+          {{ invoice.paid_at|date:"M d, Y"|default:"—" }}
+        </td>
+
+      </tr>
+
+      {% empty %}
+
+      <tr>
+        <td colspan="6"
+            style="text-align:center;color:#94a3b8;padding:24px;">
+          No invoices.
+        </td>
+      </tr>
+
+      {% endfor %}
+
+    </tbody>
+
+  </table>
+
+</div>
+
+{% endblock %}

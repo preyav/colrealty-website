@@ -1,0 +1,34 @@
+{% extends "portal/base.html" %}
+{% block title %}Record Vendor Quote | Col Realty Portal{% endblock %}
+{% block page_title %}Record Vendor Quote{% endblock %}
+{% block content %}
+<div style="margin-bottom:18px;"><a href="{% url 'portal:work_order_detail' work_order.id %}" style="color:#2563eb;text-decoration:none;font-size:.85rem;">← Back to Work Order #{{ work_order.id }}</a></div>
+<div class="card" style="max-width:980px;">
+  <div class="card-header"><div><h2>Quote for Work Order #{{ work_order.id }} — {{ work_order.title }}</h2><div style="font-size:.82rem;color:#64748b;margin-top:4px;">{% if quote_request %}Record the response received from {{ quote_request.vendor }}.{% else %}Record a quote received by phone, email, text, in person, or another channel.{% endif %}</div></div></div>
+  <form method="post" enctype="multipart/form-data" style="padding:20px;" id="quote-form">
+    {% csrf_token %}{% if quote_request %}<input type="hidden" name="quote_request_id" value="{{ quote_request.id }}">{% endif %}
+    {% if form.non_field_errors %}<div class="alert alert-error">{{ form.non_field_errors }}</div>{% endif %}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;">
+      <div><label style="display:block;font-weight:600;margin-bottom:6px;">Vendor</label>{% if quote_request %}<div style="padding:8px 0;font-weight:600;">{{ quote_request.vendor }}</div><input type="hidden" name="vendor" value="{{ quote_request.vendor_id }}">{% else %}{{ form.vendor }}{% endif %}{{ form.vendor.errors }}</div>
+      <div><label style="display:block;font-weight:600;margin-bottom:6px;">How was this quote received?</label>{% if quote_request %}<div style="padding:8px 0;font-weight:600;">COL360 Quote Request</div><input type="hidden" name="source" value="col360">{% else %}{{ form.source }}{% endif %}{{ form.source.errors }}</div>
+    </div>
+    <div style="margin-bottom:18px;"><label style="display:block;font-weight:600;margin-bottom:8px;">Quote entry method</label>{{ form.entry_method }}{{ form.entry_method.errors }}</div>
+    <div id="total-only-fields" style="margin-bottom:18px;"><label style="display:block;font-weight:600;margin-bottom:6px;">Total Quote</label>{{ form.amount }}{{ form.amount.errors }}</div>
+    <div id="itemized-fields" style="display:none;margin-bottom:18px;padding:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;">
+      <div style="font-weight:700;margin-bottom:12px;">Itemized costs</div>
+      <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;">
+        <div><label>Labor</label>{{ form.labor_amount }}{{ form.labor_amount.errors }}</div><div><label>Materials</label>{{ form.materials_amount }}{{ form.materials_amount.errors }}</div><div><label>Taxes</label>{{ form.tax_amount }}{{ form.tax_amount.errors }}</div><div><label>Other Fees</label>{{ form.other_fees }}{{ form.other_fees.errors }}</div><div><label>Discount</label>{{ form.discount_amount }}{{ form.discount_amount.errors }}</div><div><label>Calculated Total</label><input id="calculated-total" class="form-control" value="$0.00" readonly></div>
+      </div>
+      <div style="font-size:.78rem;color:#64748b;margin-top:10px;">Labor + materials + taxes + other fees − discount = total quote.</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;"><div><label style="display:block;font-weight:600;margin-bottom:6px;">Date Received</label>{{ form.received_date }}{{ form.received_date.errors }}</div><div><label style="display:block;font-weight:600;margin-bottom:6px;">Valid Through <span style="font-weight:400;color:#94a3b8;">(optional)</span></label>{{ form.valid_through }}{{ form.valid_through.errors }}</div></div>
+    <div style="margin-bottom:18px;"><label style="display:block;font-weight:600;margin-bottom:6px;">Scope / Description</label>{{ form.description }}{{ form.description.errors }}</div>
+    <div style="margin-bottom:18px;"><label style="display:block;font-weight:600;margin-bottom:6px;">Quote Document or Image <span style="font-weight:400;color:#94a3b8;">(optional)</span></label>{{ form.attachment }}{{ form.attachment.errors }}</div>
+    <div style="margin-bottom:20px;"><label style="display:block;font-weight:600;margin-bottom:6px;">Internal Notes <span style="font-weight:400;color:#94a3b8;">(optional)</span></label>{{ form.notes }}{{ form.notes.errors }}</div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;border-top:1px solid #e2e8f0;padding-top:16px;"><a href="{% url 'portal:work_order_detail' work_order.id %}" class="btn btn-sm" style="background:#f1f5f9;">Cancel</a><button type="submit" class="btn btn-primary btn-sm">Save Vendor Quote</button></div>
+  </form>
+</div>
+<script>
+(function(){const methods=document.querySelectorAll('input[name="entry_method"]'),totalFields=document.getElementById('total-only-fields'),itemizedFields=document.getElementById('itemized-fields'),costIds=['id_labor_amount','id_materials_amount','id_tax_amount','id_other_fees'],discount=document.getElementById('id_discount_amount'),calculated=document.getElementById('calculated-total');function mode(){const selected=document.querySelector('input[name="entry_method"]:checked'),itemized=selected&&selected.value==='itemized';totalFields.style.display=itemized?'none':'block';itemizedFields.style.display=itemized?'block':'none'}function sum(){const subtotal=costIds.reduce((value,id)=>value+(parseFloat(document.getElementById(id).value)||0),0),result=subtotal-(parseFloat(discount.value)||0);calculated.value='$'+Math.max(result,0).toFixed(2)}methods.forEach(input=>input.addEventListener('change',mode));costIds.forEach(id=>document.getElementById(id).addEventListener('input',sum));discount.addEventListener('input',sum);mode();sum()})();
+</script>
+{% endblock %}

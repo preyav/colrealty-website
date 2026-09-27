@@ -1,0 +1,204 @@
+{% extends "portal/base.html" %}
+
+{% block title %}{{ page_heading }} | Col Realty Portal{% endblock %}
+{% block page_title %}{{ page_heading }}{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom:18px;">
+
+  {% if tenant %}
+    <a href="{% url 'portal:tenant_detail' tenant.id %}"
+       style="color:#2563eb;text-decoration:none;font-size:0.85rem;">
+      ← Back to Tenant 360
+    </a>
+  {% else %}
+    <a href="{% url 'portal:tenants' %}"
+       style="color:#2563eb;text-decoration:none;font-size:0.85rem;">
+      ← Back to Tenants
+    </a>
+  {% endif %}
+
+</div>
+
+
+<div class="card">
+
+  <div class="card-header">
+    <h2>{{ page_heading }}</h2>
+  </div>
+
+  <div style="padding:20px;">
+
+    <form method="post">
+
+      {% if next_url %}
+        <input type="hidden"
+              name="next"
+              value="{{ next_url }}">
+      {% endif %}
+
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="alert alert-error">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
+
+
+      <div style="
+          display:grid;
+          grid-template-columns:1fr 1fr;
+          gap:20px;">
+
+        <div>
+          <label class="stat-label">
+            First Name <span style="color:#dc2626;">*</span>
+          </label>
+
+          <div style="margin-top:6px;">
+            {{ form.first_name }}
+          </div>
+
+          {{ form.first_name.errors }}
+        </div>
+
+
+        <div>
+          <label class="stat-label">
+            Last Name <span style="color:#dc2626;">*</span>
+          </label>
+
+          <div style="margin-top:6px;">
+            {{ form.last_name }}
+          </div>
+
+          {{ form.last_name.errors }}
+        </div>
+
+
+        <div>
+          <label class="stat-label">Email</label>
+
+          <div style="margin-top:6px;">
+            {{ form.email }}
+          </div>
+
+          {{ form.email.errors }}
+        </div>
+
+
+        <div>
+          <label class="stat-label">Phone</label>
+
+          <div style="margin-top:6px;">
+            {{ form.phone }}
+          </div>
+
+          {{ form.phone.errors }}
+        </div>
+
+
+        <div>
+          <label class="stat-label">Date of Birth</label>
+
+          <div style="margin-top:6px;">
+            {{ form.date_of_birth }}
+          </div>
+
+          {{ form.date_of_birth.errors }}
+        </div>
+
+
+        <div>
+          <label class="stat-label">Active</label>
+
+          <div style="margin-top:10px;">
+            {{ form.is_active }}
+          </div>
+
+          {{ form.is_active.errors }}
+        </div>
+
+
+        <div>
+          <label class="stat-label">
+            Emergency Contact
+          </label>
+
+          <div style="margin-top:6px;">
+            {{ form.emergency_contact_name }}
+          </div>
+
+          {{ form.emergency_contact_name.errors }}
+        </div>
+
+
+        <div>
+          <label class="stat-label">
+            Emergency Contact Phone
+          </label>
+
+          <div style="margin-top:6px;">
+            {{ form.emergency_contact_phone }}
+          </div>
+
+          {{ form.emergency_contact_phone.errors }}
+        </div>
+
+      </div>
+
+
+      <div style="margin-top:24px;">
+
+        <label class="stat-label">Notes</label>
+
+        <div style="margin-top:6px;">
+          {{ form.notes }}
+        </div>
+
+        {{ form.notes.errors }}
+
+      </div>
+
+
+      <div style="
+          display:flex;
+          justify-content:flex-end;
+          gap:10px;
+          margin-top:24px;">
+
+        {% if tenant %}
+
+          <a href="{% url 'portal:tenant_detail' tenant.id %}"
+             class="btn"
+             style="background:#f1f5f9;">
+            Cancel
+          </a>
+
+        {% else %}
+
+          <a href="{% url 'portal:tenants' %}"
+             class="btn"
+             style="background:#f1f5f9;">
+            Cancel
+          </a>
+
+        {% endif %}
+
+
+        <button type="submit"
+                class="btn btn-primary">
+          {{ submit_label }}
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+
+{% endblock %}

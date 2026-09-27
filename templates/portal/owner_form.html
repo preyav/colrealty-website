@@ -1,0 +1,175 @@
+{% extends "portal/base.html" %}
+
+{% block title %}{{ page_heading }} | Col Realty Portal{% endblock %}
+{% block page_title %}{{ page_heading }}{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom:18px;">
+  {% if owner %}
+    <a href="{% url 'portal:owner_detail' owner.id %}"
+       style="color:#2563eb;text-decoration:none;font-size:0.85rem;">
+      ← Back to Owner 360
+    </a>
+  {% else %}
+    <a href="{% url 'portal:owners' %}"
+       style="color:#2563eb;text-decoration:none;font-size:0.85rem;">
+      ← Back to Owners
+    </a>
+  {% endif %}
+</div>
+
+<div class="card">
+
+  <div class="card-header">
+    <h2>{{ page_heading }}</h2>
+  </div>
+
+  <div style="padding:20px;">
+
+    <form method="post">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="alert alert-error">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
+
+      <div style="
+          display:grid;
+          grid-template-columns:1fr 1fr;
+          gap:20px;">
+
+        <div>
+          <label class="stat-label">Owner Type</label>
+          <div style="margin-top:6px;">
+            {{ form.owner_type }}
+          </div>
+          {{ form.owner_type.errors }}
+        </div>
+
+        <div>
+          <label class="stat-label">Active</label>
+          <div style="margin-top:10px;">
+            {{ form.is_active }}
+          </div>
+          {{ form.is_active.errors }}
+        </div>
+
+        <div>
+          <label class="stat-label">First Name</label>
+          <div style="margin-top:6px;">
+            {{ form.first_name }}
+          </div>
+          {{ form.first_name.errors }}
+        </div>
+
+        <div>
+          <label class="stat-label">Last Name</label>
+          <div style="margin-top:6px;">
+            {{ form.last_name }}
+          </div>
+          {{ form.last_name.errors }}
+        </div>
+
+        <div style="grid-column:1 / -1;">
+          <label class="stat-label">Entity / Company Name</label>
+          <div style="margin-top:6px;">
+            {{ form.entity_name }}
+          </div>
+          {{ form.entity_name.errors }}
+        </div>
+
+        <div>
+          <label class="stat-label">Email</label>
+          <div style="margin-top:6px;">
+            {{ form.email }}
+          </div>
+          {{ form.email.errors }}
+        </div>
+
+        <div>
+          <label class="stat-label">Phone</label>
+          <div style="margin-top:6px;">
+            {{ form.phone }}
+          </div>
+          {{ form.phone.errors }}
+        </div>
+
+        <div style="grid-column:1 / -1;">
+          <label class="stat-label">Mailing Address</label>
+          <div style="margin-top:6px;">
+            {{ form.mailing_address }}
+          </div>
+          {{ form.mailing_address.errors }}
+        </div>
+
+        <div>
+          <label class="stat-label">Mailing City</label>
+          <div style="margin-top:6px;">
+            {{ form.mailing_city }}
+          </div>
+          {{ form.mailing_city.errors }}
+        </div>
+
+        <div>
+          <label class="stat-label">Mailing State</label>
+          <div style="margin-top:6px;">
+            {{ form.mailing_state }}
+          </div>
+          {{ form.mailing_state.errors }}
+        </div>
+
+        <div>
+          <label class="stat-label">Mailing ZIP Code</label>
+          <div style="margin-top:6px;">
+            {{ form.mailing_zip_code }}
+          </div>
+          {{ form.mailing_zip_code.errors }}
+        </div>
+
+      </div>
+
+      <div style="margin-top:24px;">
+        <label class="stat-label">Notes</label>
+        <div style="margin-top:6px;">
+          {{ form.notes }}
+        </div>
+        {{ form.notes.errors }}
+      </div>
+
+      <div style="
+          display:flex;
+          justify-content:flex-end;
+          gap:10px;
+          margin-top:24px;">
+
+        {% if owner %}
+          <a href="{% url 'portal:owner_detail' owner.id %}"
+             class="btn"
+             style="background:#f1f5f9;">
+            Cancel
+          </a>
+        {% else %}
+          <a href="{% url 'portal:owners' %}"
+             class="btn"
+             style="background:#f1f5f9;">
+            Cancel
+          </a>
+        {% endif %}
+
+        <button type="submit"
+                class="btn btn-primary">
+          {{ submit_label }}
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+
+{% endblock %}

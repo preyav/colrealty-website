@@ -1,0 +1,569 @@
+{% extends "portal/base.html" %}
+
+{% block title %}Lease #{{ lease.id }} | Col Realty Portal{% endblock %}
+{% block page_title %}Lease 360{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom:18px;display:flex;gap:16px;">
+
+  <a href="{% url 'portal:leases' %}"
+     style="color:#2563eb;text-decoration:none;font-size:0.85rem;">
+    ← Back to Leases
+  </a>
+
+  <a href="{% url 'portal:property_detail' lease.unit.property.id %}"
+     style="color:#2563eb;text-decoration:none;font-size:0.85rem;">
+    Property 360
+  </a>
+
+</div>
+
+
+<!-- SUMMARY -->
+
+<div class="stat-grid">
+
+  <div class="stat-card
+      {% if lease.status == 'active' %}green
+      {% elif lease.status == 'pending' %}orange
+      {% elif lease.status == 'terminated' or lease.status == 'cancelled' %}red
+      {% else %}blue{% endif %}">
+
+    <div class="stat-label">Status</div>
+
+    <div class="stat-value" style="font-size:1.4rem;">
+      {{ lease.get_status_display }}
+    </div>
+
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-label">Monthly Rent</div>
+    <div class="stat-value" style="font-size:1.4rem;">
+      ${{ lease.monthly_rent|floatformat:2 }}
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-label">Security Deposit</div>
+    <div class="stat-value" style="font-size:1.4rem;">
+      ${{ lease.security_deposit|floatformat:2 }}
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-label">Tenants</div>
+    <div class="stat-value">
+      {{ lease.lease_tenants.count }}
+    </div>
+  </div>
+
+</div>
+
+{% if show_renewal_reminder %}
+<div class="card"
+     style="border-left:4px solid #f59e0b;background:#fffbeb;">
+  <div style="padding:18px 20px;">
+    <div style="font-weight:700;color:#92400e;margin-bottom:6px;">
+      Renewal / Move-Out Follow-Up
+    </div>
+
+    <div style="color:#78350f;line-height:1.6;">
+      This lease expires on
+      <strong>{{ lease.end_date|date:"M d, Y" }}</strong>
+      ({{ lease_days_remaining }} day{{ lease_days_remaining|pluralize }} remaining).
+
+      {% if intent_days_remaining > 0 %}
+        The tenant's 60-day renewal or move-out intent deadline is
+        <strong>{{ intent_deadline|date:"M d, Y" }}</strong>,
+        which is in
+        <strong>{{ intent_days_remaining }} day{{ intent_days_remaining|pluralize }}</strong>.
+        Please contact the tenant now to confirm their plans.
+      {% elif intent_days_remaining == 0 %}
+        The tenant's 60-day renewal or move-out intent is
+        <strong>due today</strong>.
+      {% else %}
+        The tenant's 60-day renewal or move-out intent deadline was
+        <strong>{{ intent_deadline|date:"M d, Y" }}</strong>.
+        Please follow up with the tenant if their plans have not yet been confirmed.
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% if current_intent %}
+  {% if current_intent.intent == "renew" %}
+    <div class="card"
+         style="border-left:4px solid #22c55e;background:#f0fdf4;">
+      <div style="padding:18px 20px;">
+        <div style="font-weight:700;color:#166534;margin-bottom:6px;">
+          Renewal Requested
+        </div>
+
+        <div style="color:#166534;line-height:1.7;">
+          Tenant confirmed intent to renew on
+          <strong>{{ current_intent.response_date|date:"M d, Y" }}</strong>
+          via
+          <strong>{{ current_intent.get_notice_method_display }}</strong>.
+          No renewal lease has been created automatically.
+
+          {% if current_intent.notes %}
+            <div style="margin-top:6px;">
+              <strong>Notes:</strong>
+              {{ current_intent.notes|linebreaksbr }}
+            </div>
+          {% endif %}
+
+          {% if upcoming_lease_exists %}
+            <div style="margin-top:8px;font-weight:600;">
+              A future Draft/Pending lease already exists for this property.
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+  {% elif current_intent.intent == "vacate" %}
+    <div class="card"
+         style="border-left:4px solid #f59e0b;background:#fffbeb;">
+      <div style="padding:18px 20px;">
+        <div style="font-weight:700;color:#92400e;margin-bottom:6px;">
+          Move-Out Planned
+        </div>
+
+        <div style="color:#78350f;line-height:1.7;">
+          Tenant provided notice on
+          <strong>{{ current_intent.response_date|date:"M d, Y" }}</strong>
+          and plans to vacate on
+          <strong>{{ current_intent.planned_move_out_date|date:"M d, Y" }}</strong>
+          via
+          <strong>{{ current_intent.get_notice_method_display }}</strong>.
+
+          {% if current_intent.notes %}
+            <div style="margin-top:6px;">
+              <strong>Notes:</strong>
+              {{ current_intent.notes|linebreaksbr }}
+            </div>
+          {% endif %}
+        </div>
+
+        <form method="post"
+              action="{% url 'portal:withdraw_move_out_notice' lease.id %}"
+              style="margin-top:12px;"
+              onsubmit="return confirm('Withdraw this move-out notice and return the lease to Active?');">
+          {% csrf_token %}
+          <button type="submit"
+                  class="btn btn-sm"
+                  style="background:#f1f5f9;">
+            Withdraw Move-Out Notice
+          </button>
+        </form>
+      </div>
+    </div>
+  {% endif %}
+{% endif %}
+
+
+<!-- LEASE DETAILS -->
+
+<div class="card">
+
+  <div class="card-header">
+
+    <h2>
+      {{ lease.unit.property.street_address }}
+      {% if lease.unit.unit_number %}
+        — Unit {{ lease.unit.unit_number }}
+      {% else %}
+        — Main Unit
+      {% endif %}
+    </h2>
+
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      {% if lease.status == "active" and can_record_lease_intent and not current_intent and not upcoming_lease_exists %}
+        <a href="{% url 'portal:record_renewal_intent' lease.id %}"
+           class="btn btn-sm"
+           style="background:#dcfce7;color:#166534;">
+          Tenant Plans to Renew
+        </a>
+
+        <a href="{% url 'portal:record_vacate_intent' lease.id %}"
+           class="btn btn-sm"
+           style="background:#ffedd5;color:#9a3412;">
+          Tenant Plans to Vacate
+        </a>
+      {% endif %}
+
+      {% if can_create_renewal_draft and current_intent and current_intent.intent == "renew" and not upcoming_lease_exists %}
+        <a href="{% url 'portal:create_lease_renewal' lease.id %}"
+           class="btn btn-sm"
+           style="background:#dcfce7;color:#166534;">
+          Create Renewal Draft
+        </a>
+      {% endif %}
+
+      {% if lease.status == "draft" %}
+        <form method="post"
+              action="{% url 'portal:mark_lease_pending' lease.id %}"
+              style="margin:0;"
+              onsubmit="return confirm('Mark this lease Pending Signature?');">
+          {% csrf_token %}
+          <button type="submit"
+                  class="btn btn-sm"
+                  style="background:#e0f2fe;color:#075985;">
+            Mark Pending Signature
+          </button>
+        </form>
+
+        <form method="post"
+              action="{% url 'portal:delete_draft_lease' lease.id %}"
+              style="margin:0;"
+              onsubmit="return confirm('Delete this Draft lease permanently? This cannot be undone.');">
+          {% csrf_token %}
+          <button type="submit"
+                  class="btn btn-sm"
+                  style="background:#fee2e2;color:#b91c1c;">
+            Delete Draft
+          </button>
+        </form>
+      {% endif %}
+
+      {% if lease.status == "pending" %}
+        <form method="post"
+              action="{% url 'portal:activate_pending_lease' lease.id %}"
+              style="margin:0;"
+              onsubmit="return confirm('Activate this lease? Confirm that the lease is fully signed and its Start Date has arrived.');">
+          {% csrf_token %}
+          <button type="submit"
+                  class="btn btn-sm"
+                  style="background:#dcfce7;color:#166534;">
+            Activate Lease
+          </button>
+        </form>
+
+        <form method="post"
+              action="{% url 'portal:cancel_pending_lease' lease.id %}"
+              style="margin:0;"
+              onsubmit="return confirm('Cancel this Pending Signature lease? The lease will be kept in history and cannot be activated unless a new lease is prepared.');">
+          {% csrf_token %}
+          <button type="submit"
+                  class="btn btn-sm"
+                  style="background:#fee2e2;color:#b91c1c;">
+            Cancel Lease
+          </button>
+        </form>
+      {% endif %}
+
+      {% if lease.status != "cancelled" %}
+        <a href="{% url 'portal:edit_lease' lease.id %}"
+           class="btn btn-primary btn-sm">
+          Edit Lease
+        </a>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <div style="
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:20px;
+      padding:20px;">
+
+    <div>
+      <div class="stat-label">Start Date</div>
+      {{ lease.start_date|date:"M d, Y" }}
+    </div>
+
+    <div>
+      <div class="stat-label">End Date</div>
+      {{ lease.end_date|date:"M d, Y" }}
+    </div>
+
+    <div>
+      <div class="stat-label">Signed Date</div>
+      {{ lease.signed_date|date:"M d, Y"|default:"—" }}
+    </div>
+
+    <div>
+      <div class="stat-label">Move-In Date</div>
+      {{ lease.move_in_date|date:"M d, Y"|default:"—" }}
+    </div>
+
+    <div>
+      <div class="stat-label">Move-Out Date</div>
+      {{ lease.move_out_date|date:"M d, Y"|default:"—" }}
+    </div>
+
+    <div>
+      <div class="stat-label">Created</div>
+      {{ lease.created_at|date:"M d, Y" }}
+    </div>
+
+  </div>
+
+  <div style="padding:0 20px 20px;">
+    <div class="stat-label">Notes</div>
+    <div style="margin-top:6px;line-height:1.6;">
+      {{ lease.notes|default:"—"|linebreaksbr }}
+    </div>
+  </div>
+
+</div>
+
+
+<!-- TENANTS -->
+
+<div class="card">
+
+  <div class="card-header">
+
+    <div>
+      <h2>Lease Tenants</h2>
+      {% if lease.status == "cancelled" %}
+        <div style="margin-top:3px;color:#64748b;font-size:0.8rem;">
+          Historical record — read-only
+        </div>
+      {% endif %}
+    </div>
+
+    {% if lease.status != "cancelled" %}
+      <a href="{% url 'portal:add_lease_tenant' lease.id %}"
+         class="btn btn-primary btn-sm">
+        + Add Tenant
+      </a>
+    {% endif %}
+
+  </div>
+
+  <table class="data-table">
+
+    <thead>
+      <tr>
+        <th>Tenant</th>
+        <th>Role</th>
+        <th>Financially Responsible</th>
+        {% if lease.status != "cancelled" %}
+          <th>Action</th>
+        {% endif %}
+      </tr>
+    </thead>
+
+    <tbody>
+
+      {% for membership in lease.lease_tenants.all %}
+
+      <tr>
+
+        <td>
+          <a href="{% url 'portal:tenant_detail' membership.tenant.id %}">
+            <strong>{{ membership.tenant }}</strong>
+          </a>
+        </td>
+
+        <td>
+          {{ membership.get_role_display }}
+        </td>
+
+        <td>
+          {% if membership.is_financially_responsible %}
+            <span class="badge badge-green">Yes</span>
+          {% else %}
+            —
+          {% endif %}
+        </td>
+
+        {% if lease.status != "cancelled" %}
+          <td>
+            <div style="display:flex;gap:6px;align-items:center;">
+
+              <a href="{% url 'portal:edit_lease_tenant' lease.id membership.id %}"
+                class="btn btn-sm"
+                style="background:#f1f5f9;">
+                Edit
+              </a>
+
+              <form method="post"
+                    action="{% url 'portal:remove_lease_tenant' lease.id membership.id %}"
+                    style="margin:0;"
+                    onsubmit="return confirm('Remove this tenant from this lease?');">
+
+                {% csrf_token %}
+
+                <button type="submit"
+                        class="btn btn-sm"
+                        style="background:#fee2e2;color:#b91c1c;">
+                  Remove
+                </button>
+
+              </form>
+
+            </div>
+          </td>
+        {% endif %}
+
+      </tr>
+
+      {% empty %}
+
+      <tr>
+        <td colspan="{% if lease.status == 'cancelled' %}3{% else %}4{% endif %}"
+            style="text-align:center;color:#94a3b8;padding:24px;">
+          No tenants attached to this lease.
+        </td>
+      </tr>
+
+      {% endfor %}
+
+    </tbody>
+
+  </table>
+
+</div>
+
+
+<!-- MAINTENANCE -->
+{% if lease.status == "active" or lease.status == "notice" or lease.status == "expired" or lease.status == "terminated" %}
+
+<div class="card">
+
+  <div class="card-header">
+    <h2>Maintenance History</h2>
+
+    {% if lease.status == "active" or lease.status == "notice" %}
+      <a href="{% url 'portal:create_maintenance_request' %}?lease_id={{ lease.id }}"
+         class="btn btn-primary btn-sm">
+        + Report Maintenance
+      </a>
+    {% endif %}
+  </div>
+
+  <table class="data-table">
+
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Issue</th>
+        <th>Priority</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+
+    <tbody>
+
+      {% for item in lease.maintenance_requests.all %}
+
+      <tr>
+
+        <td>
+          {{ item.submitted_at|date:"M d, Y" }}
+        </td>
+
+        <td>
+          <a href="{% url 'portal:maintenance_detail' item.id %}">
+            {{ item.title }}
+          </a>
+        </td>
+
+        <td>
+          {{ item.get_priority_display }}
+        </td>
+
+        <td>
+          {{ item.get_status_display }}
+        </td>
+
+      </tr>
+
+      {% empty %}
+
+      <tr>
+        <td colspan="4"
+            style="text-align:center;color:#94a3b8;padding:24px;">
+          No maintenance requests for this lease.
+        </td>
+      </tr>
+
+      {% endfor %}
+
+    </tbody>
+
+  </table>
+
+</div>
+{% endif %}
+
+<div class="card" style="margin-top:20px;">
+  <div class="card-header">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <div>
+        <h2 style="margin-bottom:3px;">Activity &amp; Audit History</h2>
+        <div style="color:#64748b;font-size:0.82rem;">
+          Meaningful business actions recorded for this lease.
+        </div>
+      </div>
+
+      <button type="button"
+              id="audit-history-toggle"
+              aria-expanded="false"
+              aria-controls="audit-history-body"
+              onclick="toggleAuditHistory()"
+              style="border:0;background:transparent;color:#2563eb;font-size:0.8rem;font-weight:600;cursor:pointer;padding:2px 4px;">
+        Show More
+      </button>
+    </div>
+  </div>
+
+  <div id="audit-history-body" style="display:none;padding:0 20px 8px 20px;">
+    {% for event in audit_events %}
+      <div style="padding:14px 0;{% if not forloop.last %}border-bottom:1px solid #e2e8f0;{% endif %}">
+        <div style="font-weight:650;color:#0f172a;">
+          {{ event.display_action }}
+        </div>
+
+        <div style="margin-top:3px;color:#64748b;font-size:0.8rem;">
+          {{ event.occurred_at|date:"M d, Y" }} ·
+          {{ event.occurred_at|date:"g:i A" }} ·
+          {{ event.actor_display|default:"System" }}
+        </div>
+
+        {% if event.display_changes %}
+          <div style="margin-top:8px;display:flex;flex-direction:column;gap:4px;">
+            {% for change in event.display_changes %}
+              <div style="font-size:0.84rem;line-height:1.5;color:#334155;">
+                <span style="font-weight:600;color:#475569;">{{ change.label }}:</span>
+                <span style="white-space:pre-line;">{{ change.summary }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        {% if event.display_reason %}
+          <div style="margin-top:7px;font-size:0.82rem;color:#64748b;font-style:italic;">
+            {{ event.display_reason }}
+          </div>
+        {% endif %}
+      </div>
+    {% empty %}
+      <div style="padding:22px 0;color:#94a3b8;text-align:center;">
+        No meaningful audit events have been recorded for this lease yet.
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<script>
+  function toggleAuditHistory() {
+    const body = document.getElementById("audit-history-body");
+    const button = document.getElementById("audit-history-toggle");
+    const isOpen = body.style.display !== "none";
+
+    body.style.display = isOpen ? "none" : "block";
+    button.textContent = isOpen ? "Show More" : "Show Less";
+    button.setAttribute("aria-expanded", isOpen ? "false" : "true");
+  }
+</script>
+
+{% endblock %}

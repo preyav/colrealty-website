@@ -1,0 +1,380 @@
+{% extends "portal/base.html" %}
+
+{% block title %}{{ page_heading }} | Col Realty Portal{% endblock %}
+{% block page_title %}{{ page_heading }}{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom:18px;">
+  {% if property_obj %}
+    <a href="{% url 'portal:property_detail' property_obj.id %}"
+       style="color:#2563eb;text-decoration:none;font-size:0.85rem;">
+      ← Back to Property 360
+    </a>
+  {% else %}
+    <a href="{% url 'portal:properties' %}"
+       style="color:#2563eb;text-decoration:none;font-size:0.85rem;">
+      ← Back to Properties
+    </a>
+  {% endif %}
+</div>
+
+<div class="card">
+
+  <div style="padding:20px;">
+
+    <form method="post" id="property-form">
+
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="alert alert-error">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
+
+      <div style="
+          display:grid;
+          grid-template-columns:1fr 1fr;
+          gap:20px;">
+
+        <div>
+          <label class="stat-label">Street Address</label>
+          <div style="margin-top:6px;">
+            {{ form.street_address }}
+          </div>
+          {{ form.street_address.errors }}
+        </div>
+
+        <div id="parent-unit-number-wrap">
+          <label class="stat-label">Unit Number</label>
+          <div style="margin-top:6px;">
+            {{ form.unit_number }}
+          </div>
+          {{ form.unit_number.errors }}
+        </div>  
+
+        <div>
+          <label class="stat-label">City</label>
+          <div style="margin-top:6px;">
+            {{ form.city }}
+            <datalist id="texas-city-list"></datalist>
+          </div>
+          {{ form.city.errors }}
+        </div>
+
+        <div>
+          <label class="stat-label">State</label>
+          <div style="margin-top:6px;">
+            {{ form.state }}
+          </div>
+          {{ form.state.errors }}
+        </div>
+
+        <div>
+          <label class="stat-label">ZIP Code</label>
+          <div style="margin-top:6px;">
+            {{ form.zip_code }}
+          </div>
+          {{ form.zip_code.errors }}
+        </div>
+
+        <div>
+          <label class="stat-label">County <span style="color:#dc2626;">*</span></label>
+          <div style="margin-top:6px;">
+            {{ form.county }}
+          </div>
+          {{ form.county.errors }}
+        </div>
+
+        <div>
+          <label class="stat-label">Subdivision <span style="color:#dc2626;">*</span></label>
+          <div style="margin-top:6px;">
+            {{ form.subdivision }}
+          </div>
+          {{ form.subdivision.errors }}
+        </div>
+
+        <div style="grid-column:span 2;">
+          <label class="stat-label">Property Type <span style="color:#dc2626;">*</span></label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px;">
+            <div>
+              {{ form.property_type }}
+              {{ form.property_type.errors }}
+            </div>
+            <div id="property-type-other-wrap" style="display:none;">
+              {{ form.property_type_other }}
+              {{ form.property_type_other.errors }}
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="stat-label">Year Built</label>
+          <div style="margin-top:6px;">
+            {{ form.year_built }}
+          </div>
+          {{ form.year_built.errors }}
+        </div>
+
+        <div id="single-unit-specs"
+             style="grid-column:span 2;display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+          <div>
+            <label class="stat-label">Bedrooms <span style="color:#dc2626;">*</span></label>
+            <div style="margin-top:6px;">{{ form.bedrooms }}</div>
+            {{ form.bedrooms.errors }}
+          </div>
+          <div>
+            <label class="stat-label">Bathrooms Full <span style="color:#dc2626;">*</span></label>
+            <div style="margin-top:6px;">{{ form.bathrooms_full }}</div>
+            {{ form.bathrooms_full.errors }}
+          </div>
+          <div>
+            <label class="stat-label">Bathrooms Half <span style="color:#dc2626;">*</span></label>
+            <div style="margin-top:6px;">{{ form.bathrooms_half }}</div>
+            {{ form.bathrooms_half.errors }}
+          </div>
+          <div>
+            <label class="stat-label">Square Feet <span style="color:#dc2626;">*</span></label>
+            <div style="margin-top:6px;">{{ form.sqft }}</div>
+            {{ form.sqft.errors }}
+          </div>
+        </div>
+
+        <div>
+          <label class="stat-label">Lot Size (Sq Ft)</label>
+          <div style="margin-top:6px;">
+            {{ form.lot_size_sqft }}
+          </div>
+          {{ form.lot_size_sqft.errors }}
+        </div>
+
+        <div>
+          <label class="stat-label">Latitude</label>
+          <div style="margin-top:6px;">
+            {{ form.latitude }}
+          </div>
+          {{ form.latitude.errors }}
+        </div>
+
+        <div>
+          <label class="stat-label">Longitude</label>
+          <div style="margin-top:6px;">
+            {{ form.longitude }}
+          </div>
+          {{ form.longitude.errors }}
+        </div>
+
+        <div>
+          <label class="stat-label">Management Status</label>
+          <div style="margin-top:6px;">
+            {{ form.management_status }}
+          </div>
+          {{ form.management_status.errors }}
+        </div>
+
+        <div id="multi-unit-wrap">
+          <label class="stat-label">Multi-Unit Property</label>
+          <div style="margin-top:10px;">
+            {{ form.is_multi_unit }}
+          </div>
+          <div style="margin-top:6px; font-size:12px; color:#6b7280;">
+            Enable this when the property contains multiple independently rentable units.
+          </div>
+          {{ form.is_multi_unit.errors }}
+        </div>
+
+      </div>
+
+      <div style="margin-top:24px;">
+        <label class="stat-label">Notes</label>
+        <div style="margin-top:6px;">
+          {{ form.notes }}
+        </div>
+        {{ form.notes.errors }}
+      </div>
+
+      <div style="
+          display:flex;
+          justify-content:flex-end;
+          gap:10px;
+          margin-top:24px;">
+
+        {% if property_obj %}
+          <a href="{% url 'portal:property_detail' property_obj.id %}"
+             class="btn"
+             style="background:#f1f5f9;">
+            Cancel
+          </a>
+        {% else %}
+          <a href="{% url 'portal:properties' %}"
+             class="btn"
+             style="background:#f1f5f9;">
+            Cancel
+          </a>
+        {% endif %}
+
+        <button type="submit"
+                class="btn btn-primary">
+          {{ submit_label }}
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const propertyType = document.getElementById("id_property_type");
+  const otherWrap = document.getElementById("property-type-other-wrap");
+  const otherInput = document.getElementById("id_property_type_other");
+  const multiUnitWrap = document.getElementById("multi-unit-wrap");
+  const multiUnitInput = document.getElementById("id_is_multi_unit");
+  const parentUnitNumberWrap = document.getElementById("parent-unit-number-wrap");
+  const parentUnitNumberInput = document.getElementById("id_unit_number");
+  const singleUnitSpecs = document.getElementById("single-unit-specs");
+  const unitSpecInputs = [
+    document.getElementById("id_bedrooms"),
+    document.getElementById("id_bathrooms_full"),
+    document.getElementById("id_bathrooms_half"),
+    document.getElementById("id_sqft")
+  ].filter(Boolean);
+
+  function syncOtherPropertyType() {
+    if (!propertyType || !otherWrap || !otherInput) return;
+    const showOther = propertyType.value === "other";
+    otherWrap.style.display = showOther ? "block" : "none";
+    otherInput.required = showOther;
+    if (!showOther) otherInput.value = "";
+  }
+
+  function syncMultiUnitOption() {
+    if (!propertyType || !multiUnitWrap || !multiUnitInput) return;
+
+    const isSingleFamily =
+      propertyType.value === "single_family_residential";
+
+    multiUnitWrap.style.display = isSingleFamily ? "none" : "block";
+
+    if (isSingleFamily) {
+      multiUnitInput.checked = false;
+    }
+
+    const isMultiUnit = !isSingleFamily && multiUnitInput.checked;
+
+    if (parentUnitNumberWrap) {
+      parentUnitNumberWrap.style.display = isMultiUnit ? "none" : "block";
+    }
+    if (singleUnitSpecs) {
+      singleUnitSpecs.style.display = isMultiUnit ? "none" : "grid";
+    }
+    unitSpecInputs.forEach(function (input) {
+      input.required = !isMultiUnit;
+    });
+    if (isMultiUnit && parentUnitNumberInput) {
+      parentUnitNumberInput.value = "";
+    }
+  }
+
+  if (propertyType) {
+    propertyType.addEventListener("change", function () {
+      syncOtherPropertyType();
+      syncMultiUnitOption();
+    });
+  }
+
+  if (multiUnitInput) {
+    multiUnitInput.addEventListener("change", syncMultiUnitOption);
+  }
+
+  syncOtherPropertyType();
+  syncMultiUnitOption();
+
+  // Local City autocomplete: suggestions only; staff may still type
+  // another valid city/locality manually.
+  const cityInput = document.getElementById("id_city");
+  const cityList = document.getElementById("texas-city-list");
+
+  if (cityInput && cityList) {
+    const cities = (cityInput.dataset.texasCities || "")
+      .split("|")
+      .filter(Boolean);
+
+    cities.forEach(function (city) {
+      const option = document.createElement("option");
+      option.value = city;
+      cityList.appendChild(option);
+    });
+  }
+
+  // Geocoding is coordinate-only. City, State, and ZIP are staff-entered
+  // address facts and are never overwritten by the geocoder.
+  const fields = {
+    street_address: document.getElementById("id_street_address"),
+    unit_number: document.getElementById("id_unit_number"),
+    city: document.getElementById("id_city"),
+    state: document.getElementById("id_state"),
+    zip_code: document.getElementById("id_zip_code")
+  };
+
+  const latitude = document.getElementById("id_latitude");
+  const longitude = document.getElementById("id_longitude");
+
+  if (
+    !fields.street_address ||
+    !fields.city ||
+    !fields.state ||
+    !fields.zip_code ||
+    !latitude ||
+    !longitude
+  ) return;
+
+  let timer;
+
+  async function geocode() {
+    if (
+      !fields.street_address.value.trim() ||
+      !fields.city.value.trim() ||
+      !fields.state.value.trim() ||
+      !fields.zip_code.value.trim()
+    ) return;
+
+    const params = new URLSearchParams();
+    Object.entries(fields).forEach(([key, field]) => {
+      params.set(key, field ? field.value.trim() : "");
+    });
+
+    try {
+      const response = await fetch(
+        "{% url 'portal:geocode_property_address' %}?" + params.toString(),
+        {headers: {"X-Requested-With": "XMLHttpRequest"}}
+      );
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        latitude.value = data.latitude;
+        longitude.value = data.longitude;
+      }
+    } catch (error) {
+      console.error("Property geocoding failed:", error);
+    }
+  }
+
+  function scheduleGeocode() {
+    clearTimeout(timer);
+    timer = setTimeout(geocode, 700);
+  }
+
+  Object.values(fields).filter(Boolean).forEach(field => {
+    field.addEventListener("change", scheduleGeocode);
+    field.addEventListener("blur", scheduleGeocode);
+  });
+});
+</script>
+
+{% endblock %}

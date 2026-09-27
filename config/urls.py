@@ -23,3 +23,8 @@ urlpatterns = [
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# Branded production error handlers (used when DEBUG=False).
+handler403 = "config.error_views.error_403"
+handler404 = "config.error_views.error_404"
+handler500 = "config.error_views.error_500"

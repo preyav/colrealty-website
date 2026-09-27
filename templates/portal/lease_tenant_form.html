@@ -1,0 +1,131 @@
+{% extends "portal/base.html" %}
+
+{% block title %}{{ page_heading }} | Col Realty Portal{% endblock %}
+{% block page_title %}{{ page_heading }}{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom:18px;">
+  <a href="{% url 'portal:lease_detail' lease.id %}"
+     style="color:#2563eb;text-decoration:none;font-size:0.85rem;">
+    ← Back to Lease 360
+  </a>
+</div>
+
+<div class="card">
+
+  <div class="card-header">
+    <h2>{{ page_heading }}</h2>
+  </div>
+
+  <div style="padding:20px;">
+
+    <div style="
+        margin-bottom:20px;
+        padding:14px;
+        background:#f8fafc;
+        border-radius:6px;">
+
+      <div class="stat-label">Lease</div>
+
+      <strong>
+        {{ lease.unit.property.street_address }}
+        {% if lease.unit.unit_number %}
+          — Unit {{ lease.unit.unit_number }}
+        {% else %}
+          — Main Unit
+        {% endif %}
+      </strong>
+
+      <div style="margin-top:5px;color:#64748b;">
+        {{ lease.start_date|date:"M d, Y" }}
+        -
+        {{ lease.end_date|date:"M d, Y" }}
+      </div>
+
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="alert alert-error">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
+
+      <div style="
+          display:grid;
+          grid-template-columns:1fr 1fr;
+          gap:20px;">
+
+        <div>
+
+          <label class="stat-label">Tenant</label>
+
+          <div style="
+              margin-top:6px;
+              display:flex;
+              gap:8px;
+              align-items:center;">
+
+            <div style="flex:1;">
+              {{ form.tenant }}
+            </div>
+
+            <a href="{% url 'portal:create_tenant' %}?next={% url 'portal:add_lease_tenant' lease.id %}"
+              class="btn btn-sm"
+              style="background:#f1f5f9;white-space:nowrap;">
+              + New Tenant
+            </a>
+
+          </div>
+
+          {{ form.tenant.errors }}
+
+        </div>
+
+        <div>
+          <label class="stat-label">Role</label>
+          <div style="margin-top:6px;">
+            {{ form.role }}
+          </div>
+          {{ form.role.errors }}
+        </div>
+
+        <div>
+          <label class="stat-label">Financially Responsible</label>
+          <div style="margin-top:10px;">
+            {{ form.is_financially_responsible }}
+          </div>
+          {{ form.is_financially_responsible.errors }}
+        </div>
+
+      </div>
+
+      <div style="
+          display:flex;
+          justify-content:flex-end;
+          gap:10px;
+          margin-top:24px;">
+
+        <a href="{% url 'portal:lease_detail' lease.id %}"
+           class="btn"
+           style="background:#f1f5f9;">
+          Cancel
+        </a>
+
+        <button type="submit"
+                class="btn btn-primary">
+          {{ submit_label }}
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+
+{% endblock %}

@@ -18,9 +18,11 @@ preya_files
 credentials.json
 token.json
 
-
-
 "colrealty-prod.pem" 
 "colrealty-prod.pem" 
 media/listings/
 media_backup_*/
+
+# Local uploads and review archives
+media/maintenance/
+*.zip

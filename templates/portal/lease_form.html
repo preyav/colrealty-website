@@ -1,0 +1,379 @@
+{% extends "portal/base.html" %}
+
+{% block title %}{{ page_heading }} | Col Realty Portal{% endblock %}
+{% block page_title %}{{ page_heading }}{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom:18px;">
+  {% if lease %}
+    <a href="{% url 'portal:lease_detail' lease.id %}"
+       style="color:#2563eb;text-decoration:none;font-size:0.85rem;">
+      ← Back to Lease 360
+    </a>
+  {% elif property_obj %}
+    <a href="{% url 'portal:property_detail' property_obj.id %}"
+       style="color:#2563eb;text-decoration:none;font-size:0.85rem;">
+      ← Back to Property 360
+    </a>
+  {% else %}
+    <a href="{% url 'portal:leases' %}"
+       style="color:#2563eb;text-decoration:none;font-size:0.85rem;">
+      ← Back to Leases
+    </a>
+  {% endif %}
+</div>
+
+<div class="card">
+
+  <div style="padding:20px;">
+
+    {% if property_obj %}
+      <div style="
+          margin-bottom:20px;
+          padding:14px;
+          background:#f8fafc;
+          border-radius:6px;">
+
+        <div class="stat-label">Property</div>
+        <strong>{{ property_obj.full_address }}</strong>
+
+      </div>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="alert alert-error">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
+
+      {% if active_controlled_edit %}
+        <div style="
+            margin-bottom:22px;
+            padding:16px;
+            border:1px solid #dbeafe;
+            background:#eff6ff;
+            border-radius:8px;">
+          <div style="font-weight:600;color:#1e3a8a;margin-bottom:6px;">
+            Active lease — controlled editing
+          </div>
+          <div style="font-size:0.86rem;color:#475569;line-height:1.5;">
+            Executed contract terms are protected. This screen can update only
+            operational information. Rent, deposit, lease dates, signed date,
+            status and property/unit require a separate Lease Amendment or
+            lifecycle workflow.
+          </div>
+        </div>
+
+        <div style="
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:20px;">
+          <div>
+            <label class="stat-label">Move-In Date</label>
+            <div style="margin-top:6px;">{{ form.move_in_date }}</div>
+            {{ form.move_in_date.errors }}
+          </div>
+
+          <div>
+            <label class="stat-label">Move-Out Date</label>
+            <div style="margin-top:6px;">{{ form.move_out_date }}</div>
+            {{ form.move_out_date.errors }}
+          </div>
+        </div>
+      {% else %}
+      <div style="
+          display:grid;
+          grid-template-columns:1fr 1fr;
+          gap:20px;">
+
+        {% if generic_property_select %}
+          <div>
+            <label class="stat-label">
+              Property <span style="color:#dc2626;">*</span>
+            </label>
+            <div style="margin-top:6px;">
+              {{ form.property }}
+            </div>
+            {{ form.property.errors }}
+          </div>
+
+          <div id="generic-unit-wrap" style="display:none;">
+            <label class="stat-label">
+              Unit <span style="color:#dc2626;">*</span>
+            </label>
+            <div style="margin-top:6px;">
+              {{ form.unit }}
+            </div>
+            {{ form.unit.errors }}
+          </div>
+        {% elif unit or locked_unit %}
+            {{ form.unit }}
+            {% if form.unit.errors %}
+              {{ form.unit.errors }}
+            {% endif %}
+        {% else %}
+            <div>
+              <label class="stat-label">Unit</label>
+              <div style="margin-top:6px;">
+                {{ form.unit }}
+              </div>
+              {{ form.unit.errors }}
+            </div>
+        {% endif %}
+
+        <div>
+          <label class="stat-label">Status</label>
+          <div style="margin-top:6px;">
+            {{ form.status }}
+          </div>
+          {{ form.status.errors }}
+        </div>
+
+        <div>
+          <label class="stat-label">
+            Start Date <span style="color:#dc2626;">*</span>
+          </label>
+          <div style="margin-top:6px;">
+            {{ form.start_date }}
+          </div>
+          {{ form.start_date.errors }}
+        </div>
+
+        <div>
+          <label class="stat-label">
+            End Date <span style="color:#dc2626;">*</span>
+          </label>
+          <div style="margin-top:6px;">
+            {{ form.end_date }}
+          </div>
+          {{ form.end_date.errors }}
+        </div>
+
+        <div>
+          <label class="stat-label">
+            Monthly Rent <span style="color:#dc2626;">*</span>
+          </label>
+          <div style="margin-top:6px;">
+            {{ form.monthly_rent }}
+          </div>
+          {{ form.monthly_rent.errors }}
+        </div>
+
+        <div>
+          <label class="stat-label">Security Deposit</label>
+          <div style="margin-top:6px;">
+            {{ form.security_deposit }}
+          </div>
+          {{ form.security_deposit.errors }}
+        </div>
+
+        <div>
+          <label class="stat-label">Signed Date</label>
+          <div style="margin-top:6px;">
+            {{ form.signed_date }}
+          </div>
+          {{ form.signed_date.errors }}
+        </div>
+
+        <div>
+          <label class="stat-label">Move-In Date</label>
+          <div style="margin-top:6px;">
+            {{ form.move_in_date }}
+          </div>
+          {{ form.move_in_date.errors }}
+        </div>
+
+        <div>
+          <label class="stat-label">Move-Out Date</label>
+          <div style="margin-top:6px;">
+            {{ form.move_out_date }}
+          </div>
+          {{ form.move_out_date.errors }}
+        </div>
+
+      </div>
+
+      {% endif %}
+      <div style="margin-top:24px;">
+        <label class="stat-label">Notes</label>
+        <div style="margin-top:6px;">
+          {{ form.notes }}
+        </div>
+        {{ form.notes.errors }}
+      </div>
+
+      {% if active_controlled_edit %}
+        <div style="margin-top:20px;">
+          <label class="stat-label">
+            Reason for Change <span style="color:#dc2626;">*</span>
+          </label>
+          <div style="margin-top:6px;">
+            {{ form.change_reason }}
+          </div>
+          {{ form.change_reason.errors }}
+          <div style="margin-top:6px;color:#64748b;font-size:0.8rem;">
+            This reason becomes part of the permanent Audit Ledger entry.
+          </div>
+        </div>
+      {% endif %}
+
+      {% if form.primary_tenant %}
+        <div style="
+            margin-top:28px;
+            padding-top:24px;
+            border-top:1px solid #e2e8f0;">
+
+          <div style="margin-bottom:16px;">
+            <h3 style="margin:0 0 4px 0;font-size:1rem;">Tenants</h3>
+            <div style="color:#64748b;font-size:0.85rem;">
+              Select the primary tenant and any co-tenants for this lease.
+            </div>
+          </div>
+
+          <div style="
+              display:grid;
+              grid-template-columns:1fr 1fr;
+              gap:20px;">
+
+            <div>
+              <label class="stat-label">
+                Primary Tenant <span style="color:#dc2626;">*</span>
+              </label>
+              <div style="margin-top:6px;">
+                {{ form.primary_tenant }}
+              </div>
+              {{ form.primary_tenant.errors }}
+            </div>
+
+            <div>
+              <label class="stat-label">
+                Co-Tenants <span style="color:#64748b;">(Optional)</span>
+              </label>
+              <div style="margin-top:6px;">
+                {{ form.co_tenants }}
+              </div>
+              {{ form.co_tenants.errors }}
+              <div style="margin-top:6px;color:#64748b;font-size:0.8rem;">
+                Use Ctrl (Windows) or Command (Mac) to select more than one.
+              </div>
+            </div>
+
+          </div>
+
+          <div style="margin-top:12px;color:#64748b;font-size:0.82rem;">
+            Additional occupants or later tenant changes can be managed from Lease 360.
+          </div>
+
+        </div>
+      {% endif %}
+
+      <div style="
+          display:flex;
+          justify-content:flex-end;
+          gap:10px;
+          margin-top:24px;">
+
+        {% if lease %}
+          <a href="{% url 'portal:lease_detail' lease.id %}"
+             class="btn"
+             style="background:#f1f5f9;">
+            Cancel
+          </a>
+        {% elif property_obj %}
+          <a href="{% url 'portal:property_detail' property_obj.id %}"
+             class="btn"
+             style="background:#f1f5f9;">
+            Cancel
+          </a>
+        {% else %}
+          <a href="{% url 'portal:leases' %}"
+             class="btn"
+             style="background:#f1f5f9;">
+            Cancel
+          </a>
+        {% endif %}
+
+        <button type="submit"
+                class="btn btn-primary">
+          {{ submit_label }}
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+
+
+{% if generic_property_select %}
+  {{ multi_unit_property_ids|json_script:"multi-unit-property-ids" }}
+  {{ unit_property_map|json_script:"unit-property-map" }}
+
+  <script>
+    (function () {
+      const propertySelect = document.getElementById("id_property");
+      const unitSelect = document.getElementById("id_unit");
+      const unitWrap = document.getElementById("generic-unit-wrap");
+
+      if (!propertySelect || !unitSelect || !unitWrap) return;
+
+      const multiIds = new Set(
+        JSON.parse(document.getElementById("multi-unit-property-ids").textContent)
+          .map(String)
+      );
+      const unitPropertyMap = JSON.parse(
+        document.getElementById("unit-property-map").textContent
+      );
+      const allUnitOptions = Array.from(unitSelect.options).map((option) => ({
+        value: option.value,
+        text: option.text,
+      }));
+      const submittedUnitValue = unitSelect.value;
+
+      function refreshUnits() {
+        const propertyId = propertySelect.value;
+        const isMulti = multiIds.has(String(propertyId));
+
+        unitWrap.style.display = isMulti ? "block" : "none";
+        unitSelect.innerHTML = "";
+
+        const blank = document.createElement("option");
+        blank.value = "";
+        blank.textContent = "Select unit";
+        unitSelect.appendChild(blank);
+
+        if (!isMulti) return;
+
+        allUnitOptions.forEach((option) => {
+          if (
+            option.value &&
+            String(unitPropertyMap[option.value]) === String(propertyId)
+          ) {
+            const item = document.createElement("option");
+            item.value = option.value;
+            item.textContent = option.text;
+            unitSelect.appendChild(item);
+          }
+        });
+
+        if (
+          submittedUnitValue &&
+          String(unitPropertyMap[submittedUnitValue]) === String(propertyId)
+        ) {
+          unitSelect.value = submittedUnitValue;
+        }
+      }
+
+      propertySelect.addEventListener("change", refreshUnits);
+      refreshUnits();
+    })();
+  </script>
+{% endif %}
+
+{% endblock %}

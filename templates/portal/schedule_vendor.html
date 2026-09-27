@@ -1,0 +1,113 @@
+{% extends "portal/base.html" %}
+
+{% block title %}Schedule Vendor | Col Realty Portal{% endblock %}
+{% block page_title %}Schedule Vendor Visit{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom:18px;">
+  <a href="{% url 'portal:work_order_detail' work_order.id %}"
+     style="color:#2563eb;text-decoration:none;font-size:0.85rem;">
+    ← Back to Work Order #{{ work_order.id }}
+  </a>
+</div>
+
+<div class="card">
+
+  <div class="card-header">
+    <h2>{{ assignment.vendor }}</h2>
+  </div>
+
+  <div style="padding:20px;">
+
+    <div style="
+        display:grid;
+        grid-template-columns:repeat(3,1fr);
+        gap:20px;">
+
+      <div>
+        <div class="stat-label">Work Order</div>
+        <strong>#{{ work_order.id }} - {{ work_order.title }}</strong>
+      </div>
+
+      <div>
+        <div class="stat-label">Property</div>
+        {{ work_order.unit.property.street_address }}
+      </div>
+
+      <div>
+        <div class="stat-label">Current Status</div>
+        {{ assignment.get_status_display }}
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<div class="card">
+
+  <div class="card-header">
+    <h2>Schedule Visit</h2>
+  </div>
+
+  <div style="padding:20px;">
+
+    <form method="post">
+
+      {% csrf_token %}
+
+      <div style="margin-bottom:20px;">
+
+        <label class="stat-label">
+          Scheduled Date & Time
+        </label>
+
+        <div style="margin-top:6px;">
+          {{ form.scheduled_for }}
+        </div>
+
+        {{ form.scheduled_for.errors }}
+
+      </div>
+
+      <div style="margin-bottom:24px;">
+
+        <label class="stat-label">
+          Vendor Instructions / Notes
+        </label>
+
+        <div style="margin-top:6px;">
+          {{ form.vendor_notes }}
+        </div>
+
+        {{ form.vendor_notes.errors }}
+
+      </div>
+
+      <div style="
+          display:flex;
+          justify-content:flex-end;
+          gap:10px;">
+
+        <a href="{% url 'portal:work_order_detail' work_order.id %}"
+           class="btn"
+           style="background:#f1f5f9;">
+          Cancel
+        </a>
+
+        <button type="submit"
+                class="btn btn-primary">
+          Schedule Vendor
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+
+{% endblock %}

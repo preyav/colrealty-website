@@ -1,0 +1,940 @@
+{% extends "portal/base.html" %}
+{% block title %}{{ maintenance_request.title }} | Col Realty Portal{% endblock %}
+{% block page_title %}Maintenance Request #{{ maintenance_request.id }}{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom:18px;">
+  <a href="{% url 'portal:maintenance' %}"
+     style="color:#2563eb;text-decoration:none;font-size:0.85rem;">
+    ← Back to Maintenance
+  </a>
+</div>
+
+
+<!-- SUMMARY -->
+
+<div class="stat-grid">
+
+  <div class="stat-card
+      {% if maintenance_request.priority == 'emergency' %}red
+      {% elif maintenance_request.priority == 'high' %}orange
+      {% else %}blue{% endif %}">
+
+    <div class="stat-label">Priority</div>
+
+    <div class="stat-value" style="font-size:1.4rem;">
+      {{ maintenance_request.get_priority_display }}
+    </div>
+
+  </div>
+
+
+  <div class="stat-card">
+    <div class="stat-label">Status</div>
+
+    <div class="stat-value" style="font-size:1.4rem;">
+      {{ maintenance_request.get_status_display }}
+    </div>
+  </div>
+
+
+  <div class="stat-card">
+    <div class="stat-label">Submitted</div>
+
+    <div class="stat-value" style="font-size:1.2rem;">
+      {{ maintenance_request.submitted_at|date:"M d, Y" }}
+    </div>
+  </div>
+
+
+  <div class="stat-card {% if work_order %}green{% endif %}">
+    <div class="stat-label">Work Order</div>
+
+    <div class="stat-value" style="font-size:1.4rem;">
+      {% if work_order %}
+        #{{ work_order.id }}
+      {% else %}
+        —
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+
+<!-- PROPERTY / TENANT -->
+
+<div style="
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;">
+
+  <div class="card">
+
+    <div class="card-header">
+      <h2>Property</h2>
+    </div>
+
+    <div style="padding:20px;">
+
+      <strong style="font-size:1rem;">
+        {{ maintenance_request.unit.property.street_address }}
+      </strong>
+
+      <div style="color:#64748b;margin-top:4px;">
+        {{ maintenance_request.unit.property.city }},
+        {{ maintenance_request.unit.property.state }}
+        {{ maintenance_request.unit.property.zip_code }}
+      </div>
+
+      <div style="margin-top:12px;">
+        <span class="stat-label">Unit</span><br>
+
+        {% if maintenance_request.unit.unit_number %}
+          {{ maintenance_request.unit.unit_number }}
+        {% else %}
+          Main Unit
+        {% endif %}
+      </div>
+
+      <div style="margin-top:18px;">
+        <a href="{% url 'portal:property_detail' maintenance_request.unit.property.id %}"
+           class="btn btn-primary btn-sm">
+          Property 360
+        </a>
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <div class="card">
+
+    <div class="card-header">
+      <h2>Reported By</h2>
+    </div>
+
+    <div style="padding:20px;">
+
+      {% if maintenance_request.reported_by_tenant %}
+
+        <strong style="font-size:1rem;">
+          {{ maintenance_request.reported_by_tenant }}
+        </strong>
+
+        <div style="margin-top:10px;">
+          {{ maintenance_request.reported_by_tenant.email|default:"—" }}
+        </div>
+
+        <div style="color:#64748b;margin-top:4px;">
+          {{ maintenance_request.reported_by_tenant.phone|default:"—" }}
+        </div>
+
+      {% elif maintenance_request.reported_by_user %}
+
+        <strong>
+          {{ maintenance_request.reported_by_user.get_full_name|default:maintenance_request.reported_by_user.username }}
+        </strong>
+
+      {% else %}
+
+        <span style="color:#94a3b8;">Not specified</span>
+
+      {% endif %}
+
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ISSUE DETAILS -->
+
+<div class="card">
+
+  <div style="padding:16px 20px;border-bottom:1px solid #e5e7eb;">
+    <h2 style="margin:0;">
+      {% if maintenance_request.status == "approved" and not work_order %}
+        Approved Maintenance Request
+      {% else %}
+        Maintenance Request Details
+      {% endif %}
+    </h2>
+  </div>
+
+  <div class="card-header">
+    <h2>{{ maintenance_request.title }}</h2>
+
+    <div style="display:flex;gap:8px;align-items:center;">
+      {% if maintenance_request.status == "approved" and not work_order %}
+        <a href="{% url 'portal:create_work_order' maintenance_request.id %}"
+          class="btn btn-primary btn-sm">
+          Create Work Order
+        </a>
+      {% endif %}
+
+      <a href="{% url 'portal:edit_maintenance_request' maintenance_request.id %}"
+        class="btn btn-primary btn-sm">
+        Edit
+      </a>
+    </div>
+  </div>
+
+  <div style="padding:20px;">
+
+    <div style="margin-bottom:20px;">
+      <div class="stat-label">Description</div>
+      <div style="margin-top:6px;line-height:1.6;">
+        {{ maintenance_request.description|linebreaksbr }}
+      </div>
+    </div>
+
+    <div style="
+        display:grid;
+        grid-template-columns:repeat(3,1fr);
+        gap:20px;">
+
+      <div>
+        <div class="stat-label">Category</div>
+        <strong>{{ maintenance_request.get_category_display }}</strong>
+      </div>
+
+      <div>
+        <div class="stat-label">Priority</div>
+        <strong>{{ maintenance_request.get_priority_display }}</strong>
+      </div>
+
+      <div>
+        <div class="stat-label">Status</div>
+        <strong>{{ maintenance_request.get_status_display }}</strong>
+      </div>
+
+      <div>
+        <div class="stat-label">Permission to Enter</div>
+
+        {% if maintenance_request.permission_to_enter %}
+          <span class="badge badge-green">Yes</span>
+        {% else %}
+          <span class="badge badge-orange">No</span>
+        {% endif %}
+      </div>
+
+      <div>
+        <div class="stat-label">Tenant Availability</div>
+        {% if maintenance_request.availability_date %}
+          {{ maintenance_request.availability_date|date:"M d, Y" }}<br>
+          {{ maintenance_request.availability_start_time|time:"g:i A" }}
+          –
+          {{ maintenance_request.availability_end_time|time:"g:i A" }}
+        {% elif maintenance_request.tenant_availability %}
+          {{ maintenance_request.tenant_availability }}
+        {% else %}
+          —
+        {% endif %}
+      </div>
+
+      <div>
+        <div class="stat-label">Last Updated</div>
+        {{ maintenance_request.updated_at|date:"M d, Y g:i A" }}
+      </div>
+
+      {% if maintenance_request.reviewed_at %}
+        <div>
+          <div class="stat-label">Reviewed By</div>
+          <strong>
+            {{ maintenance_request.reviewed_by.get_full_name|default:maintenance_request.reviewed_by.username }}
+          </strong><br>
+          {{ maintenance_request.reviewed_at|date:"M d, Y g:i A" }}
+        </div>
+      {% endif %}
+
+      {% if maintenance_request.assigned_reviewer %}
+        <div>
+          <div class="stat-label">Assigned Reviewer</div>
+          <strong>
+            {{ maintenance_request.assigned_reviewer.get_full_name|default:maintenance_request.assigned_reviewer.username }}
+          </strong>
+        </div>
+      {% endif %}
+
+      {% if maintenance_request.review_due_at %}
+        <div>
+          <div class="stat-label">Review Due</div>
+          <strong>{{ maintenance_request.review_due_at|date:"M d, Y g:i A" }}</strong>
+          {% if maintenance_request.review_is_overdue %}
+            <br><span class="badge badge-red">Overdue</span>
+          {% endif %}
+        </div>
+      {% endif %}
+
+      {% if maintenance_request.pending_reason %}
+        <div>
+          <div class="stat-label">Pending Reason</div>
+          {{ maintenance_request.get_pending_reason_display }}
+        </div>
+      {% endif %}
+
+      {% if maintenance_request.review_notes %}
+        <div style="grid-column:span 2;">
+          <div class="stat-label">Internal Review Notes</div>
+          {{ maintenance_request.review_notes|linebreaksbr }}
+        </div>
+      {% endif %}
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- WORK ORDER / REVIEW DECISION -->
+
+{% if review_form and not work_order %}
+<div class="card">
+  <div class="card-header">
+    <h2>Request Review &amp; Create Work Order</h2>
+  </div>
+
+  <div style="padding:6px 20px 10px;">
+    <p style="margin:0 0 18px;color:#64748b;font-size:0.9rem;">
+      Review the maintenance request and property history before making a decision.
+      Approving the request will create a work order; otherwise, you can keep it
+      under review, request additional information, or decline it.
+    </p>
+
+    <form method="post"
+          action="{% url 'portal:approve_maintenance_request' maintenance_request.id %}">
+      {% csrf_token %}
+      {{ review_form.non_field_errors }}
+      {{ review_form.decision }}
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div>
+          <label for="{{ review_form.category.id_for_label }}"
+                 style="display:block;font-weight:600;margin-bottom:6px;">
+            {{ review_form.category.label }}
+          </label>
+          {{ review_form.category }}
+          {% for error in review_form.category.errors %}
+            <div style="color:#b91c1c;font-size:0.85rem;margin-top:4px;">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <div>
+          <label for="{{ review_form.priority.id_for_label }}"
+                 style="display:block;font-weight:600;margin-bottom:6px;">
+            {{ review_form.priority.label }}
+          </label>
+          {{ review_form.priority }}
+          {% for error in review_form.priority.errors %}
+            <div style="color:#b91c1c;font-size:0.85rem;margin-top:4px;">{{ error }}</div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;">
+        <div>
+          <label for="{{ review_form.assigned_reviewer.id_for_label }}"
+                 style="display:block;font-weight:600;margin-bottom:6px;">
+            {{ review_form.assigned_reviewer.label }}
+          </label>
+          {{ review_form.assigned_reviewer }}
+          {% for error in review_form.assigned_reviewer.errors %}
+            <div style="color:#b91c1c;font-size:0.85rem;margin-top:4px;">{{ error }}</div>
+          {% endfor %}
+        </div>
+        <div>
+          <label for="{{ review_form.review_due_at.id_for_label }}"
+                 style="display:block;font-weight:600;margin-bottom:6px;">
+            {{ review_form.review_due_at.label }}
+          </label>
+          {{ review_form.review_due_at }}
+          {% for error in review_form.review_due_at.errors %}
+            <div style="color:#b91c1c;font-size:0.85rem;margin-top:4px;">{{ error }}</div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;">
+        <button type="submit" name="decision" value="approved"
+                class="btn btn-primary">Approve Request</button>
+        <button type="button" class="review-action-choice btn"
+                data-decision="under_review"
+                style="background:#e0e7ff;color:#3730a3;">Save as Under Review</button>
+        <button type="button" class="review-action-choice btn"
+                data-decision="pending_information"
+                style="background:#fef3c7;color:#92400e;">Request More Information</button>
+        <button type="button" class="review-action-choice btn"
+                data-decision="declined"
+                style="background:#fee2e2;color:#b91c1c;">Decline Request</button>
+      </div>
+
+      <div id="review-follow-up-fields"
+           style="{% if review_form.is_bound and review_form.decision.value != 'approved' %}display:block;{% else %}display:none;{% endif %}margin-top:16px;padding:16px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;">
+        <div>
+          <label for="{{ review_form.pending_reason.id_for_label }}"
+                 style="display:block;font-weight:600;margin-bottom:6px;">
+            {{ review_form.pending_reason.label }}
+          </label>
+          {{ review_form.pending_reason }}
+          {% for error in review_form.pending_reason.errors %}
+            <div style="color:#b91c1c;font-size:0.85rem;margin-top:4px;">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <div style="margin-top:16px;">
+          <label for="{{ review_form.review_notes.id_for_label }}"
+                 style="display:block;font-weight:600;margin-bottom:6px;">
+            {{ review_form.review_notes.label }}
+          </label>
+          {{ review_form.review_notes }}
+          {% for error in review_form.review_notes.errors %}
+            <div style="color:#b91c1c;font-size:0.85rem;margin-top:4px;">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:16px;">
+          <button type="submit" name="decision" value="under_review"
+                  id="review-decision-submit" class="btn btn-primary">
+            Save as Under Review
+          </button>
+          <button type="button" id="review-decision-cancel" class="btn"
+                  style="background:#e2e8f0;color:#334155;">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const followUpFields = document.getElementById("review-follow-up-fields");
+  const decisionInput = document.getElementById("id_decision");
+  const decisionSubmit = document.getElementById("review-decision-submit");
+  const decisionCancel = document.getElementById("review-decision-cancel");
+  const decisionLabels = {
+    under_review: "Save as Under Review",
+    pending_information: "Request More Information",
+    declined: "Decline Request"
+  };
+
+  document.querySelectorAll(".review-action-choice").forEach(function (button) {
+    button.addEventListener("click", function () {
+      const decision = button.dataset.decision;
+      decisionInput.value = decision;
+      decisionSubmit.value = decision;
+      decisionSubmit.textContent = decisionLabels[decision];
+      followUpFields.style.display = "block";
+      followUpFields.scrollIntoView({behavior: "smooth", block: "nearest"});
+    });
+  });
+
+  if (followUpFields.style.display !== "none" && decisionInput.value !== "approved") {
+    decisionSubmit.value = decisionInput.value;
+    decisionSubmit.textContent = decisionLabels[decisionInput.value] || "Save Decision";
+  }
+
+  decisionCancel.addEventListener("click", function () {
+    decisionInput.value = "approved";
+    followUpFields.style.display = "none";
+  });
+});
+</script>
+{% endif %}
+
+
+<!-- WORK ORDERS FOR THIS REQUEST -->
+
+{% if work_order_history %}
+<div class="card">
+  <div class="card-header">
+    <h2>Work Orders for This Request</h2>
+  </div>
+  <div style="overflow-x:auto;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Work Order</th>
+          <th>Created</th>
+          <th>Status</th>
+          <th>Scheduled</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for historical_work_order in work_order_history %}
+          <tr>
+            <td>#{{ historical_work_order.id }} — {{ historical_work_order.title }}</td>
+            <td>{{ historical_work_order.created_at|date:"M d, Y g:i A" }}</td>
+            <td>{{ historical_work_order.get_status_display }}</td>
+            <td>{{ historical_work_order.scheduled_for|date:"M d, Y g:i A"|default:"—" }}</td>
+            <td>
+              <a href="{% url 'portal:work_order_detail' historical_work_order.id %}"
+                 class="btn btn-primary btn-sm">View</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+
+
+<!-- PHOTOS -->
+
+<div class="card">
+
+  <div class="card-header">
+
+    <h2>Photos</h2>
+
+    <a href="{% url 'portal:add_maintenance_photo' maintenance_request.id %}"
+      class="btn btn-primary btn-sm">
+      Add Photo
+    </a>
+
+  </div>
+
+  <div style="
+      padding:20px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:16px;">
+
+    {% for photo in maintenance_request.photos.all %}
+
+      <div style="width:220px;">
+
+        <img
+          src="{{ photo.image.url }}"
+          alt="{{ photo.caption|default:'Maintenance photo' }}"
+          style="
+            width:220px;
+            height:160px;
+            object-fit:cover;
+            border-radius:8px;
+            border:1px solid #e2e8f0;"
+        >
+
+        <div style="margin-top:7px;font-size:0.8rem;">
+          <strong>{{ photo.get_photo_type_display }}</strong>
+        </div>
+
+        {% if photo.caption %}
+          <div style="color:#64748b;font-size:0.78rem;">
+            {{ photo.caption }}
+          </div>
+        {% endif %}
+
+      </div>
+
+    {% empty %}
+
+      <div style="color:#94a3b8;">
+        No photos attached to this request.
+      </div>
+
+    {% endfor %}
+
+  </div>
+
+</div>
+
+
+{% if work_order %}
+
+<!-- VENDOR ASSIGNMENTS -->
+
+{% with assignments=work_order.vendor_assignments.all %}
+{% if assignments %}
+<div class="card">
+
+  <div class="card-header">
+    <h2>Vendor Assignments</h2>
+    <button type="button" class="section-toggle btn btn-primary btn-sm"
+            data-target="vendor-assignments-content" aria-expanded="false">
+      Show More
+    </button>
+  </div>
+
+  <div id="vendor-assignments-content" style="display:none;overflow-x:auto;">
+  <table class="data-table">
+
+    <thead>
+      <tr>
+        <th>Vendor</th>
+        <th>Status</th>
+        <th>Assigned</th>
+        <th>Scheduled</th>
+        <th>Completed</th>
+      </tr>
+    </thead>
+
+    <tbody>
+
+      {% for assignment in work_order.vendor_assignments.all %}
+
+      <tr>
+
+        <td>
+          <strong>{{ assignment.vendor }}</strong>
+        </td>
+
+        <td>
+          {{ assignment.get_status_display }}
+        </td>
+
+        <td>
+          {{ assignment.assigned_at|date:"M d, Y" }}
+        </td>
+
+        <td>
+          {{ assignment.scheduled_for|date:"M d, Y g:i A"|default:"—" }}
+        </td>
+
+        <td>
+          {{ assignment.completed_at|date:"M d, Y g:i A"|default:"—" }}
+        </td>
+
+      </tr>
+
+      {% endfor %}
+
+    </tbody>
+
+  </table>
+  </div>
+
+</div>
+{% endif %}
+{% endwith %}
+
+
+<!-- ESTIMATES -->
+
+{% with estimates=work_order.vendor_estimates.all %}
+{% if estimates %}
+<div class="card">
+
+  <div class="card-header">
+    <h2>Vendor Estimates</h2>
+    <button type="button" class="section-toggle btn btn-primary btn-sm"
+            data-target="vendor-estimates-content" aria-expanded="false">
+      Show More
+    </button>
+  </div>
+
+  <div id="vendor-estimates-content" style="display:none;overflow-x:auto;">
+  <table class="data-table">
+
+    <thead>
+      <tr>
+        <th>Vendor</th>
+        <th>Amount</th>
+        <th>Status</th>
+        <th>Submitted</th>
+        <th>Approved</th>
+        <th>Details</th>
+      </tr>
+    </thead>
+
+    <tbody>
+
+      {% for estimate in estimates %}
+
+      <tr>
+        <td>{{ estimate.vendor }}</td>
+        <td><strong>${{ estimate.amount|floatformat:2 }}</strong></td>
+        <td>{{ estimate.get_status_display }}</td>
+        <td>{{ estimate.submitted_at|date:"M d, Y" }}</td>
+        <td>{{ estimate.approved_at|date:"M d, Y"|default:"—" }}</td>
+        <td>
+          <button type="button"
+                  class="estimate-toggle"
+                  data-target="estimate-details-{{ estimate.id }}"
+                  aria-expanded="false"
+                  style="border:0;background:transparent;color:#2563eb;cursor:pointer;font:inherit;padding:0;">
+            Show More
+          </button>
+        </td>
+      </tr>
+
+      <tr id="estimate-details-{{ estimate.id }}" style="display:none;">
+        <td colspan="6" style="padding:0 20px 20px; background:#f8fafc;">
+          <div style="border-top:1px solid #e2e8f0;padding-top:18px;">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px 32px;">
+              <div>
+                <div style="font-size:12px;color:#64748b;text-transform:uppercase;margin-bottom:6px;">Scope / Description</div>
+                <div>{{ estimate.description|default:"—"|linebreaksbr }}</div>
+              </div>
+              <div>
+                <div style="font-size:12px;color:#64748b;text-transform:uppercase;margin-bottom:6px;">Internal Notes</div>
+                <div>{{ estimate.notes|default:"—"|linebreaksbr }}</div>
+              </div>
+              <div>
+                <div style="font-size:12px;color:#64748b;text-transform:uppercase;margin-bottom:6px;">Submitted</div>
+                <div>{{ estimate.submitted_at|date:"M d, Y · g:i A" }}</div>
+              </div>
+              <div>
+                <div style="font-size:12px;color:#64748b;text-transform:uppercase;margin-bottom:6px;">Approved</div>
+                <div>{{ estimate.approved_at|date:"M d, Y · g:i A"|default:"—" }}</div>
+              </div>
+              <div>
+                <div style="font-size:12px;color:#64748b;text-transform:uppercase;margin-bottom:6px;">Approved By</div>
+                <div>{{ estimate.approved_by|default:"—" }}</div>
+              </div>
+            </div>
+          </div>
+        </td>
+      </tr>
+
+      {% endfor %}
+
+    </tbody>
+
+  </table>
+  </div>
+
+</div>
+{% endif %}
+{% endwith %}
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const propertyHistoryButton = document.getElementById("property-history-toggle");
+  if (propertyHistoryButton) {
+    propertyHistoryButton.addEventListener("click", function () {
+      const rows = document.querySelectorAll(".property-history-extra");
+      const isOpen = propertyHistoryButton.getAttribute("aria-expanded") === "true";
+      rows.forEach(function (row) {
+        row.style.display = isOpen ? "none" : "table-row";
+      });
+      propertyHistoryButton.textContent = isOpen ? "Show More" : "Show Less";
+      propertyHistoryButton.setAttribute("aria-expanded", isOpen ? "false" : "true");
+    });
+  }
+
+  document.querySelectorAll(".section-toggle").forEach(function (button) {
+    button.addEventListener("click", function () {
+      const content = document.getElementById(button.dataset.target);
+      const isOpen = button.getAttribute("aria-expanded") === "true";
+      content.style.display = isOpen ? "none" : "block";
+      button.textContent = isOpen ? "Show More" : "Show Less";
+      button.setAttribute("aria-expanded", isOpen ? "false" : "true");
+    });
+  });
+
+  document.querySelectorAll(".estimate-toggle").forEach(function (button) {
+    button.addEventListener("click", function () {
+      const row = document.getElementById(button.dataset.target);
+      const isOpen = row.style.display !== "none";
+      row.style.display = isOpen ? "none" : "table-row";
+      button.textContent = isOpen ? "Show More" : "Show Less";
+      button.setAttribute("aria-expanded", isOpen ? "false" : "true");
+    });
+  });
+});
+</script>
+
+
+<!-- INVOICES -->
+
+{% with invoices=work_order.vendor_invoices.all %}
+{% if invoices %}
+<div class="card">
+
+  <div class="card-header">
+    <h2>Vendor Invoices</h2>
+    <button type="button" class="section-toggle btn btn-primary btn-sm"
+            data-target="vendor-invoices-content" aria-expanded="false">
+      Show More
+    </button>
+  </div>
+
+  <div id="vendor-invoices-content" style="display:none;overflow-x:auto;">
+  <table class="data-table">
+
+    <thead>
+      <tr>
+        <th>Vendor</th>
+        <th>Invoice #</th>
+        <th>Amount</th>
+        <th>Status</th>
+        <th>Invoice Date</th>
+        <th>Paid</th>
+      </tr>
+    </thead>
+
+    <tbody>
+
+      {% for invoice in invoices %}
+
+      <tr>
+
+        <td>{{ invoice.vendor }}</td>
+
+        <td>{{ invoice.invoice_number|default:"—" }}</td>
+
+        <td>
+          <strong>${{ invoice.amount|floatformat:2 }}</strong>
+        </td>
+
+        <td>{{ invoice.get_status_display }}</td>
+
+        <td>
+          {{ invoice.invoice_date|date:"M d, Y"|default:"—" }}
+        </td>
+
+        <td>
+          {{ invoice.paid_at|date:"M d, Y"|default:"—" }}
+        </td>
+
+      </tr>
+
+      {% endfor %}
+
+    </tbody>
+
+  </table>
+  </div>
+
+</div>
+{% endif %}
+{% endwith %}
+
+
+<!-- STATUS HISTORY -->
+
+{% with status_history=work_order.status_history.all %}
+{% if status_history %}
+<div class="card">
+
+  <div class="card-header">
+    <h2>Work Order History</h2>
+    <button type="button" class="section-toggle btn btn-primary btn-sm"
+            data-target="work-order-history-content" aria-expanded="false">
+      Show More
+    </button>
+  </div>
+
+  <div id="work-order-history-content" style="display:none;overflow-x:auto;">
+  <table class="data-table">
+
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>From</th>
+        <th>To</th>
+        <th>Changed By</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+
+    <tbody>
+
+      {% for history in status_history %}
+
+      <tr>
+
+        <td>
+          {{ history.changed_at|date:"M d, Y g:i A" }}
+        </td>
+
+        <td>
+          {{ history.from_status|default:"—" }}
+        </td>
+
+        <td>
+          <strong>{{ history.to_status }}</strong>
+        </td>
+
+        <td>
+          {{ history.changed_by|default:"—" }}
+        </td>
+
+        <td>
+          {{ history.notes|default:"—" }}
+        </td>
+
+      </tr>
+
+      {% endfor %}
+
+    </tbody>
+
+  </table>
+  </div>
+
+</div>
+{% endif %}
+{% endwith %}
+
+{% endif %}
+
+<!-- PROPERTY MAINTENANCE HISTORY — LAST SECTION, ONLY WHEN DATA EXISTS -->
+
+{% if property_history %}
+<div class="card">
+  <div class="card-header">
+    <h2>Property &amp; Unit Maintenance History</h2>
+    <span style="color:#64748b;font-size:0.85rem;">Latest 10 requests</span>
+  </div>
+
+  <div style="overflow-x:auto;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Submitted</th>
+          <th>Unit</th>
+          <th>Issue</th>
+          <th>Category</th>
+          <th>Status</th>
+          <th>Work Order</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in property_history %}
+          <tr{% if forloop.counter > 3 %} class="property-history-extra" style="display:none;"{% endif %}>
+            <td>{{ item.submitted_at|date:"M d, Y" }}</td>
+            <td>{{ item.unit.unit_number|default:"Main Unit" }}</td>
+            <td>
+              <a href="{% url 'portal:maintenance_detail' item.id %}">
+                {{ item.title }}
+              </a>
+            </td>
+            <td>{{ item.get_category_display }}</td>
+            <td>{{ item.get_status_display }}</td>
+            <td>
+              {% if item.work_order %}
+                <a href="{% url 'portal:work_order_detail' item.work_order.id %}">
+                  #{{ item.work_order.id }} — {{ item.work_order.get_status_display }}
+                </a>
+              {% else %}
+                —
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if property_history|length > 3 %}
+    <div style="padding:12px 20px;border-top:1px solid #e2e8f0;text-align:right;">
+      <button type="button"
+              id="property-history-toggle"
+              class="btn btn-primary btn-sm"
+              aria-expanded="false">
+        Show More
+      </button>
+    </div>
+  {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

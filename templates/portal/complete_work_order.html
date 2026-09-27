@@ -1,0 +1,141 @@
+
+{% extends "portal/base.html" %}
+
+{% block title %}Complete Work Order | Col Realty Portal{% endblock %}
+{% block page_title %}Complete Work Order #{{ work_order.id }}{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom:18px;">
+  <a href="{% url 'portal:work_order_detail' work_order.id %}"
+     style="color:#2563eb;text-decoration:none;font-size:0.85rem;">
+    ← Back to Work Order #{{ work_order.id }}
+  </a>
+</div>
+
+<div class="card">
+
+  <div class="card-header">
+    <h2>{{ work_order.title }}</h2>
+  </div>
+
+  <div style="padding:20px;">
+
+    <div style="
+        display:grid;
+        grid-template-columns:repeat(3,1fr);
+        gap:20px;">
+
+      <div>
+        <div class="stat-label">Property</div>
+        <strong>
+          {{ work_order.unit.property.street_address }}
+        </strong>
+      </div>
+
+      <div>
+        <div class="stat-label">Current Status</div>
+        {{ work_order.get_status_display }}
+      </div>
+
+      <div>
+        <div class="stat-label">Estimated Cost</div>
+        {% if work_order.estimated_cost %}
+          ${{ work_order.estimated_cost|floatformat:2 }}
+        {% else %}
+          —
+        {% endif %}
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<div class="card">
+
+  <div class="card-header">
+    <h2>Completion Details</h2>
+  </div>
+
+  <div style="padding:20px;">
+
+    <form method="post">
+
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="alert alert-error">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
+
+      <div style="margin-bottom:20px;">
+        <label class="stat-label">
+          Actual Cost
+        </label>
+
+        <div style="margin-top:6px;">
+          {{ form.actual_cost }}
+        </div>
+
+        {{ form.actual_cost.errors }}
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <label class="stat-label">
+          Completed Date & Time
+        </label>
+
+        <div style="margin-top:6px;">
+          {{ form.completed_at }}
+        </div>
+
+        <div style="
+            color:#94a3b8;
+            font-size:0.75rem;
+            margin-top:5px;">
+          Leave blank to use the current date and time.
+        </div>
+
+        {{ form.completed_at.errors }}
+      </div>
+
+      <div style="margin-bottom:24px;">
+        <label class="stat-label">
+          Completion Notes
+        </label>
+
+        <div style="margin-top:6px;">
+          {{ form.completion_notes }}
+        </div>
+
+        {{ form.completion_notes.errors }}
+      </div>
+
+      <div style="
+          display:flex;
+          justify-content:flex-end;
+          gap:10px;">
+
+        <a href="{% url 'portal:work_order_detail' work_order.id %}"
+           class="btn"
+           style="background:#f1f5f9;">
+          Cancel
+        </a>
+
+        <button type="submit"
+                class="btn btn-primary">
+          Complete Work Order
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+
+{% endblock %}

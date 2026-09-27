@@ -1,0 +1,389 @@
+{% extends "portal/base.html" %}
+
+{% block title %}New Maintenance Request | Col Realty Portal{% endblock %}
+{% block page_title %}New Maintenance Request{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom:18px;">
+  <a href="{% url 'portal:maintenance' %}"
+     style="color:#2563eb;text-decoration:none;font-size:0.85rem;">
+    ← Back to Maintenance
+  </a>
+</div>
+
+<div class="card">
+
+  <div class="card-header">
+    <h2>Maintenance Request Details</h2>
+  </div>
+
+  <div style="padding:20px;">
+
+    <form method="post">
+
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="alert alert-error">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
+
+      <div style="
+          display:grid;
+          grid-template-columns:1fr 1fr;
+          gap:20px;">
+
+        <div>
+          <label class="stat-label">Property</label>
+          <div style="margin-top:6px;">
+            {{ form.property }}
+          </div>
+          {{ form.property.errors }}
+        </div>
+
+        <div id="unit-field-wrapper">
+          <label class="stat-label">Unit</label>
+          <div style="margin-top:6px;">
+            {{ form.unit }}
+          </div>
+          {{ form.unit.errors }}
+        </div>
+
+        <div>
+          <label class="stat-label">Lease</label>
+          <div style="margin-top:6px;">
+            {{ form.lease }}
+          </div>
+          {{ form.lease.errors }}
+        </div>
+
+        <div>
+          <label class="stat-label">Reported By Tenant</label>
+          <div style="margin-top:6px;">
+            {{ form.reported_by_tenant }}
+          </div>
+          {{ form.reported_by_tenant.errors }}
+        </div>
+
+        <div>
+          <label class="stat-label">Priority</label>
+          <div style="margin-top:6px;">
+            {{ form.priority }}
+          </div>
+          {{ form.priority.errors }}
+        </div>
+
+        <div>
+          <label class="stat-label">Category</label>
+          <div style="margin-top:6px;">
+            {{ form.category }}
+          </div>
+          {{ form.category.errors }}
+        </div>
+
+        <div>
+          <label class="stat-label">Permission to Enter</label>
+          <div style="margin-top:10px;">
+            {{ form.permission_to_enter }}
+          </div>
+          {{ form.permission_to_enter.errors }}
+        </div>
+
+      </div>
+
+      <div style="margin-top:20px;">
+        <label class="stat-label">Title</label>
+        <div style="margin-top:6px;">
+          {{ form.title }}
+        </div>
+        {{ form.title.errors }}
+      </div>
+
+      <div style="margin-top:20px;">
+        <label class="stat-label">Description</label>
+        <div style="margin-top:6px;">
+          {{ form.description }}
+        </div>
+        {{ form.description.errors }}
+      </div>
+
+      <div style="margin-top:20px;">
+        <label class="stat-label">Tenant Availability</label>
+        <div style="
+            display:grid;
+            grid-template-columns:1fr 1fr 1fr;
+            gap:14px;
+            margin-top:6px;">
+          <div>
+            <div style="font-size:0.78rem;color:#64748b;margin-bottom:5px;">Date</div>
+            {{ form.availability_date }}
+            {{ form.availability_date.errors }}
+          </div>
+          <div>
+            <div style="font-size:0.78rem;color:#64748b;margin-bottom:5px;">Start Time</div>
+            {{ form.availability_start_time }}
+            {{ form.availability_start_time.errors }}
+          </div>
+          <div>
+            <div style="font-size:0.78rem;color:#64748b;margin-bottom:5px;">End Time</div>
+            {{ form.availability_end_time }}
+            {{ form.availability_end_time.errors }}
+          </div>
+        </div>
+      </div>
+
+      <div style="
+          display:flex;
+          justify-content:flex-end;
+          gap:10px;
+          margin-top:24px;">
+
+        <a href="{% url 'portal:maintenance' %}"
+           class="btn"
+           style="background:#f1f5f9;">
+          Cancel
+        </a>
+
+        <button type="submit"
+                class="btn btn-primary">
+          Create Maintenance Request
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const propertySelect = document.getElementById("id_property");
+    const unitSelect = document.getElementById("id_unit");
+    const unitWrapper = document.getElementById("unit-field-wrapper");
+    const leaseSelect = document.getElementById("id_lease");
+    const tenantSelect = document.getElementById("id_reported_by_tenant");
+
+    if (!propertySelect || !unitSelect || !unitWrapper || !leaseSelect || !tenantSelect) {
+        return;
+    }
+
+    async function loadPropertyUnits(preserveSelection) {
+        const propertyId = propertySelect.value;
+        const selectedUnitId = preserveSelection ? unitSelect.value : "";
+
+        resetSelect(unitSelect, "Select a property first");
+        resetSelect(leaseSelect, "Select a unit first");
+        resetSelect(tenantSelect, "Select a lease first");
+        unitWrapper.style.display = "none";
+
+        if (!propertyId) {
+            return;
+        }
+
+        try {
+            const url =
+                "{% url 'portal:maintenance_property_options' %}" +
+                "?property_id=" +
+                encodeURIComponent(propertyId);
+
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error("Unable to load property units.");
+            }
+
+            const data = await response.json();
+            populateSelect(
+                unitSelect,
+                data.units,
+                data.units.length ? "Select unit" : "No active units"
+            );
+
+            if (selectedUnitId && data.units.some(
+                item => String(item.id) === String(selectedUnitId)
+            )) {
+                unitSelect.value = selectedUnitId;
+            }
+
+            if (data.is_multi_unit) {
+                unitWrapper.style.display = "block";
+            } else if (data.units.length === 1) {
+                unitSelect.value = data.units[0].id;
+            } else {
+                unitWrapper.style.display = "block";
+            }
+
+            if (unitSelect.value) {
+                await loadUnitOptions();
+            }
+        } catch (error) {
+            console.error(error);
+            unitWrapper.style.display = "block";
+            resetSelect(unitSelect, "Unable to load units");
+        }
+    }
+
+    function resetSelect(select, placeholder) {
+        select.innerHTML = "";
+
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = placeholder;
+
+        select.appendChild(option);
+    }
+
+    function populateSelect(select, items, placeholder) {
+        resetSelect(select, placeholder);
+
+        items.forEach(function (item) {
+            const option = document.createElement("option");
+            option.value = item.id;
+            option.textContent = item.label;
+
+            select.appendChild(option);
+        });
+
+        if (items.length === 1) {
+            select.value = items[0].id;
+        }
+    }
+
+    async function loadTenantsForLease() {
+        const leaseId = leaseSelect.value;
+
+        resetSelect(
+            tenantSelect,
+            "Select a lease first"
+        );
+
+        if (!leaseId) {
+            return;
+        }
+
+        try {
+            const url =
+                "{% url 'portal:maintenance_lease_options' %}" +
+                "?lease_id=" +
+                encodeURIComponent(leaseId);
+
+            const response = await fetch(url);
+
+            if (!response.ok) {
+                throw new Error(
+                    "Unable to load tenants."
+                );
+            }
+
+            const data = await response.json();
+
+            populateSelect(
+                tenantSelect,
+                data.tenants,
+                data.tenants.length
+                    ? "Select tenant"
+                    : "No tenants on this lease"
+            );
+
+        } catch (error) {
+            console.error(error);
+
+            resetSelect(
+                tenantSelect,
+                "Unable to load tenants"
+            );
+        }
+    }
+
+    async function loadUnitOptions() {
+        const unitId = unitSelect.value;
+
+        resetSelect(
+            leaseSelect,
+            "Select a unit first"
+        );
+
+        resetSelect(
+            tenantSelect,
+            "Select a lease first"
+        );
+
+        if (!unitId) {
+            return;
+        }
+
+        try {
+            const url =
+                "{% url 'portal:maintenance_unit_options' %}" +
+                "?unit_id=" +
+                encodeURIComponent(unitId);
+
+            const response = await fetch(url);
+
+            if (!response.ok) {
+                throw new Error(
+                    "Unable to load unit information."
+                );
+            }
+
+            const data = await response.json();
+
+            populateSelect(
+                leaseSelect,
+                data.leases,
+                data.leases.length
+                    ? "Select lease"
+                    : "No active lease"
+            );
+
+            /*
+             * If the unit has exactly one active lease,
+             * populateSelect() auto-selects it.
+             * Immediately load the tenant(s) for that lease.
+             */
+            if (leaseSelect.value) {
+                await loadTenantsForLease();
+            }
+
+        } catch (error) {
+            console.error(error);
+
+            resetSelect(
+                leaseSelect,
+                "Unable to load leases"
+            );
+
+            resetSelect(
+                tenantSelect,
+                "Unable to load tenants"
+            );
+        }
+    }
+
+    unitSelect.addEventListener(
+        "change",
+        loadUnitOptions
+    );
+
+    leaseSelect.addEventListener(
+        "change",
+        loadTenantsForLease
+    );
+
+    propertySelect.addEventListener("change", function () {
+        loadPropertyUnits(false);
+    });
+
+    if (propertySelect.value) {
+        loadPropertyUnits(true);
+    } else {
+        unitWrapper.style.display = "none";
+    }
+
+});
+</script>
+{% endblock %}

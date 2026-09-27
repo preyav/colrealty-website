@@ -1,0 +1,302 @@
+{% extends "portal/base.html" %}
+
+{% block title %}{{ tenant }} | Col Realty Portal{% endblock %}
+{% block page_title %}Tenant 360{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom:18px;">
+
+  <a href="{% url 'portal:tenants' %}"
+     style="color:#2563eb;text-decoration:none;font-size:0.85rem;">
+    ← Back to Tenants
+  </a>
+
+</div>
+
+
+<!-- SUMMARY -->
+
+<div class="stat-grid">
+
+  <div class="stat-card {% if tenant.is_active %}green{% endif %}">
+
+    <div class="stat-label">Status</div>
+
+    <div class="stat-value" style="font-size:1.4rem;">
+      {% if tenant.is_active %}
+        Active
+      {% else %}
+        Inactive
+      {% endif %}
+    </div>
+
+  </div>
+
+
+  <div class="stat-card">
+
+    <div class="stat-label">Leases</div>
+
+    <div class="stat-value">
+      {{ tenant.lease_memberships.count }}
+    </div>
+
+  </div>
+
+
+  <div class="stat-card">
+
+    <div class="stat-label">Maintenance Requests</div>
+
+    <div class="stat-value">
+      {{ tenant.maintenance_requests.count }}
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- TENANT DETAILS -->
+
+<div class="card">
+
+  <div class="card-header">
+
+    <h2>{{ tenant }}</h2>
+
+    <a href="{% url 'portal:edit_tenant' tenant.id %}"
+       class="btn btn-primary btn-sm">
+      Edit Tenant
+    </a>
+
+  </div>
+
+
+  <div style="
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:20px;
+      padding:20px;">
+
+    <div>
+      <div class="stat-label">Name</div>
+      <strong>
+        {{ tenant.first_name }} {{ tenant.last_name }}
+      </strong>
+    </div>
+
+
+    <div>
+      <div class="stat-label">Email</div>
+      {{ tenant.email|default:"—" }}
+    </div>
+
+
+    <div>
+      <div class="stat-label">Phone</div>
+      {{ tenant.phone|default:"—" }}
+    </div>
+
+
+    <div>
+      <div class="stat-label">Date of Birth</div>
+      {{ tenant.date_of_birth|date:"M d, Y"|default:"—" }}
+    </div>
+
+
+    <div>
+      <div class="stat-label">Emergency Contact</div>
+      {{ tenant.emergency_contact_name|default:"—" }}
+    </div>
+
+
+    <div>
+      <div class="stat-label">Emergency Phone</div>
+      {{ tenant.emergency_contact_phone|default:"—" }}
+    </div>
+
+  </div>
+
+
+  <div style="padding:0 20px 20px;">
+
+    <div class="stat-label">Notes</div>
+
+    <div style="margin-top:6px;line-height:1.6;">
+      {{ tenant.notes|default:"—"|linebreaksbr }}
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- LEASE HISTORY -->
+
+<div class="card">
+
+  <div class="card-header">
+    <h2>Lease History</h2>
+  </div>
+
+
+  <table class="data-table">
+
+    <thead>
+      <tr>
+        <th>Property</th>
+        <th>Unit</th>
+        <th>Role</th>
+        <th>Lease Status</th>
+        <th>Term</th>
+        <th>Rent</th>
+      </tr>
+    </thead>
+
+    <tbody>
+
+      {% for membership in tenant.lease_memberships.all %}
+
+      <tr>
+
+        <td>
+          <a href="{% url 'portal:property_detail' membership.lease.unit.property.id %}">
+            {{ membership.lease.unit.property.street_address }}
+          </a>
+        </td>
+
+
+        <td>
+          {% if membership.lease.unit.unit_number %}
+            {{ membership.lease.unit.unit_number }}
+          {% else %}
+            Main Unit
+          {% endif %}
+        </td>
+
+
+        <td>
+          {{ membership.get_role_display }}
+        </td>
+
+
+        <td>
+          {{ membership.lease.get_status_display }}
+        </td>
+
+
+        <td>
+          {{ membership.lease.start_date|date:"M d, Y" }}
+          -
+          {{ membership.lease.end_date|date:"M d, Y" }}
+        </td>
+
+
+        <td>
+          ${{ membership.lease.monthly_rent|floatformat:2 }}
+        </td>
+
+      </tr>
+
+
+      {% empty %}
+
+      <tr>
+        <td colspan="6"
+            style="text-align:center;color:#94a3b8;padding:24px;">
+          No lease history.
+        </td>
+      </tr>
+
+      {% endfor %}
+
+    </tbody>
+
+  </table>
+
+</div>
+
+
+<!-- MAINTENANCE HISTORY -->
+
+<div class="card">
+
+  <div class="card-header">
+    <h2>Maintenance History</h2>
+
+    {% if tenant.is_active %}
+      <a href="{% url 'portal:create_maintenance_request' %}?tenant_id={{ tenant.id }}"
+         class="btn btn-primary btn-sm">
+        + Report Maintenance
+      </a>
+    {% endif %}
+  </div>
+
+
+  <table class="data-table">
+
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Property</th>
+        <th>Issue</th>
+        <th>Priority</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+
+    <tbody>
+
+      {% for item in tenant.maintenance_requests.all %}
+
+      <tr>
+
+        <td>
+          {{ item.submitted_at|date:"M d, Y" }}
+        </td>
+
+
+        <td>
+          {{ item.unit.property.street_address }}
+        </td>
+
+
+        <td>
+          <a href="{% url 'portal:maintenance_detail' item.id %}">
+            {{ item.title }}
+          </a>
+        </td>
+
+
+        <td>
+          {{ item.get_priority_display }}
+        </td>
+
+
+        <td>
+          {{ item.get_status_display }}
+        </td>
+
+      </tr>
+
+
+      {% empty %}
+
+      <tr>
+        <td colspan="5"
+            style="text-align:center;color:#94a3b8;padding:24px;">
+          No maintenance history.
+        </td>
+      </tr>
+
+      {% endfor %}
+
+    </tbody>
+
+  </table>
+
+</div>
+
+{% endblock %}

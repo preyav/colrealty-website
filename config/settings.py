@@ -130,10 +130,17 @@ INSTALLED_APPS = [
     "mls_sync",
     "newsletter",
     "rentals",
+    "properties",
+    "owners",
+    "tenants",
+    "leasing",
+    "maintenance",
+    "vendors",
     "pages",
     "portal",
     "ai_concierge",
     "common",
+    "common.audit.apps.AuditConfig",
 ]
 
 
@@ -215,7 +222,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # ─────────────────────────────────────────────────────────────────────────────
 
 LANGUAGE_CODE = "en-us"
-TIME_ZONE = "UTC"
+TIME_ZONE = "America/Chicago"
 USE_I18N = True
 USE_TZ = True
 
@@ -355,7 +362,7 @@ CELERY_TASK_QUEUES = (
     Queue("hubspot"),
 )
 
-SITE_ID = 1
+SITE_ID = env.int("SITE_ID", default=1)
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
     "allauth.account.auth_backends.AuthenticationBackend",
@@ -373,3 +380,13 @@ SOCIALACCOUNT_EMAIL_REQUIRED = False
 SOCIALACCOUNT_EMAIL_VERIFICATION = "none"
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# ─────────────────────────────────────────────────────────────────────────────
+# COL360 Financial Provider (V1.5A)
+# ─────────────────────────────────────────────────────────────────────────────
+# Core property-management workflows must remain functional with this disabled.
+# Supported values: disabled, col360, quickbooks
+COL360_FINANCIAL_PROVIDER = env(
+    "COL360_FINANCIAL_PROVIDER",
+    default="disabled",
+).strip().lower()

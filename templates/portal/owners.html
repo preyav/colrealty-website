@@ -1,0 +1,124 @@
+{% extends "portal/base.html" %}
+
+{% block title %}Owners | Col Realty Portal{% endblock %}
+{% block page_title %}Owners ({{ total }}){% endblock %}
+
+{% block content %}
+
+<div class="card">
+
+  <div class="card-header">
+    <h2>Owner Directory</h2>
+
+    <a href="{% url 'portal:create_owner' %}"
+       class="btn btn-primary btn-sm">
+      + Add Owner
+    </a>
+  </div>
+
+  <form method="get" class="filter-bar">
+
+    <input
+      type="text"
+      name="q"
+      placeholder="Search owner, email, phone..."
+      value="{{ search }}"
+    />
+
+    <button type="submit"
+            class="btn btn-primary btn-sm">
+      Filter
+    </button>
+
+    {% if search %}
+      <a href="{% url 'portal:owners' %}"
+         class="btn btn-sm"
+         style="background:#f1f5f9;">
+        Clear
+      </a>
+    {% endif %}
+
+  </form>
+
+  <table class="data-table">
+
+    <thead>
+      <tr>
+        <th>Owner</th>
+        <th>Type</th>
+        <th>Contact</th>
+        <th>Properties</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+
+    <tbody>
+
+      {% for owner in owners %}
+
+      <tr>
+
+        <td>
+          <strong>{{ owner }}</strong>
+        </td>
+
+        <td>
+          <span class="badge badge-gray">
+            {{ owner.get_owner_type_display }}
+          </span>
+        </td>
+
+        <td>
+          <div>{{ owner.email|default:"—" }}</div>
+
+          {% if owner.phone %}
+            <div style="color:#64748b;font-size:0.78rem;">
+              {{ owner.phone }}
+            </div>
+          {% endif %}
+        </td>
+
+        <td>
+          {{ owner.property_ownerships.count }}
+        </td>
+
+        <td>
+          {% if owner.is_active %}
+            <span class="badge badge-green">
+              Active
+            </span>
+          {% else %}
+            <span class="badge badge-gray">
+              Inactive
+            </span>
+          {% endif %}
+        </td>
+
+        <td>
+          <a href="{% url 'portal:owner_detail' owner.id %}"
+             class="btn btn-primary btn-sm">
+            View
+          </a>
+        </td>
+
+      </tr>
+
+      {% empty %}
+
+      <tr>
+        <td colspan="6"
+            style="text-align:center;color:#94a3b8;padding:32px;">
+          No owners found.
+        </td>
+      </tr>
+
+      {% endfor %}
+
+    </tbody>
+
+  </table>
+
+</div>
+
+{% endblock %}

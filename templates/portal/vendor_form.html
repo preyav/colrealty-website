@@ -1,0 +1,135 @@
+{% extends "portal/base.html" %}
+
+{% block title %}{{ page_heading }} | Col Realty Portal{% endblock %}
+{% block page_title %}{{ page_heading }}{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom:18px;">
+  {% if vendor %}
+    <a href="{% url 'portal:vendor_detail' vendor.id %}"
+       style="color:#2563eb;text-decoration:none;font-size:0.85rem;">
+      ← Back to Vendor
+    </a>
+  {% else %}
+    <a href="{% url 'portal:vendors' %}"
+       style="color:#2563eb;text-decoration:none;font-size:0.85rem;">
+      ← Back to Vendors
+    </a>
+  {% endif %}
+</div>
+
+<div class="card">
+
+  <div class="card-header">
+    <h2>{{ page_heading }}</h2>
+  </div>
+
+  <div style="padding:20px;">
+
+    <form method="post">
+      {% csrf_token %}
+
+      <div style="
+          display:grid;
+          grid-template-columns:1fr 1fr;
+          gap:20px;">
+
+        <div>
+          <label class="stat-label">Contact Name</label>
+          <div style="margin-top:6px;">
+            {{ vendor_form.name }}
+          </div>
+          {{ vendor_form.name.errors }}
+        </div>
+
+        <div>
+          <label class="stat-label">Company Name</label>
+          <div style="margin-top:6px;">
+            {{ vendor_form.company_name }}
+          </div>
+          {{ vendor_form.company_name.errors }}
+        </div>
+
+        <div>
+          <label class="stat-label">Email</label>
+          <div style="margin-top:6px;">
+            {{ vendor_form.email }}
+          </div>
+          {{ vendor_form.email.errors }}
+        </div>
+
+        <div>
+          <label class="stat-label">Phone</label>
+          <div style="margin-top:6px;">
+            {{ vendor_form.phone }}
+          </div>
+          {{ vendor_form.phone.errors }}
+        </div>
+
+        <div>
+          <label class="stat-label">Status</label>
+          <div style="margin-top:6px;">
+            {{ vendor_form.status }}
+          </div>
+          {{ vendor_form.status.errors }}
+        </div>
+
+      </div>
+
+      <div style="margin-top:24px;">
+        <label class="stat-label">Trades / Specialties</label>
+
+        <div style="
+            margin-top:10px;
+            display:grid;
+            grid-template-columns:repeat(3,1fr);
+            gap:8px;">
+          {{ trade_form.trades }}
+        </div>
+
+        {{ trade_form.trades.errors }}
+      </div>
+
+      <div style="margin-top:24px;">
+        <label class="stat-label">Notes</label>
+        <div style="margin-top:6px;">
+          {{ vendor_form.notes }}
+        </div>
+        {{ vendor_form.notes.errors }}
+      </div>
+
+      <div style="
+          display:flex;
+          justify-content:flex-end;
+          gap:10px;
+          margin-top:24px;">
+
+        {% if vendor %}
+          <a href="{% url 'portal:vendor_detail' vendor.id %}"
+             class="btn"
+             style="background:#f1f5f9;">
+            Cancel
+          </a>
+        {% else %}
+          <a href="{% url 'portal:vendors' %}"
+             class="btn"
+             style="background:#f1f5f9;">
+            Cancel
+          </a>
+        {% endif %}
+
+        <button type="submit"
+                class="btn btn-primary">
+          {{ submit_label }}
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+
+{% endblock %}

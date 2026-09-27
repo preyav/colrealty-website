@@ -1,0 +1,232 @@
+{% extends "portal/base.html" %}
+
+{% block title %}Vendors | Col Realty Portal{% endblock %}
+
+{% block page_title %}Vendors ({{ total }}){% endblock %}
+
+
+{% block content %}
+
+<div class="card">
+
+  <!-- HEADER / ACTIONS -->
+
+  <div class="card-header">
+
+    <h2>Vendor Directory</h2>
+
+    <a href="{% url 'portal:create_vendor' %}"
+       class="btn btn-primary btn-sm">
+      + Add Vendor
+    </a>
+
+  </div>
+
+
+  <!-- FILTERS -->
+
+  <form method="get" class="filter-bar">
+
+    <input type="text"
+           name="q"
+           placeholder="Search vendor, company, email..."
+           value="{{ search }}" />
+
+    <select name="status">
+
+      <option value="">
+        All Status
+      </option>
+
+      <option value="active"
+              {% if status_filter == "active" %}selected{% endif %}>
+        Active
+      </option>
+
+      <option value="pending"
+              {% if status_filter == "pending" %}selected{% endif %}>
+        Pending
+      </option>
+
+      <option value="inactive"
+              {% if status_filter == "inactive" %}selected{% endif %}>
+        Inactive
+      </option>
+
+    </select>
+
+    <button type="submit"
+            class="btn btn-primary btn-sm">
+      Filter
+    </button>
+
+    {% if search or status_filter %}
+
+      <a href="{% url 'portal:vendors' %}"
+         class="btn btn-sm"
+         style="background:#f1f5f9;">
+        Clear
+      </a>
+
+    {% endif %}
+
+  </form>
+
+
+  <!-- VENDOR TABLE -->
+
+  <table class="data-table">
+
+    <thead>
+
+      <tr>
+
+        <th>Vendor</th>
+
+        <th>Trades</th>
+
+        <th>Email</th>
+
+        <th>Phone</th>
+
+        <th>Status</th>
+
+        <th>Assignments</th>
+
+        <th>Action</th>
+
+      </tr>
+
+    </thead>
+
+
+    <tbody>
+
+      {% for vendor in vendors %}
+
+      <tr>
+
+        <!-- VENDOR -->
+
+        <td>
+
+          <strong>
+            {{ vendor }}
+          </strong>
+
+        </td>
+
+
+        <!-- TRADES -->
+
+        <td>
+
+          {% for trade in vendor.trades.all %}
+
+            <span class="badge badge-gray">
+              {{ trade.get_trade_display }}
+            </span>
+
+          {% empty %}
+
+            —
+
+          {% endfor %}
+
+        </td>
+
+
+        <!-- EMAIL -->
+
+        <td>
+
+          {{ vendor.email|default:"—" }}
+
+        </td>
+
+
+        <!-- PHONE -->
+
+        <td>
+
+          {{ vendor.phone|default:"—" }}
+
+        </td>
+
+
+        <!-- STATUS -->
+
+        <td>
+
+          {% if vendor.status == "active" %}
+
+            <span class="badge badge-green">
+              Active
+            </span>
+
+          {% elif vendor.status == "pending" %}
+
+            <span class="badge badge-orange">
+              Pending
+            </span>
+
+          {% else %}
+
+            <span class="badge badge-gray">
+              Inactive
+            </span>
+
+          {% endif %}
+
+        </td>
+
+
+        <!-- ASSIGNMENTS -->
+
+        <td>
+
+          {{ vendor.work_order_assignments.count }}
+
+        </td>
+
+
+        <!-- ACTION -->
+
+        <td>
+
+          <a href="{% url 'portal:vendor_detail' vendor.id %}"
+             class="btn btn-primary btn-sm">
+            View
+          </a>
+
+        </td>
+
+      </tr>
+
+
+      {% empty %}
+
+      <tr>
+
+        <td colspan="7"
+            style="
+              text-align:center;
+              color:#94a3b8;
+              padding:32px;
+            ">
+
+          No vendors found.
+
+        </td>
+
+      </tr>
+
+      {% endfor %}
+
+    </tbody>
+
+  </table>
+
+</div>
+
+{% endblock %}

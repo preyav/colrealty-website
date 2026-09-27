@@ -1,0 +1,68 @@
+{% extends "portal/base.html" %}
+{% block title %}Edit Maintenance Request | Col Realty Portal{% endblock %}
+{% block page_title %}Edit Maintenance Request #{{ maintenance_request.id }}{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:18px;">
+  <a href="{% url 'portal:maintenance_detail' maintenance_request.id %}"
+     style="color:#2563eb;text-decoration:none;font-size:0.85rem;">
+    ← Back to Maintenance Request
+  </a>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h2>{{ maintenance_request.title }}</h2>
+    <span class="badge badge-gray">{{ maintenance_request.get_status_display }}</span>
+  </div>
+
+  <div style="padding:20px;">
+    <p style="margin-top:0;color:#64748b;font-size:0.9rem;">
+      Edit the request details here. Workflow status is controlled by the
+      Review &amp; Approve and Work Order actions and cannot be changed from this form.
+    </p>
+
+    <form method="post">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+
+      <div class="maintenance-edit-grid"
+           style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 24px;">
+        {% for field in form %}
+          <div style="{% if field.name == 'description' or field.name == 'availability_date' %}grid-column:1 / -1;{% endif %}">
+            <label for="{{ field.id_for_label }}"
+                   style="display:block;font-weight:600;margin-bottom:6px;">
+              {{ field.label }}
+            </label>
+            {{ field }}
+            {% if field.help_text %}
+              <div style="color:#64748b;font-size:0.8rem;margin-top:4px;">{{ field.help_text }}</div>
+            {% endif %}
+            {% for error in field.errors %}
+              <div style="color:#b91c1c;font-size:0.85rem;margin-top:4px;">{{ error }}</div>
+            {% endfor %}
+          </div>
+        {% endfor %}
+      </div>
+
+      <style>
+        @media (max-width: 760px) {
+          .maintenance-edit-grid {
+            grid-template-columns:1fr !important;
+          }
+          .maintenance-edit-grid > div {
+            grid-column:1 !important;
+          }
+        }
+      </style>
+
+      <div style="display:flex;gap:8px;margin-top:20px;">
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <a href="{% url 'portal:maintenance_detail' maintenance_request.id %}"
+           class="btn"
+           style="background:#f1f5f9;">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

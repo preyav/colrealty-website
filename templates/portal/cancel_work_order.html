@@ -1,0 +1,91 @@
+{% extends "portal/base.html" %}
+
+{% block title %}Cancel Work Order{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">
+                Cancel Work Order #{{ work_order.id }}
+            </h2>
+
+            <div class="text-muted">
+                {{ work_order.unit }}
+            </div>
+        </div>
+
+        <a
+            href="{% url 'portal:work_order_detail' work_order.id %}"
+            class="btn btn-outline-secondary"
+        >
+            Back to Work Order
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+
+            <div class="alert alert-warning">
+                <strong>Are you sure you want to cancel this work order?</strong>
+                <br>
+                The linked maintenance request will also be marked as cancelled.
+            </div>
+
+            <div class="mb-4">
+                <strong>{{ work_order.title }}</strong>
+
+                {% if work_order.description %}
+                    <div class="text-muted mt-2">
+                        {{ work_order.description }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+
+                {{ form.non_field_errors }}
+
+                <div class="mb-3">
+                    <label
+                        for="{{ form.cancellation_reason.id_for_label }}"
+                        class="form-label"
+                    >
+                        {{ form.cancellation_reason.label }}
+                    </label>
+
+                    {{ form.cancellation_reason }}
+
+                    {% for error in form.cancellation_reason.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ error }}
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button
+                        type="submit"
+                        class="btn btn-danger"
+                    >
+                        Cancel Work Order
+                    </button>
+
+                    <a
+                        href="{% url 'portal:work_order_detail' work_order.id %}"
+                        class="btn btn-outline-secondary"
+                    >
+                        Keep Work Order
+                    </a>
+                </div>
+            </form>
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

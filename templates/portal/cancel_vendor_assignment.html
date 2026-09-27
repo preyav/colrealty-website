@@ -1,0 +1,21 @@
+{% extends "portal/base.html" %}
+{% block title %}Cancel Vendor Assignment | Col Realty Portal{% endblock %}
+{% block page_title %}Cancel Vendor Assignment{% endblock %}
+{% block content %}
+<div style="margin-bottom:18px;"><a href="{% url 'portal:work_order_detail' work_order.id %}" style="color:#2563eb;text-decoration:none;font-size:.85rem;">← Back to Work Order #{{ work_order.id }}</a></div>
+<div class="card">
+  <div class="card-header"><div><h2 style="margin-bottom:4px;">Cancel Assignment to {{ assignment.vendor }}</h2><div style="font-size:.82rem;color:#64748b;font-weight:400;">The vendor award will remain in place. After cancellation, you may reassign this vendor or revoke the award and select another vendor.</div></div></div>
+  <form method="post" style="padding:20px;">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+      <div><label class="stat-label">Cancellation reason</label><div style="margin-top:6px;">{{ form.reason }}</div>{{ form.reason.errors }}</div>
+      <div><label class="stat-label">Explanation</label><div style="margin-top:6px;">{{ form.notes }}</div>{{ form.notes.errors }}</div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:24px;">
+      <a href="{% url 'portal:work_order_detail' work_order.id %}" class="btn" style="background:#f1f5f9;">Keep Assignment</a>
+      <button type="submit" class="btn" style="background:#dc2626;color:#fff;">Cancel Assignment</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

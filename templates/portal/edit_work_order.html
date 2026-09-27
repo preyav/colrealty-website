@@ -1,0 +1,19 @@
+{% extends "portal/base.html" %}
+{% block title %}Edit Work Order | Col Realty Portal{% endblock %}
+{% block page_title %}Edit Work Order #{{ work_order.id }}{% endblock %}
+{% block content %}
+<div style="margin-bottom:18px;"><a href="{% url 'portal:work_order_detail' work_order.id %}" style="color:#2563eb;text-decoration:none;font-size:0.85rem;">← Back to Work Order</a></div>
+<div class="card">
+  <div class="card-header"><h2>Work Order #{{ work_order.id }} — {{ work_order.title }}</h2><span class="badge badge-gray">{{ work_order.get_status_display }}</span></div>
+  <div style="padding:20px;">
+    <p style="margin-top:0;color:#64748b;font-size:0.9rem;max-width:900px;line-height:1.5;">Edit descriptive and estimated-cost information here. Scheduling, status, completion, vendor assignment, and actual cost are controlled by their dedicated COL360 workflow actions.</p>
+    <form method="post">{% csrf_token %}{{ form.non_field_errors }}
+      {% for field in form %}
+        <div style="margin-bottom:16px;"><label for="{{ field.id_for_label }}" style="display:block;font-weight:600;margin-bottom:6px;">{{ field.label }}</label>{{ field }}
+        {% for error in field.errors %}<div style="color:#b91c1c;font-size:0.85rem;margin-top:4px;">{{ error }}</div>{% endfor %}</div>
+      {% endfor %}
+      <div style="display:flex;gap:8px;margin-top:20px;"><button type="submit" class="btn btn-primary">Save Changes</button><a href="{% url 'portal:work_order_detail' work_order.id %}" class="btn" style="background:#f1f5f9;">Cancel</a></div>
+    </form>
+  </div>
+</div>
+{% endblock %}

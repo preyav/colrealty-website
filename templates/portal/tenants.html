@@ -1,0 +1,86 @@
+{% extends "portal/base.html" %}
+{% block title %}Tenants | Col Realty Portal{% endblock %}
+{% block page_title %}Tenants ({{ total }}){% endblock %}
+
+{% block content %}
+<div class="card">
+
+  <div class="card-header">
+    <h2>Tenant Directory</h2>
+
+    <a href="{% url 'portal:create_tenant' %}"
+       class="btn btn-primary btn-sm">
+      + Add Tenant
+    </a>
+  </div>
+
+  <form method="get" class="filter-bar">
+    <input type="text" name="q"
+           placeholder="Search tenant, email, phone..."
+           value="{{ search }}" />
+
+    <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+
+    {% if search %}
+      <a href="{% url 'portal:tenants' %}"
+         class="btn btn-sm"
+         style="background:#f1f5f9;">
+        Clear
+      </a>
+    {% endif %}
+  </form>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Tenant</th>
+        <th>Email</th>
+        <th>Phone</th>
+        <th>Leases</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for tenant in tenants %}
+      <tr>
+        <td>
+          <strong>{{ tenant.first_name }} {{ tenant.last_name }}</strong>
+        </td>
+
+        <td>{{ tenant.email|default:"—" }}</td>
+        <td>{{ tenant.phone|default:"—" }}</td>
+
+        <td>
+          {{ tenant.lease_memberships.count }}
+        </td>
+
+        <td>
+          {% if tenant.is_active %}
+            <span class="badge badge-green">Active</span>
+          {% else %}
+            <span class="badge badge-gray">Inactive</span>
+          {% endif %}
+        </td>
+
+        <td>
+          <a href="{% url 'portal:tenant_detail' tenant.id %}"
+             class="btn btn-primary btn-sm">
+            View
+          </a>
+        </td>
+      </tr>
+
+      {% empty %}
+      <tr>
+        <td colspan="6"
+            style="text-align:center;color:#94a3b8;padding:32px;">
+          No tenants found.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

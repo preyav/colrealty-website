@@ -306,13 +306,12 @@ def toggle_favorite(request, listing_id):
 
 def select_user_type(request):
     role = request.GET.get('role') or request.POST.get('user_type', 'other')
+
     if request.user.is_authenticated:
         profile = get_or_create_profile(request.user)
         profile.user_type = role
         profile.save()
 
-    if role == 'agent':
-        return redirect('/portal/')
     return redirect('accounts:overview')
 
 

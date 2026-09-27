@@ -1,0 +1,679 @@
+{% extends "portal/base.html" %}
+{% block title %}{{ property.full_address }} | Col Realty Portal{% endblock %}
+
+{% block page_title %}{{ property.full_address }}{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom:18px;">
+  <a href="{% url 'portal:properties' %}"
+     style="color:#2563eb;text-decoration:none;font-size:0.85rem;">
+    ← Back to Properties
+  </a>
+</div>
+
+<!-- SUMMARY -->
+<div class="stat-grid">
+
+  <div class="stat-card blue">
+    <div class="stat-label">Status</div>
+    <div class="stat-value" style="font-size:1.4rem;">
+      {{ property.get_management_status_display }}
+    </div>
+  </div>
+
+  <div class="stat-card green">
+    <div class="stat-label">Active Leases</div>
+    <div class="stat-value">{{ current_leases.count }}</div>
+  </div>
+
+  <div class="stat-card {% if open_maintenance_count %}orange{% endif %}">
+    <div class="stat-label">Open Maintenance</div>
+    <div class="stat-value">{{ open_maintenance_count }}</div>
+  </div>
+
+  <div class="stat-card {% if open_work_order_count %}orange{% endif %}">
+    <div class="stat-label">Open Work Orders</div>
+    <div class="stat-value">{{ open_work_order_count }}</div>
+  </div>
+
+</div>
+
+
+<!-- PROPERTY DETAILS -->
+<div class="card">
+
+  <div class="card-header">
+    <h2>Property Details</h2>
+
+    <a href="{% url 'portal:edit_property' property.id %}"
+       class="btn btn-primary btn-sm">
+      Edit Property
+    </a>
+  </div>
+
+  <div style="
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:20px;
+      padding:20px;">
+
+    <div>
+      <div class="stat-label">Address</div>
+      <strong>
+        {{ property.street_address }}
+        {% if property.unit_number %}
+          #{{ property.unit_number }}
+        {% endif %}
+      </strong><br>
+      {{ property.city }}, {{ property.state }} {{ property.zip_code }}
+    </div>
+
+    <div>
+      <div class="stat-label">Property Type</div>
+      {{ property.get_property_type_display|default:"—" }}
+    </div>
+
+    <div>
+      <div class="stat-label">Year Built</div>
+      {{ property.year_built|default:"—" }}
+    </div>
+
+    {% if not property.is_multi_unit %}
+    <div>
+      <div class="stat-label">Bedrooms</div>
+      {{ property.bedrooms|default:"—" }}
+    </div>
+    <div>
+      <div class="stat-label">Bathrooms Full</div>
+      {{ property.bathrooms_full|default:"—" }}
+    </div>
+    <div>
+      <div class="stat-label">Bathrooms Half</div>
+      {{ property.bathrooms_half|default:"—" }}
+    </div>
+    <div>
+      <div class="stat-label">Square Feet</div>
+      {{ property.sqft|default:"—" }}
+    </div>
+    {% endif %}
+
+    <div>
+      <div class="stat-label">County</div>
+      {{ property.county|default:"—" }}
+    </div>
+
+    <div>
+      <div class="stat-label">Subdivision</div>
+      {{ property.subdivision|default:"—" }}
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- OWNERS -->
+<div class="card">
+
+  <div class="card-header">
+
+    <h2>Ownership</h2>
+
+    <a href="{% url 'portal:create_property_ownership' property.id %}"
+      class="btn btn-primary btn-sm">
+      + Add Owner
+    </a>
+
+  </div>
+
+  <table class="data-table">
+
+    <thead>
+      <tr>
+        <th>Owner</th>
+        <th>Ownership</th>
+        <th>Primary Contact</th>
+        <th>Period</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+
+    <tbody>
+
+      {% for ownership in property.ownerships.all %}
+
+      <tr>
+        <td><strong>{{ ownership.owner }}</strong></td>
+
+        <td>{{ ownership.ownership_percentage }}%</td>
+
+        <td>
+          {% if ownership.is_primary_contact %}
+            <span class="badge badge-green">Yes</span>
+          {% else %}
+            —
+          {% endif %}
+        </td>
+
+        <td>
+          {{ ownership.start_date|date:"M d, Y"|default:"—" }}
+          {% if ownership.end_date %}
+            - {{ ownership.end_date|date:"M d, Y" }}
+          {% endif %}
+        </td>
+
+        <td>
+
+          <div style="display:flex;gap:6px;align-items:center;">
+
+            <a href="{% url 'portal:owner_detail' ownership.owner.id %}"
+               class="btn btn-primary btn-sm">
+              View
+            </a>
+
+            <a href="{% url 'portal:edit_property_ownership' property.id ownership.id %}"
+               class="btn btn-sm"
+               style="background:#f1f5f9;">
+              Edit
+            </a>
+
+          </div>
+
+        </td>
+      </tr>
+
+      {% empty %}
+
+      <tr>
+        <td colspan="5"
+            style="text-align:center;color:#94a3b8;padding:24px;">
+          No ownership records.
+        </td>
+      </tr>
+
+      {% endfor %}
+
+    </tbody>
+
+  </table>
+
+</div>
+
+
+
+{% if property.is_multi_unit %}
+<!-- RENTABLE UNITS -->
+<div class="card">
+
+  <div class="card-header">
+    <div>
+      <h2>Units</h2>
+      <div style="font-size:12px;color:#64748b;margin-top:4px;">
+        Independently rentable units within this property.
+      </div>
+    </div>
+
+    <a href="{% url 'portal:create_property_unit' property.id %}"
+       class="btn btn-primary btn-sm">
+      + Add Unit
+    </a>
+  </div>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Unit</th>
+        <th>Beds</th>
+        <th>Full Baths</th>
+        <th>Half Baths</th>
+        <th>SQFT</th>
+        <th>Market Rent</th>
+        <th>Occupancy</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for row in unit_rows %}
+      <tr>
+        <td><strong>#{{ row.unit.unit_number|default:"—" }}</strong></td>
+        <td>{{ row.unit.beds|default:"—" }}</td>
+        <td>
+          {% if row.unit.bathrooms_full != None %}
+            {{ row.unit.bathrooms_full }}
+          {% elif row.unit.baths != None %}
+            {{ row.unit.baths|floatformat:"0" }}
+          {% else %}
+            —
+          {% endif %}
+        </td>
+        <td>
+          {% if row.unit.bathrooms_half != None %}
+            {{ row.unit.bathrooms_half }}
+          {% elif row.unit.baths != None and row.unit.baths|stringformat:"s"|slice:"-2:" == ".5" %}
+            1
+          {% else %}
+            0
+          {% endif %}
+        </td>
+        <td>{{ row.unit.sqft|default:"—" }}</td>
+        <td>
+          {% if row.unit.market_rent != None %}
+            ${{ row.unit.market_rent|floatformat:2 }}
+          {% else %}
+            —
+          {% endif %}
+        </td>
+        <td>
+          {% if row.current_lease %}
+            <span class="badge badge-green">Occupied</span>
+          {% elif row.upcoming_lease %}
+            <span class="badge">Upcoming Lease</span>
+          {% else %}
+            <span class="badge">Vacant</span>
+          {% endif %}
+        </td>
+        <td>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <a href="{% url 'portal:edit_property_unit' property.id row.unit.id %}"
+               class="btn btn-sm"
+               style="background:#f1f5f9;">
+              Edit
+            </a>
+
+            {% if property.management_status == "active" and not row.current_lease and not row.upcoming_lease %}
+              <a href="{% url 'portal:create_unit_lease' property.id row.unit.id %}"
+                 class="btn btn-primary btn-sm">
+                + Create Lease
+              </a>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+
+      {% empty %}
+      <tr>
+        <td colspan="8"
+            style="text-align:center;color:#94a3b8;padding:24px;">
+          No rentable units have been added yet.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+</div>
+{% endif %}
+
+
+<!-- CURRENT & UPCOMING LEASES -->
+<div class="card">
+
+  <div class="card-header">
+    <h2>Current Lease</h2>
+
+    {% if not property.is_multi_unit and not current_leases and not upcoming_leases and units %}
+      {% if property.management_status == "active" %}
+        {% with unit=units.0 %}
+          <a href="{% url 'portal:create_unit_lease' property.id unit.id %}"
+             class="btn btn-primary btn-sm">
+            + Create Lease
+          </a>
+        {% endwith %}
+      {% else %}
+        <div style="text-align:right;">
+          <button type="button"
+                  class="btn btn-sm"
+                  disabled
+                  style="background:#e2e8f0;color:#64748b;cursor:not-allowed;">
+            + Create Lease
+          </button>
+          <div style="margin-top:6px;color:#b45309;font-size:0.78rem;max-width:360px;">
+            Lease creation requires Active management status and an executed
+            Property Management Agreement.
+          </div>
+        </div>
+      {% endif %}
+    {% endif %}
+  </div>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Primary Tenant</th>
+        <th>Term</th>
+        <th>Rent</th>
+        <th>Deposit</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for lease in current_leases %}
+        <tr>
+          <td>
+            {% for membership in lease.lease_tenants.all %}
+              {% if membership.role == "primary" %}
+                <strong>{{ membership.tenant }}</strong>
+              {% endif %}
+            {% empty %}
+              —
+            {% endfor %}
+          </td>
+          <td>
+            {{ lease.start_date|date:"M d, Y" }} -
+            {{ lease.end_date|date:"M d, Y" }}
+          </td>
+          <td>${{ lease.monthly_rent|floatformat:2 }}</td>
+          <td>${{ lease.security_deposit|floatformat:2 }}</td>
+          <td><span class="badge badge-green">{{ lease.get_status_display }}</span></td>
+          <td>
+            <a href="{% url 'portal:lease_detail' lease.id %}"
+               class="btn btn-primary btn-sm">View</a>
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="6"
+              style="text-align:center;color:#94a3b8;padding:24px;">
+            No current lease.
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+</div>
+
+{% if upcoming_leases %}
+<div class="card">
+
+  <div class="card-header">
+    <h2>Upcoming Lease</h2>
+  </div>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Primary Tenant</th>
+        <th>Term</th>
+        <th>Rent</th>
+        <th>Deposit</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for lease in upcoming_leases %}
+        <tr>
+          <td>
+            {% for membership in lease.lease_tenants.all %}
+              {% if membership.role == "primary" %}
+                <strong>{{ membership.tenant }}</strong>
+              {% endif %}
+            {% empty %}
+              —
+            {% endfor %}
+          </td>
+          <td>
+            {{ lease.start_date|date:"M d, Y" }} -
+            {{ lease.end_date|date:"M d, Y" }}
+          </td>
+          <td>${{ lease.monthly_rent|floatformat:2 }}</td>
+          <td>${{ lease.security_deposit|floatformat:2 }}</td>
+          <td><span class="badge badge-gray">{{ lease.get_status_display }}</span></td>
+          <td>
+            <a href="{% url 'portal:lease_detail' lease.id %}"
+               class="btn btn-primary btn-sm">View</a>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+</div>
+{% endif %}
+
+
+<!-- MAINTENANCE -->
+<div class="card">
+  <div class="card-header">
+    <h2>Maintenance</h2>
+
+    <div style="display:flex;gap:8px;align-items:center;">
+      {% if property.is_multi_unit %}
+        <a href="{% url 'portal:create_maintenance_request' %}"
+           class="btn btn-primary btn-sm">
+          + New Request
+        </a>
+      {% else %}
+        <a href="{% url 'portal:create_maintenance_request' %}?unit_id={{ units.0.id }}"
+           class="btn btn-primary btn-sm">
+          + New Request
+        </a>
+      {% endif %}
+
+      <a href="{% url 'portal:maintenance' %}?q={{ property.street_address|urlencode }}"
+         class="btn btn-sm"
+         style="background:#f1f5f9;">
+        View All
+      </a>
+    </div>
+  </div>
+
+  {% if maintenance_requests %}
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Issue</th>
+          <th>Tenant</th>
+          <th>Priority</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for item in maintenance_requests %}
+          <tr>
+            <td>{{ item.submitted_at|date:"M d, Y" }}</td>
+            <td>
+              <a href="{% url 'portal:maintenance_detail' item.id %}"
+                 style="text-decoration:none;">
+                <strong>{{ item.title }}</strong>
+              </a>
+            </td>
+            <td>{{ item.reported_by_tenant|default:"—" }}</td>
+            <td>
+              {% if item.priority == "emergency" %}
+                <span class="badge badge-red">Emergency</span>
+              {% elif item.priority == "high" %}
+                <span class="badge badge-orange">High</span>
+              {% else %}
+                <span class="badge badge-gray">{{ item.get_priority_display }}</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if item.status == "completed" %}
+                <span class="badge badge-green">Completed</span>
+              {% else %}
+                <span class="badge badge-orange">{{ item.get_status_display }}</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+</div>
+
+
+<!-- WORK ORDERS -->
+<div class="card">
+
+  <div class="card-header">
+    <h2>Work Orders & Costs</h2>
+  </div>
+
+  <table class="data-table">
+
+    <thead>
+      <tr>
+        <th>Work Order</th>
+        <th>Status</th>
+        <th>Vendor</th>
+        <th>Estimate</th>
+        <th>Actual Cost</th>
+        <th>Invoice</th>
+      </tr>
+    </thead>
+
+    <tbody>
+
+      {% for work_order in work_orders %}
+
+      <tr>
+
+        <td>
+          <a href="{% url 'portal:work_order_detail' work_order.id %}"
+            style="color:#2563eb;text-decoration:none;font-weight:600;">
+            #{{ work_order.id }} - {{ work_order.title }}
+          </a>
+        </td>
+
+        <td>
+          {% if work_order.status == "completed" %}
+            <span class="badge badge-green">Completed</span>
+          {% else %}
+            <span class="badge badge-orange">
+              {{ work_order.get_status_display }}
+            </span>
+          {% endif %}
+        </td>
+
+        <td>
+          {% for assignment in work_order.vendor_assignments.all %}
+            {{ assignment.vendor }}
+            {% if not forloop.last %}, {% endif %}
+          {% empty %}
+            —
+          {% endfor %}
+        </td>
+
+        <td>
+          {% for estimate in work_order.vendor_estimates.all %}
+            ${{ estimate.amount|floatformat:2 }}
+            {% if not forloop.last %}<br>{% endif %}
+          {% empty %}
+            —
+          {% endfor %}
+        </td>
+
+        <td>
+          {% if work_order.actual_cost %}
+            ${{ work_order.actual_cost|floatformat:2 }}
+          {% else %}
+            —
+          {% endif %}
+        </td>
+
+        <td>
+          {% for invoice in work_order.vendor_invoices.all %}
+            ${{ invoice.amount|floatformat:2 }}
+          {% empty %}
+            —
+          {% endfor %}
+        </td>
+
+      </tr>
+
+      {% empty %}
+
+      <tr>
+        <td colspan="6"
+            style="text-align:center;color:#94a3b8;padding:24px;">
+          No work orders.
+        </td>
+      </tr>
+
+      {% endfor %}
+
+    </tbody>
+
+  </table>
+
+</div>
+
+
+<!-- ACTIVITY & AUDIT HISTORY -->
+<div class="card" style="margin-top:20px;">
+  <div class="card-header">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <div>
+        <h2 style="margin-bottom:3px;">Activity &amp; Audit History</h2>
+        <div style="color:#64748b;font-size:0.82rem;">
+          Meaningful property, ownership, lease, and maintenance activity recorded in COL360.
+        </div>
+      </div>
+
+      <button type="button"
+              id="audit-history-toggle"
+              aria-expanded="false"
+              aria-controls="audit-history-body"
+              onclick="toggleAuditHistory()"
+              style="border:0;background:transparent;color:#2563eb;font-size:0.8rem;font-weight:600;cursor:pointer;padding:2px 4px;">
+        Show More
+      </button>
+    </div>
+  </div>
+
+  <div id="audit-history-body" style="display:none;padding:0 20px 8px 20px;">
+    {% for event in audit_events %}
+      <div style="padding:14px 0;{% if not forloop.last %}border-bottom:1px solid #e2e8f0;{% endif %}">
+        <div style="font-weight:650;color:#0f172a;">{{ event.display_action }}</div>
+
+        <div style="margin-top:3px;color:#64748b;font-size:0.8rem;">
+          {{ event.occurred_at|date:"M d, Y" }} ·
+          {{ event.occurred_at|date:"g:i A" }} ·
+          {{ event.actor_display|default:"System" }}
+        </div>
+
+        {% if event.display_changes %}
+          <div style="margin-top:8px;display:flex;flex-direction:column;gap:4px;">
+            {% for change in event.display_changes %}
+              <div style="font-size:0.84rem;line-height:1.5;color:#334155;">
+                <span style="font-weight:600;color:#475569;">{{ change.label }}:</span>
+                <span style="white-space:pre-line;">{{ change.summary }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        {% if event.display_reason %}
+          <div style="margin-top:7px;font-size:0.82rem;color:#64748b;font-style:italic;">
+            {{ event.display_reason }}
+          </div>
+        {% endif %}
+      </div>
+    {% empty %}
+      <div style="padding:22px 0;color:#94a3b8;text-align:center;">
+        No meaningful property or unit changes have been recorded yet.
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<script>
+  function toggleAuditHistory() {
+    const body = document.getElementById("audit-history-body");
+    const button = document.getElementById("audit-history-toggle");
+    const isOpen = body.style.display !== "none";
+
+    body.style.display = isOpen ? "none" : "block";
+    button.textContent = isOpen ? "Show More" : "Show Less";
+    button.setAttribute("aria-expanded", isOpen ? "false" : "true");
+  }
+</script>
+
+{% endblock %}

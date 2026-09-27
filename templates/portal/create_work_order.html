@@ -1,0 +1,208 @@
+{% extends "portal/base.html" %}
+
+{% block title %}{% if replacement_candidate %}Create Replacement{% else %}Create{% endif %} Work Order | Col Realty Portal{% endblock %}
+{% block page_title %}{% if replacement_candidate %}Create Replacement{% else %}Create{% endif %} Work Order{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom:18px;">
+  <a href="{% url 'portal:maintenance_detail' maintenance_request.id %}"
+     style="color:#2563eb;text-decoration:none;font-size:0.85rem;">
+    ← Back to Maintenance Request
+  </a>
+</div>
+
+
+<!-- SOURCE REQUEST -->
+
+<div class="card">
+
+  <div class="card-header">
+    <h2>Maintenance Request #{{ maintenance_request.id }}</h2>
+  </div>
+
+  <div style="padding:20px;">
+
+    <strong style="font-size:1rem;">
+      {{ maintenance_request.title }}
+    </strong>
+
+    <div style="color:#64748b;margin-top:6px;">
+      {{ maintenance_request.description }}
+    </div>
+
+    <div style="
+        display:grid;
+        grid-template-columns:repeat(3,1fr);
+        gap:20px;
+        margin-top:20px;">
+
+      <div>
+        <div class="stat-label">Property</div>
+        <strong>
+          {{ maintenance_request.unit.property.street_address }}
+        </strong>
+      </div>
+
+      <div>
+        <div class="stat-label">Unit</div>
+        {% if maintenance_request.unit.unit_number %}
+          {{ maintenance_request.unit.unit_number }}
+        {% else %}
+          Main Unit
+        {% endif %}
+      </div>
+
+      <div>
+        <div class="stat-label">Priority</div>
+        {{ maintenance_request.get_priority_display }}
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- CREATE WORK ORDER -->
+
+<div class="card">
+
+  <div class="card-header">
+    <h2>Work Order Details</h2>
+  </div>
+
+  <div style="padding:20px;">
+
+    {% if replacement_candidate %}
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;padding:12px;border-radius:6px;margin-bottom:20px;">
+        This work order will replace cancelled Work Order #{{ replacement_candidate.id }}.
+        The cancelled work order and its history will remain available.
+      </div>
+    {% endif %}
+
+    <form method="post">
+
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div style="
+            background:#fef2f2;
+            border:1px solid #fecaca;
+            padding:12px;
+            border-radius:6px;
+            margin-bottom:20px;
+            color:#991b1b;">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
+
+
+      <div style="margin-bottom:18px;">
+        <label class="stat-label">
+          Title
+        </label>
+
+        <div style="margin-top:6px;">
+          {{ form.title }}
+        </div>
+
+        {{ form.title.errors }}
+      </div>
+
+
+      <div style="margin-bottom:18px;">
+        <label class="stat-label">
+          Description
+        </label>
+
+        <div style="margin-top:6px;">
+          {{ form.description }}
+        </div>
+
+        {{ form.description.errors }}
+      </div>
+
+
+      <div style="
+          display:grid;
+          grid-template-columns:1fr 1fr;
+          gap:20px;">
+
+        <div style="margin-bottom:18px;">
+
+          <label class="stat-label">
+            Schedule For
+          </label>
+
+          <div style="margin-top:6px;">
+            {{ form.scheduled_for }}
+          </div>
+
+          {{ form.scheduled_for.errors }}
+
+          <div style="color:#64748b;font-size:0.8rem;margin-top:6px;">
+            Optional. If entered, the date and time must not be in the past.
+          </div>
+
+        </div>
+
+
+        <div style="margin-bottom:18px;">
+
+          <label class="stat-label">
+            Estimated Cost
+          </label>
+
+          <div style="margin-top:6px;">
+            {{ form.estimated_cost }}
+          </div>
+
+          {{ form.estimated_cost.errors }}
+
+        </div>
+
+      </div>
+
+
+      <div style="margin-bottom:24px;">
+
+        <label class="stat-label">
+          Internal Notes
+        </label>
+
+        <div style="margin-top:6px;">
+          {{ form.notes }}
+        </div>
+
+        {{ form.notes.errors }}
+
+      </div>
+
+
+      <div style="
+          display:flex;
+          justify-content:flex-end;
+          gap:10px;">
+
+        <a href="{% url 'portal:maintenance_detail' maintenance_request.id %}"
+           class="btn"
+           style="background:#f1f5f9;">
+          Cancel
+        </a>
+
+        <button type="submit"
+                class="btn btn-primary">
+          {% if replacement_candidate %}Create Replacement{% else %}Create{% endif %} Work Order
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+
+{% endblock %}

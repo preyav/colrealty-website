@@ -56,6 +56,18 @@
     .nav-item.active { background: #1e293b; color: #fff; border-left-color: #3b82f6; }
     .nav-icon { font-size: 1rem; width: 20px; text-align: center; }
 
+    .nav-subitem {
+      display: block;
+      padding: 8px 20px 8px 53px;
+      color: #64748b;
+      text-decoration: none;
+      font-size: 0.8rem;
+      border-left: 3px solid transparent;
+    }
+
+    .nav-subitem:hover { background: #172033; color: #cbd5e1; }
+    .nav-subitem.active { color: #fff; background: #172033; border-left-color: #60a5fa; }
+
     .sidebar-footer {
       padding: 16px 20px;
       border-top: 1px solid #1e293b;
@@ -248,6 +260,54 @@
       <a href="{% url 'portal:rentals' %}"
          class="nav-item {% if section == 'rentals' %}active{% endif %}">
         <span class="nav-icon">🔑</span> Rentals
+      </a>
+      <div style="padding:14px 20px 6px;
+            font-size:0.68rem;
+            text-transform:uppercase;
+            letter-spacing:1px;
+            color:#475569;">
+        Property Management
+      </div>
+
+      <a href="{% url 'portal:properties' %}"
+        class="nav-item {% if section == 'properties' %}active{% endif %}">
+        <span class="nav-icon">🏠</span> Properties
+      </a>
+
+      <a href="{% url 'portal:owners' %}"
+        class="nav-item {% if section == 'owners' %}active{% endif %}">
+        <span class="nav-icon">👤</span> Owners
+      </a>
+
+      <a href="{% url 'portal:tenants' %}"
+        class="nav-item {% if section == 'tenants' %}active{% endif %}">
+        <span class="nav-icon">👥</span> Tenants
+      </a>
+
+      <a href="{% url 'portal:leases' %}"
+        class="nav-item {% if section == 'leases' %}active{% endif %}">
+        <span class="nav-icon">📄</span> Leases
+      </a>
+
+      <a href="{% url 'portal:maintenance' %}"
+        class="nav-item {% if section == 'maintenance' %}active{% endif %}">
+        <span class="nav-icon">🛠</span> Maintenance
+      </a>
+
+      {% if section == 'maintenance' %}
+        <a href="{% url 'portal:maintenance' %}"
+          class="nav-subitem {% if maintenance_subsection != 'work_orders' %}active{% endif %}">
+          Maintenance Requests
+        </a>
+        <a href="{% url 'portal:work_orders' %}"
+          class="nav-subitem {% if maintenance_subsection == 'work_orders' %}active{% endif %}">
+          Work Orders
+        </a>
+      {% endif %}
+
+      <a href="{% url 'portal:vendors' %}"
+        class="nav-item {% if section == 'vendors' %}active{% endif %}">
+        <span class="nav-icon">🔧</span> Vendors
       </a>
     </div>
 

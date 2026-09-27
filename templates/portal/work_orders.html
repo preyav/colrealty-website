@@ -1,0 +1,110 @@
+{% extends "portal/base.html" %}
+{% block title %}Work Orders | Col Realty Portal{% endblock %}
+{% block page_title %}Work Orders ({{ total }}){% endblock %}
+
+{% block content %}
+<div class="card-header">
+  <div>
+    <h2>Work Orders</h2>
+    <div style="font-size:0.8rem;color:#64748b;margin-top:4px;">
+      Track vendor assignment, scheduling, progress, and repair costs.
+    </div>
+  </div>
+  <a href="{% url 'portal:maintenance' %}" class="btn btn-sm" style="background:#f1f5f9;">
+    Maintenance Requests
+  </a>
+</div>
+
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin:14px 0;">
+  {% for value, label in queue_choices %}
+    <a href="{% url 'portal:work_orders' %}?queue={{ value }}"
+       class="btn btn-sm {% if queue_filter == value %}btn-primary{% endif %}"
+       style="{% if queue_filter != value %}background:#fff;border:1px solid #e2e8f0;color:#475569;{% endif %}">
+      {{ label }}
+    </a>
+  {% endfor %}
+</div>
+
+<div class="card">
+  <form method="get" class="filter-bar">
+    <input type="text" name="q" placeholder="Work order, issue, property, vendor..." value="{{ search }}" />
+
+    <select name="status">
+      <option value="">All Statuses</option>
+      {% for value, label in status_choices %}
+        <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+
+    <select name="property">
+      <option value="">All Properties</option>
+      {% for property in properties %}
+        <option value="{{ property.id }}" {% if property_filter == property.id|stringformat:'s' %}selected{% endif %}>
+          {{ property.street_address }}
+        </option>
+      {% endfor %}
+    </select>
+
+    <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+    {% if search or status_filter or property_filter or queue_filter %}
+      <a href="{% url 'portal:work_orders' %}" class="btn btn-sm" style="background:#f1f5f9;">Clear</a>
+    {% endif %}
+  </form>
+
+  <div style="overflow-x:auto;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Work Order</th>
+          <th>Created</th>
+          <th>Issue</th>
+          <th>Property / Unit</th>
+          <th>Vendor</th>
+          <th>Scheduled</th>
+          <th>Estimated</th>
+          <th>Actual</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for work_order in work_orders %}
+          <tr>
+            <td><strong>#{{ work_order.id }}</strong></td>
+            <td style="white-space:nowrap;color:#64748b;font-size:0.78rem;">{{ work_order.created_at|date:"M d, Y" }}</td>
+            <td><strong>{{ work_order.title }}</strong></td>
+            <td>
+              {{ work_order.unit.property.street_address }}
+              {% if work_order.unit.unit_number %}<div style="color:#64748b;font-size:0.78rem;">Unit {{ work_order.unit.unit_number }}</div>{% endif %}
+            </td>
+            <td>
+              {% with assignment=work_order.current_vendor_assignments.0 %}
+                {% if assignment %}{{ assignment.vendor }}{% else %}<span style="color:#94a3b8;">Unassigned</span>{% endif %}
+              {% endwith %}
+            </td>
+            <td style="white-space:nowrap;">{{ work_order.scheduled_for|date:"M d, Y g:i A"|default:"—" }}</td>
+            <td>{% if work_order.estimated_cost is not None %}${{ work_order.estimated_cost|floatformat:2 }}{% else %}—{% endif %}</td>
+            <td>{% if work_order.actual_cost is not None %}${{ work_order.actual_cost|floatformat:2 }}{% else %}—{% endif %}</td>
+            <td>
+              {% if work_order.status == "completed" %}
+                <span class="badge badge-green">Completed</span>
+              {% elif work_order.status == "cancelled" %}
+                <span class="badge badge-gray">Cancelled</span>
+              {% elif work_order.status == "in_progress" %}
+                <span class="badge badge-blue">In Progress</span>
+              {% elif work_order.status == "new" %}
+                <span class="badge badge-orange">New</span>
+              {% else %}
+                <span class="badge badge-orange">{{ work_order.get_status_display }}</span>
+              {% endif %}
+            </td>
+            <td><a href="{% url 'portal:work_order_detail' work_order.id %}" class="btn btn-primary btn-sm">View</a></td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="10" style="text-align:center;color:#94a3b8;padding:32px;">No work orders match these filters.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

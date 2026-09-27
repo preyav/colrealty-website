@@ -1,0 +1,197 @@
+{% extends "portal/base.html" %}
+
+{% block title %}Assign Vendor | Col Realty Portal{% endblock %}
+{% block page_title %}Assign Vendor{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom:18px;">
+  <a href="{% url 'portal:work_order_detail' work_order.id %}"
+     style="color:#2563eb;text-decoration:none;font-size:0.85rem;">
+    ← Back to Work Order #{{ work_order.id }}
+  </a>
+</div>
+
+<div class="card">
+
+  <div class="card-header">
+    <h2>Work Order #{{ work_order.id }}</h2>
+  </div>
+
+  <div style="padding:20px;">
+
+    {% if selected_estimate %}
+      <div style="padding:14px 16px;margin-bottom:20px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;">
+        <div class="stat-label">Quote selected for award</div>
+        <strong>{{ selected_estimate.vendor }} — ${{ selected_estimate.amount|floatformat:2 }}</strong>
+        <div style="color:#64748b;font-size:.8rem;margin-top:4px;">The other received quotes will remain available as alternatives.</div>
+      </div>
+    {% endif %}
+
+    <strong style="font-size:1rem;">
+      {{ work_order.title }}
+    </strong>
+
+    <div style="color:#64748b;margin-top:6px;">
+      {{ work_order.description }}
+    </div>
+
+    <div style="
+        display:grid;
+        grid-template-columns:repeat(3,1fr);
+        gap:20px;
+        margin-top:20px;">
+
+      <div>
+        <div class="stat-label">Property</div>
+        <strong>
+          {{ work_order.unit.property.street_address }}
+        </strong>
+      </div>
+
+      <div>
+        <div class="stat-label">Status</div>
+        {{ work_order.get_status_display }}
+      </div>
+
+      <div>
+        <div class="stat-label">Estimated Cost</div>
+        {% if work_order.estimated_cost %}
+          ${{ work_order.estimated_cost|floatformat:2 }}
+        {% else %}
+          —
+        {% endif %}
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<div class="card">
+
+  <div class="card-header">
+    <div>
+      <h2 style="margin-bottom:4px;">{% if selected_estimate %}Select Quote &amp; Request Confirmation{% else %}Direct Vendor Assignment{% endif %}</h2>
+      <div style="font-size:.82rem;color:#64748b;font-weight:400;">
+        {% if selected_estimate %}Select this quote and ask the vendor to confirm availability. The work order will remain unassigned.{% else %}Assign the vendor who will perform the work when a quote is not required.{% endif %}
+      </div>
+
+    </div>
+  </div>
+
+  <div style="padding:20px;">
+
+    <form method="post">
+
+      {% csrf_token %}
+
+      {% if not selected_estimate %}<div style="margin-bottom:20px;">
+        <label class="stat-label">{{ form.direct_assignment_reason.label }}</label>
+        <div style="margin-top:6px;">{{ form.direct_assignment_reason }}</div>
+        {{ form.direct_assignment_reason.errors }}
+      </div>
+      {% endif %}
+
+      {% if selected_estimate and form.requires_award_rationale %}
+      <div style="padding:14px 16px;margin-bottom:20px;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;">
+        <strong>This is not the lowest received quote.</strong>
+        <div style="color:#64748b;font-size:.8rem;margin-top:4px;">
+          Record why this quote represents the best overall value before awarding it.
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+        <div>
+          <label class="stat-label">{{ form.award_rationale.label }}</label>
+          <div style="margin-top:6px;">{{ form.award_rationale }}</div>
+          {{ form.award_rationale.errors }}
+        </div>
+        <div>
+          <label class="stat-label">{{ form.award_rationale_notes.label }}</label>
+          <div style="margin-top:6px;">{{ form.award_rationale_notes }}</div>
+          {{ form.award_rationale_notes.errors }}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if form.non_field_errors %}
+        <div class="alert alert-error">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
+
+      <div style="margin-bottom:20px;">
+
+        <label class="stat-label">
+          Vendor
+        </label>
+
+        <div style="margin-top:6px;">
+          {{ form.vendor }}
+        </div>
+
+        {{ form.vendor.errors }}
+
+      </div>
+
+      {% if not selected_estimate %}<div style="margin-bottom:20px;">
+
+        <label class="stat-label">
+          Scheduled For
+        </label>
+
+        <div style="margin-top:6px;">
+          {{ form.scheduled_for }}
+        </div>
+
+        <div style="
+            color:#94a3b8;
+            font-size:0.75rem;
+            margin-top:5px;">
+          Optional. You can assign the vendor now and schedule later.
+        </div>
+
+        {{ form.scheduled_for.errors }}
+
+      </div>{% endif %}
+
+      {% if not selected_estimate %}<div style="margin-bottom:24px;">
+
+        <label class="stat-label">
+          Vendor Instructions / Notes
+        </label>
+
+        <div style="margin-top:6px;">
+          {{ form.vendor_notes }}
+        </div>
+
+        {{ form.vendor_notes.errors }}
+
+      </div>{% endif %}
+
+      <div style="
+          display:flex;
+          justify-content:flex-end;
+          gap:10px;">
+
+        <a href="{% url 'portal:work_order_detail' work_order.id %}"
+           class="btn"
+           style="background:#f1f5f9;">
+          Cancel
+        </a>
+
+        <button type="submit"
+                class="btn btn-primary">
+          {% if selected_estimate %}Select Quote &amp; Request Confirmation{% else %}Assign Vendor{% endif %}
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+
+{% endblock %}

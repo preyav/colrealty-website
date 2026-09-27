@@ -1,0 +1,772 @@
+{% extends "portal/base.html" %}
+{% block title %}Work Order 360 | Col Realty Portal{% endblock %}
+{% block page_title %}Work Order 360{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom:18px;display:flex;gap:16px;">
+
+  {% if maintenance_request %}
+    <a href="{% url 'portal:maintenance_detail' maintenance_request.id %}"
+       style="color:#2563eb;text-decoration:none;font-size:0.85rem;">
+      ← Maintenance Request
+    </a>
+  {% endif %}
+
+  <a href="{% url 'portal:property_detail' work_order.unit.property.id %}"
+     style="color:#2563eb;text-decoration:none;font-size:0.85rem;">
+    Property 360
+  </a>
+
+</div>
+
+
+<!-- SUMMARY -->
+
+<div class="stat-grid">
+
+  <div class="stat-card
+      {% if work_order.status == 'completed' %}green
+      {% elif work_order.status == 'in_progress' %}blue
+      {% elif work_order.status == 'cancelled' %}red
+      {% else %}orange{% endif %}">
+
+    <div class="stat-label">Status</div>
+
+    <div class="stat-value" style="font-size:1.4rem;">
+      {{ work_order.get_status_display }}
+    </div>
+
+  </div>
+
+
+  <div class="stat-card">
+
+    <div class="stat-label">Estimated Cost</div>
+
+    <div class="stat-value" style="font-size:1.4rem;">
+      {% if work_order.estimated_cost %}
+        ${{ work_order.estimated_cost|floatformat:2 }}
+      {% else %}
+        —
+      {% endif %}
+    </div>
+
+  </div>
+
+
+  <div class="stat-card green">
+
+    <div class="stat-label">Actual Cost</div>
+
+    <div class="stat-value" style="font-size:1.4rem;">
+      {% if work_order.actual_cost %}
+        ${{ work_order.actual_cost|floatformat:2 }}
+      {% else %}
+        —
+      {% endif %}
+    </div>
+
+  </div>
+
+
+  {% if financial.enabled and has_invoices %}
+  <div class="stat-card">
+
+    <div class="stat-label">Invoiced</div>
+
+    <div class="stat-value" style="font-size:1.4rem;">
+      ${{ total_invoiced|floatformat:2 }}
+    </div>
+
+  </div>
+
+
+  <div class="stat-card green">
+
+    <div class="stat-label">Paid</div>
+
+    <div class="stat-value" style="font-size:1.4rem;">
+      ${{ total_paid|floatformat:2 }}
+    </div>
+
+  </div>
+
+
+  <div class="stat-card {% if outstanding > 0 %}orange{% endif %}">
+
+    <div class="stat-label">Outstanding</div>
+
+    <div class="stat-value" style="font-size:1.4rem;">
+      ${{ outstanding|floatformat:2 }}
+    </div>
+
+  </div>
+
+
+  {% endif %}
+
+  <div class="stat-card {% if has_variance %}{% if variance > 0 %}red{% elif variance < 0 %}green{% endif %}{% endif %}">
+
+    <div class="stat-label">Variance</div>
+
+    <div class="stat-value" style="font-size:1.4rem;">
+      {% if has_variance %}
+        ${{ variance|floatformat:2 }}
+      {% else %}
+        —
+      {% endif %}
+    </div>
+
+    <div class="stat-sub">
+      {% if has_variance %}Actual minus estimated{% elif not has_estimated_cost %}No estimate entered{% else %}Actual cost not entered{% endif %}
+    </div>
+
+  </div>
+
+
+  <div class="stat-card">
+
+    <div class="stat-label">Created</div>
+
+    <div class="stat-value" style="font-size:1.2rem;">
+      {{ work_order.created_at|date:"M d, Y" }}
+    </div>
+
+  </div>
+
+</div>
+
+<!-- WORK ORDER DETAILS -->
+
+<div class="card">
+
+  <div class="card-header">
+
+    <h2>Work Order #{{ work_order.id }} — {{ work_order.title }}</h2>
+
+    <div style="display:flex;gap:8px;align-items:center;">
+
+      {% if work_order.status == "scheduled" %}
+        <form method="post"
+              action="{% url 'portal:start_work_order' work_order.id %}"
+              style="margin:0;">
+          {% csrf_token %}
+
+          <button type="submit"
+                  class="btn btn-primary btn-sm">
+            Start Work
+          </button>
+        </form>
+      {% endif %}
+
+      {% if work_order.status == "in_progress" %}
+        <a href="{% url 'portal:complete_work_order' work_order.id %}"
+           class="btn btn-primary btn-sm">
+          Complete Work Order
+        </a>
+      {% endif %}
+
+      {% if work_order.status == "completed" and financial.enabled and financial.capabilities.can_add_invoice and not has_invoices %}
+        <a href="{% url 'portal:add_vendor_invoice' work_order.id %}"
+           class="btn btn-primary btn-sm">
+          Add Vendor Invoice
+        </a>
+      {% endif %}
+
+      {% if can_create_replacement %}
+        <a href="{% url 'portal:create_work_order' maintenance_request.id %}"
+           class="btn btn-primary btn-sm">
+          Create Replacement Work Order
+        </a>
+      {% elif replacement_work_order %}
+        <a href="{% url 'portal:work_order_detail' replacement_work_order.id %}"
+           class="btn btn-primary btn-sm">
+          View Replacement Work Order #{{ replacement_work_order.id }}
+        </a>
+      {% endif %}
+
+      {% if work_order.status != "completed" and work_order.status != "cancelled" %}
+        <a href="{% url 'portal:cancel_work_order' work_order.id %}"
+           class="btn btn-sm"
+           style="background:#dc2626;color:#ffffff;">
+          Cancel Work Order
+        </a>
+      {% endif %}
+
+      {% if work_order.status != "completed" and work_order.status != "cancelled" %}
+        <a href="{% url 'portal:edit_work_order' work_order.id %}"
+           class="btn btn-sm"
+           style="background:#f1f5f9;">
+          Edit
+        </a>
+      {% endif %}
+
+    </div>
+
+  </div>
+
+  <div style="padding:20px;">
+
+    <div style="margin-bottom:20px;">
+
+      <div class="stat-label">Description</div>
+
+      <div style="margin-top:6px;line-height:1.6;">
+        {{ work_order.description|linebreaksbr }}
+      </div>
+
+    </div>
+
+
+    <div style="
+        display:grid;
+        grid-template-columns:repeat(4,1fr);
+        gap:20px;">
+
+      <div>
+        <div class="stat-label">Property</div>
+        <strong>{{ work_order.unit.property.street_address }}</strong>
+      </div>
+
+      <div>
+        <div class="stat-label">Unit</div>
+
+        {% if work_order.unit.unit_number %}
+          {{ work_order.unit.unit_number }}
+        {% else %}
+          Main Unit
+        {% endif %}
+      </div>
+
+      <div>
+        <div class="stat-label">Scheduled</div>
+        {{ work_order.scheduled_for|date:"M d, Y g:i A"|default:"—" }}
+      </div>
+
+      <div>
+        <div class="stat-label">Completed</div>
+        {{ work_order.completed_at|date:"M d, Y g:i A"|default:"—" }}
+      </div>
+
+      <div>
+        <div class="stat-label">Approved By</div>
+        {{ work_order.approved_by|default:"—" }}
+      </div>
+
+      <div>
+        <div class="stat-label">Approved At</div>
+        {{ work_order.approved_at|date:"M d, Y g:i A"|default:"—" }}
+      </div>
+
+      <div>
+        <div class="stat-label">Estimated Cost</div>
+
+        {% if work_order.estimated_cost %}
+          ${{ work_order.estimated_cost|floatformat:2 }}
+        {% else %}
+          —
+        {% endif %}
+      </div>
+
+      <div>
+        <div class="stat-label">Actual Cost</div>
+
+        {% if work_order.actual_cost %}
+          <strong>${{ work_order.actual_cost|floatformat:2 }}</strong>
+        {% else %}
+          —
+        {% endif %}
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- VENDOR PROCESS -->
+<div class="card">
+  <div class="card-header" style="align-items:center;">
+    <div>
+      <h2 style="margin-bottom:4px;">
+        {% if active_award %}Vendor Award &amp; Quotes{% elif vendor_rows %}Vendor Quotes &amp; Selection{% else %}Choose a Vendor Process{% endif %}
+      </h2>
+      <div style="font-size:.82rem;color:#64748b;font-weight:400;">
+        {% if active_award %}
+          The active vendor and award decision, with other received quotes retained as alternatives.
+        {% elif vendor_rows %}
+          Review recorded quotes and assignments, then select, assign, and schedule the vendor who will perform the work.
+        {% else %}
+          Compare vendor quotes before deciding, or assign a known vendor directly when a quote is unnecessary.
+        {% endif %}
+      </div>
+    </div>
+    {% if vendor_rows and work_order.status != "completed" and work_order.status != "cancelled" %}
+      <div style="display:flex;gap:8px;align-items:center;">
+        {% if not active_award %}
+          <a href="{% url 'portal:request_vendor_quotes' work_order.id %}" class="btn btn-primary btn-sm">Request More Quotes</a>
+          <a href="{% url 'portal:add_vendor_estimate' work_order.id %}" class="btn btn-sm" style="background:#f1f5f9;">Record Quote Manually</a>
+        {% endif %}
+        {% if not active_award %}
+          <a href="{% url 'portal:assign_vendor' work_order.id %}" class="btn btn-sm" style="background:#f1f5f9;">Assign Without Quote</a>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+
+  {% if not vendor_rows %}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:20px;">
+      <div style="border:1px solid #dbeafe;border-radius:10px;padding:18px;background:#f8fbff;">
+        <div class="stat-label">Option 1</div>
+        <h3 style="margin:6px 0 8px;">Request &amp; Compare Quotes</h3>
+        <p style="margin:0 0 16px;color:#64748b;line-height:1.5;">
+          Send the same scope to selected vendors, track their responses, and
+          compare received quotes before choosing a vendor.
+        </p>
+        {% if work_order.status != "completed" and work_order.status != "cancelled" %}
+          <a href="{% url 'portal:request_vendor_quotes' work_order.id %}"
+             class="btn btn-primary btn-sm">
+            Request Quotes from Vendors
+          </a>
+          <a href="{% url 'portal:add_vendor_estimate' work_order.id %}"
+             class="btn btn-sm" style="background:#f1f5f9;margin-left:6px;">
+            Record a Quote Manually
+          </a>
+        {% endif %}
+      </div>
+
+      <div style="border:1px solid #e2e8f0;border-radius:10px;padding:18px;background:#ffffff;">
+        <div class="stat-label">Option 2</div>
+        <h3 style="margin:6px 0 8px;">Assign a Vendor Directly</h3>
+        <p style="margin:0 0 16px;color:#64748b;line-height:1.5;">
+          Use this for urgent work, warranty service, a trusted vendor, or when
+          the vendor and price are already known.
+        </p>
+        {% if work_order.status != "completed" and work_order.status != "cancelled" %}
+          <a href="{% url 'portal:assign_vendor' work_order.id %}"
+             class="btn btn-sm"
+             style="background:#f1f5f9;">
+            Assign Vendor Without Quote
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+  {% if estimates and not active_award %}
+  <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;padding:18px 20px;border-bottom:1px solid #e2e8f0;">
+    <div><div class="stat-label">Estimates Received</div><div style="font-size:1.25rem;font-weight:700;margin-top:4px;">{{ estimates|length }}</div></div>
+    <div><div class="stat-label">Lowest</div><div style="font-size:1.25rem;font-weight:700;margin-top:4px;">{% if lowest_estimate != None %}${{ lowest_estimate|floatformat:2 }}{% else %}—{% endif %}</div></div>
+    <div><div class="stat-label">Highest</div><div style="font-size:1.25rem;font-weight:700;margin-top:4px;">{% if highest_estimate != None %}${{ highest_estimate|floatformat:2 }}{% else %}—{% endif %}</div></div>
+    <div>
+      <div class="stat-label">Selected</div>
+      {% if active_award %}
+        <div style="font-weight:700;margin-top:4px;">{{ active_award.vendor }}</div>
+        <div style="color:#16a34a;font-weight:700;margin-top:2px;">{% if active_award.estimate %}${{ active_award.estimate.amount|floatformat:2 }}{% else %}Direct assignment{% endif %}</div>
+      {% else %}
+        <div style="color:#94a3b8;font-weight:600;margin-top:4px;">None selected</div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if vendor_rows %}
+  <div>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Vendor</th>
+        <th>Estimate</th>
+        <th>Quote Status</th>
+        <th>Work Status</th>
+        <th>Scheduled</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in vendor_rows %}
+      <tr{% if row.is_active_award %} style="background:#f0fdf4;"{% elif active_award %} style="background:#f8fafc;color:#64748b;"{% endif %}>
+        <td>
+          <strong>{{ row.vendor }}</strong>
+          {% if row.is_active_award %}
+            <span class="badge badge-green" style="margin-left:6px;">{% if active_award.status == "pending_confirmation" %}Selected Vendor{% else %}Awarded Vendor{% endif %}</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if row.estimate %}
+            <strong>${{ row.estimate.amount|floatformat:2 }}</strong>
+          {% elif row.quote_request %}
+            <span style="color:#94a3b8;">Awaiting quote</span>
+          {% else %}—{% endif %}
+        </td>
+        <td>
+          {% if row.estimate %}
+            <span class="badge {% if row.is_active_award %}badge-green{% else %}badge-orange{% endif %}">{% if row.is_active_award and active_award.status == "pending_confirmation" %}Pending Vendor Confirmation{% elif row.is_active_award %}Awarded{% elif active_award %}Alternative{% else %}Received{% endif %}</span>
+          {% elif row.quote_request %}
+            <span class="badge badge-orange">{{ row.quote_request.get_status_display }}</span>
+            {% if row.quote_request.response_due %}<div style="font-size:.75rem;color:#64748b;margin-top:4px;">Due {{ row.quote_request.response_due|date:"M d, Y" }}</div>{% endif %}
+          {% else %}—{% endif %}
+        </td>
+        <td>
+          {% if row.is_active_award and row.assignment and row.assignment.status != "cancelled" and row.assignment.status != "declined" %}
+            {{ row.assignment.get_status_display }}
+          {% else %}
+            <span style="color:#94a3b8;">Not Assigned</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if row.is_active_award and row.assignment and row.assignment.scheduled_for %}{{ row.assignment.scheduled_for|date:"M d, Y · g:i A" }}{% else %}—{% endif %}
+        </td>
+        <td>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            {% if row.is_active_award %}
+              {% if active_award.status == "pending_confirmation" %}
+                <form method="post" action="{% url 'portal:confirm_vendor' work_order.id active_award.id %}" style="display:inline;">{% csrf_token %}<button type="submit" class="btn btn-primary btn-sm">Confirm Vendor</button></form>
+                <a href="{% url 'portal:change_vendor' work_order.id %}" class="btn btn-sm" style="background:#f1f5f9;">Change Selection</a>
+              {% elif row.assignment and row.assignment.status == "assigned" or row.assignment and row.assignment.status == "accepted" or row.assignment and row.assignment.status == "scheduled" %}
+                <a href="{% url 'portal:schedule_vendor' work_order.id row.assignment.id %}" class="btn btn-primary btn-sm">{% if row.assignment.status == "scheduled" %}Reschedule{% else %}Schedule{% endif %}</a>
+                <a href="{% url 'portal:cancel_vendor_assignment' work_order.id row.assignment.id %}" class="btn btn-sm" style="background:#fee2e2;color:#b91c1c;">Cancel Assignment</a>
+              {% elif active_award.status == "active" %}
+                <form method="post" action="{% url 'portal:assign_awarded_vendor' work_order.id active_award.id %}" style="display:inline;">{% csrf_token %}<button type="submit" class="btn btn-primary btn-sm">Assign Work Order</button></form>
+                <a href="{% url 'portal:change_vendor' work_order.id %}" class="btn btn-sm" style="background:#f1f5f9;">Change Vendor</a>
+              {% endif %}
+            {% elif row.assignment and row.assignment.status == "assigned" or row.assignment and row.assignment.status == "accepted" or row.assignment and row.assignment.status == "scheduled" %}
+              <a href="{% url 'portal:schedule_vendor' work_order.id row.assignment.id %}" class="btn btn-primary btn-sm">{% if row.assignment.status == "scheduled" %}Reschedule{% else %}Schedule{% endif %}</a>
+            {% elif active_award and row.estimate and work_order.status != "completed" and work_order.status != "cancelled" %}
+              <span style="color:#94a3b8;font-size:.78rem;">Available through Change Vendor</span>
+            {% elif row.estimate and work_order.status != "completed" and work_order.status != "cancelled" %}
+              <a href="{% url 'portal:assign_vendor' work_order.id %}?estimate_id={{ row.estimate.id }}" class="btn btn-primary btn-sm">Select Quote</a>
+            {% elif row.quote_request and row.quote_request.status != "quote_received" and work_order.status != "completed" and work_order.status != "cancelled" %}
+              <a href="{% url 'portal:add_vendor_estimate' work_order.id %}?request_id={{ row.quote_request.id }}" class="btn btn-primary btn-sm">Record Received Quote</a>
+            {% else %}—{% endif %}
+            {% if row.estimate or row.is_active_award %}
+              <button type="button"
+                      class="estimate-toggle btn btn-sm"
+                      data-target="vendor-details-{{ row.vendor.id }}"
+                      aria-expanded="false"
+                      style="background:#f1f5f9;">
+                More Details
+              </button>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% if row.estimate or row.is_active_award %}
+      <tr id="vendor-details-{{ row.vendor.id }}" class="estimate-detail-row" style="display:none;">
+        <td colspan="6" style="padding:0;border-top:0;">
+          <div style="margin:0 18px 14px;padding:14px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
+            {% if row.is_active_award %}
+            <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;padding-bottom:14px;margin-bottom:14px;border-bottom:1px solid #e2e8f0;">
+              <div><div class="stat-label">Selection Method</div><div style="margin-top:4px;font-weight:600;">{{ active_award.get_method_display }}</div></div>
+              <div><div class="stat-label">Award Rationale</div><div style="margin-top:4px;font-weight:600;">{{ active_award.decision_reason_display|default:"—" }}</div></div>
+              <div><div class="stat-label">{% if active_award.status == "pending_confirmation" %}Selected By{% else %}Awarded By{% endif %}</div><div style="margin-top:4px;font-weight:600;">{{ active_award.awarded_by|default:"—" }}</div></div>
+              <div><div class="stat-label">{% if active_award.status == "pending_confirmation" %}Selected At{% else %}Awarded At{% endif %}</div><div style="margin-top:4px;font-weight:600;">{{ active_award.awarded_at|date:"M d, Y · g:i A" }}</div></div>
+              {% if active_award.confirmed_at %}<div><div class="stat-label">Confirmed By</div><div style="margin-top:4px;font-weight:600;">{{ active_award.confirmed_by|default:"—" }}</div></div><div><div class="stat-label">Confirmed At</div><div style="margin-top:4px;font-weight:600;">{{ active_award.confirmed_at|date:"M d, Y · g:i A" }}</div></div>{% endif %}
+              {% if active_award.decision_notes %}<div style="grid-column:1 / -1;"><div class="stat-label">Award Notes</div><div style="margin-top:4px;white-space:pre-wrap;">{{ active_award.decision_notes }}</div></div>{% endif %}
+            </div>
+            {% endif %}
+            {% if row.estimate %}
+            <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;">
+              <div>
+                <div class="stat-label">Submitted</div>
+                <div style="margin-top:4px;font-weight:600;">{{ row.estimate.submitted_at|date:"M d, Y · g:i A" }}</div>
+              </div>
+              <div>
+                <div class="stat-label">Source</div>
+                <div style="margin-top:4px;font-weight:600;">{{ row.estimate.get_source_display }}</div>
+              </div>
+              <div>
+                <div class="stat-label">Approved</div>
+                <div style="margin-top:4px;font-weight:600;">{% if row.estimate.approved_at %}{{ row.estimate.approved_at|date:"M d, Y · g:i A" }}{% else %}—{% endif %}</div>
+              </div>
+              <div>
+                <div class="stat-label">Approved By</div>
+                <div style="margin-top:4px;font-weight:600;">{% if row.estimate.approved_by %}{{ row.estimate.approved_by }}{% else %}—{% endif %}</div>
+              </div>
+            </div>
+            {% if row.estimate.entry_method == "itemized" %}
+            <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-top:14px;">
+              <div><div class="stat-label">Labor</div><div>${{ row.estimate.labor_amount|default:0|floatformat:2 }}</div></div>
+              <div><div class="stat-label">Materials</div><div>${{ row.estimate.materials_amount|default:0|floatformat:2 }}</div></div>
+              <div><div class="stat-label">Taxes</div><div>${{ row.estimate.tax_amount|default:0|floatformat:2 }}</div></div>
+              <div><div class="stat-label">Other Fees</div><div>${{ row.estimate.other_fees|default:0|floatformat:2 }}</div></div>
+              <div><div class="stat-label">Discount</div><div>-${{ row.estimate.discount_amount|default:0|floatformat:2 }}</div></div>
+            </div>
+            {% endif %}
+            {% if row.estimate.attachment %}
+            <div style="margin-top:14px;"><a href="{{ row.estimate.attachment.url }}" target="_blank" rel="noopener" class="btn btn-sm" style="background:#e2e8f0;">View Quote Attachment</a></div>
+            {% endif %}
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:14px;">
+              <div>
+                <div class="stat-label">Scope / Description</div>
+                <div style="margin-top:4px;white-space:pre-wrap;">{{ row.estimate.description|default:"—" }}</div>
+              </div>
+              <div>
+                <div class="stat-label">Internal Notes</div>
+                <div style="margin-top:4px;white-space:pre-wrap;">{{ row.estimate.notes|default:"—" }}</div>
+              </div>
+            </div>
+            {% endif %}
+            {% if not row.is_active_award and row.assignment and row.assignment.status == "cancelled" %}
+              <div style="margin-top:14px;padding-top:14px;border-top:1px solid #e2e8f0;color:#64748b;"><strong>Assignment history:</strong> A previous assignment to this vendor was cancelled.</div>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% endif %}
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% endif %}
+</div>
+
+{% if financial.enabled and has_invoices %}
+<!-- INVOICES -->
+
+<div class="card">
+
+  <div class="card-header">
+
+    <h2>Vendor Invoices</h2>
+
+    {% if work_order.status == "completed" and financial.capabilities.can_add_invoice %}
+      <a href="{% url 'portal:add_vendor_invoice' work_order.id %}"
+         class="btn btn-primary btn-sm">
+        Add Invoice
+      </a>
+    {% endif %}
+
+  </div>
+
+  <table class="data-table">
+
+    <thead>
+      <tr>
+        <th>Vendor</th>
+        <th>Invoice #</th>
+        <th>Amount</th>
+        <th>Status</th>
+        <th>Invoice Date</th>
+        <th>Due Date</th>
+        <th>Paid</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+
+    <tbody>
+
+      {% for invoice in financial.invoices %}
+
+      <tr>
+
+        <td>
+          {{ invoice.vendor }}
+        </td>
+
+        <td>
+          {{ invoice.invoice_number|default:"—" }}
+        </td>
+
+        <td>
+          <strong>
+            ${{ invoice.amount|floatformat:2 }}
+          </strong>
+        </td>
+
+        <td>
+
+          {% if invoice.status == "paid" %}
+
+            <span class="badge badge-green">
+              Paid
+            </span>
+
+          {% elif invoice.status == "disputed" %}
+
+            <span class="badge badge-red">
+              Disputed
+            </span>
+
+          {% else %}
+
+            <span class="badge badge-blue">
+              {{ invoice.get_status_display }}
+            </span>
+
+          {% endif %}
+
+        </td>
+
+        <td>
+          {{ invoice.invoice_date|date:"M d, Y"|default:"—" }}
+        </td>
+
+        <td>
+          {{ invoice.due_date|date:"M d, Y"|default:"—" }}
+        </td>
+
+        <td>
+          {{ invoice.paid_at|date:"M d, Y"|default:"—" }}
+        </td>
+
+        <td>
+
+          {% if invoice.status == "submitted" %}
+
+            <form method="post"
+                  action="{% url 'portal:approve_vendor_invoice' invoice.id %}"
+                  style="margin:0;">
+
+              {% csrf_token %}
+
+              <button type="submit"
+                      class="btn btn-primary btn-sm">
+                Approve
+              </button>
+
+            </form>
+
+          {% elif invoice.status == "approved" %}
+
+            <form method="post"
+                  action="{% url 'portal:mark_vendor_invoice_paid' invoice.id %}"
+                  style="margin:0;">
+
+              {% csrf_token %}
+
+              <button type="submit"
+                      class="btn btn-primary btn-sm">
+                Mark Paid
+              </button>
+
+            </form>
+
+          {% elif invoice.status == "paid" %}
+
+            <span class="badge badge-green">
+              Paid
+            </span>
+
+          {% else %}
+
+            —
+
+          {% endif %}
+
+        </td>
+
+      </tr>
+
+      {% empty %}
+
+      <tr>
+
+        <td colspan="8"
+            style="text-align:center;color:#94a3b8;padding:24px;">
+          No invoices.
+        </td>
+
+      </tr>
+
+      {% endfor %}
+
+    </tbody>
+
+  </table>
+
+</div>
+
+
+{% endif %}
+
+<!-- WORK ORDER ACTIVITY -->
+
+{% if status_history %}
+<div class="card">
+
+  <div class="card-header">
+    <h2>Work Order Activity</h2>
+    <button type="button" id="activity-toggle" class="btn btn-sm" style="background:#f1f5f9;" aria-expanded="false">Show Activity</button>
+  </div>
+
+  <div id="activity-content" style="display:none;">
+  <table class="data-table">
+
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>From</th>
+        <th>To</th>
+        <th>Changed By</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+
+    <tbody>
+
+      {% for history in status_history %}
+
+      <tr>
+
+        <td>
+          {{ history.changed_at|date:"M d, Y g:i A" }}
+        </td>
+
+        <td>
+          {{ history.from_status|default:"—" }}
+        </td>
+
+        <td>
+          <strong>{{ history.to_status }}</strong>
+        </td>
+
+        <td>
+          {{ history.changed_by|default:"—" }}
+        </td>
+
+        <td>
+          {{ history.notes|default:"—" }}
+        </td>
+
+      </tr>
+
+      {% endfor %}
+
+    </tbody>
+
+  </table>
+  </div>
+
+</div>
+{% endif %}
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  document.querySelectorAll(".estimate-toggle").forEach(function (button) {
+    button.addEventListener("click", function () {
+      const row = document.getElementById(button.dataset.target);
+      if (!row) return;
+      const opening = row.style.display === "none" || row.style.display === "";
+      row.style.display = opening ? "table-row" : "none";
+      button.textContent = opening ? "Less Details" : "More Details";
+      button.setAttribute("aria-expanded", opening ? "true" : "false");
+    });
+  });
+
+  const activityButton = document.getElementById("activity-toggle");
+  const activityContent = document.getElementById("activity-content");
+  if (activityButton && activityContent) {
+    activityButton.addEventListener("click", function () {
+      const opening = activityContent.style.display === "none" || activityContent.style.display === "";
+      activityContent.style.display = opening ? "block" : "none";
+      activityButton.textContent = opening ? "Hide Activity" : "Show Activity";
+      activityButton.setAttribute("aria-expanded", opening ? "true" : "false");
+    });
+  }
+});
+</script>
+{% endblock %}

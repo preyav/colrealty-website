@@ -1,0 +1,83 @@
+{% extends "portal/base.html" %}
+
+{% block title %}Add Vendor Invoice | Col Realty Portal{% endblock %}
+{% block page_title %}Add Vendor Invoice{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom:18px;">
+  <a href="{% url 'portal:work_order_detail' work_order.id %}"
+     style="color:#2563eb;text-decoration:none;font-size:0.85rem;">
+    ← Back to Work Order #{{ work_order.id }}
+  </a>
+</div>
+
+<div class="card">
+
+  <div class="card-header">
+    <h2>Work Order #{{ work_order.id }}</h2>
+  </div>
+
+  <div style="padding:20px;">
+    <strong>{{ work_order.title }}</strong>
+
+    <div style="margin-top:8px;color:#64748b;">
+      {{ work_order.unit.property.street_address }}
+    </div>
+
+    <div style="margin-top:14px;">
+      Estimated:
+      {% if work_order.estimated_cost %}
+        ${{ work_order.estimated_cost|floatformat:2 }}
+      {% else %}
+        —
+      {% endif %}
+
+      &nbsp; | &nbsp;
+
+      Actual:
+      {% if work_order.actual_cost %}
+        ${{ work_order.actual_cost|floatformat:2 }}
+      {% else %}
+        —
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+
+<div class="card">
+
+  <div class="card-header">
+    <h2>Invoice Details</h2>
+  </div>
+
+  <div style="padding:20px;">
+
+    <form method="post">
+      {% csrf_token %}
+
+      {{ form.as_p }}
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">
+
+        <a href="{% url 'portal:work_order_detail' work_order.id %}"
+           class="btn"
+           style="background:#f1f5f9;">
+          Cancel
+        </a>
+
+        <button type="submit"
+                class="btn btn-primary">
+          Add Invoice
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+
+{% endblock %}

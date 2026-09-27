@@ -4,6 +4,236 @@
 
 {% block content %}
 
+<p style="
+    font-size:0.75rem;
+    text-transform:uppercase;
+    color:#94a3b8;
+    letter-spacing:1px;
+    margin-bottom:10px;">
+  Property Management
+</p>
+
+<div class="stat-grid">
+
+  <div class="stat-card blue">
+    <div class="stat-label">Managed Properties</div>
+    <div class="stat-value">{{ property_stats.active }}</div>
+    <div class="stat-sub">
+      {{ property_stats.total }} total
+    </div>
+  </div>
+
+  <div class="stat-card green">
+    <div class="stat-label">Occupancy</div>
+    <div class="stat-value">
+      {{ unit_stats.occupancy_rate }}%
+    </div>
+    <div class="stat-sub">
+      {{ unit_stats.occupied }} occupied /
+      {{ unit_stats.total }} units
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-label">Active Leases</div>
+    <div class="stat-value">
+      {{ lease_stats.active }}
+    </div>
+    <div class="stat-sub">
+      {{ lease_stats.expiring_90_days }} expiring within 90 days
+    </div>
+  </div>
+
+  <div class="stat-card green">
+    <div class="stat-label">Monthly Rent</div>
+    <div class="stat-value"
+         style="font-size:1.6rem;">
+      ${{ active_monthly_rent|floatformat:0 }}
+    </div>
+    <div class="stat-sub">
+      Active lease rent
+    </div>
+  </div>
+
+  <div class="stat-card
+      {% if maintenance_stats.emergency %}
+          red
+      {% elif maintenance_stats.open %}
+          orange
+      {% endif %}">
+    <div class="stat-label">Open Maintenance</div>
+    <div class="stat-value">
+      {{ maintenance_stats.open }}
+    </div>
+    <div class="stat-sub">
+      {{ maintenance_stats.emergency }} emergency
+    </div>
+  </div>
+
+  <div class="stat-card orange">
+    <div class="stat-label">Open Work Orders</div>
+    <div class="stat-value">
+      {{ work_order_stats.open }}
+    </div>
+    <div class="stat-sub">
+      {{ work_order_stats.in_progress }} in progress
+    </div>
+  </div>
+
+</div>
+
+<div style="
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:16px;
+    margin-bottom:28px;">
+
+  <div class="stat-card">
+    <div class="stat-label">Owners</div>
+    <div class="stat-value">
+      {{ people_stats.owners }}
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-label">Tenants</div>
+    <div class="stat-value">
+      {{ people_stats.tenants }}
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-label">Vendors</div>
+    <div class="stat-value">
+      {{ people_stats.vendors }}
+    </div>
+  </div>
+
+  <div class="stat-card blue">
+    <div class="stat-label">Onboarding</div>
+    <div class="stat-value">
+      {{ property_stats.onboarding }}
+    </div>
+    <div class="stat-sub">
+      Properties
+    </div>
+  </div>
+
+</div>
+
+<div class="card">
+
+  <div class="card-header">
+    <h2>Recent Maintenance</h2>
+
+    <a href="{% url 'portal:maintenance' %}"
+       class="btn btn-primary btn-sm">
+      View all
+    </a>
+  </div>
+
+  <table class="data-table">
+
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Issue</th>
+        <th>Property</th>
+        <th>Priority</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+
+    <tbody>
+
+      {% for item in recent_maintenance %}
+
+      <tr>
+
+        <td style="
+            color:#64748b;
+            white-space:nowrap;">
+          {{ item.submitted_at|date:"M d, Y" }}
+        </td>
+
+        <td>
+          <strong>{{ item.title }}</strong>
+        </td>
+
+        <td>
+          {{ item.unit.property.street_address }}
+        </td>
+
+        <td>
+
+          {% if item.priority == "emergency" %}
+
+            <span class="badge badge-red">
+              Emergency
+            </span>
+
+          {% elif item.priority == "high" %}
+
+            <span class="badge badge-orange">
+              High
+            </span>
+
+          {% else %}
+
+            <span class="badge badge-gray">
+              {{ item.get_priority_display }}
+            </span>
+
+          {% endif %}
+
+        </td>
+
+        <td>
+
+          {% if item.status == "completed" %}
+
+            <span class="badge badge-green">
+              Completed
+            </span>
+
+          {% elif item.status == "new" %}
+
+            <span class="badge badge-blue">
+              New
+            </span>
+
+          {% else %}
+
+            <span class="badge badge-orange">
+              {{ item.get_status_display }}
+            </span>
+
+          {% endif %}
+
+        </td>
+
+      </tr>
+
+      {% empty %}
+
+      <tr>
+        <td colspan="5"
+            style="
+            text-align:center;
+            color:#94a3b8;
+            padding:24px;">
+          No maintenance activity.
+        </td>
+      </tr>
+
+      {% endfor %}
+
+    </tbody>
+
+  </table>
+
+</div>
+
 <!-- ── Leads Stats ─────────────────────────────────────────────────────── -->
 <p style="font-size:0.75rem;text-transform:uppercase;color:#94a3b8;letter-spacing:1px;margin-bottom:10px;">Leads</p>
 <div class="stat-grid">

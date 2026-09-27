@@ -1,0 +1,162 @@
+{% extends "portal/base.html" %}
+
+{% block title %}{{ page_heading }} | Col Realty Portal{% endblock %}
+{% block page_title %}{{ page_heading }}{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom:18px;">
+  <a href="{% url 'portal:property_detail' property_obj.id %}"
+     style="color:#2563eb;text-decoration:none;font-size:0.85rem;">
+    ← Back to Property 360
+  </a>
+</div>
+
+<div class="card">
+
+  <div class="card-header">
+    <h2>{{ page_heading }}</h2>
+  </div>
+
+  <div style="padding:20px;">
+
+    <div style="
+        margin-bottom:20px;
+        padding:14px;
+        background:#f8fafc;
+        border-radius:6px;">
+
+      <div class="stat-label">Property</div>
+
+      <strong>
+        {{ property_obj.street_address }},
+        {{ property_obj.city }},
+        {{ property_obj.state }}
+        {{ property_obj.zip_code }}
+      </strong>
+
+    </div>
+
+    <div style="
+        margin-bottom:18px;
+        color:#64748b;
+        font-size:0.82rem;">
+      <span style="color:#dc2626;">*</span>
+      Required fields
+    </div>
+
+    <form method="post">
+
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="alert alert-error">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
+
+      <div style="
+          display:grid;
+          grid-template-columns:1fr 1fr;
+          gap:20px;">
+
+        <div>
+          <label class="stat-label">Unit Number</label>
+          <div style="margin-top:6px;">
+            {{ form.unit_number }}
+          </div>
+          {{ form.unit_number.errors }}
+        </div>
+
+        <div>
+          <label class="stat-label">Status</label>
+          <div style="margin-top:6px;">
+            {{ form.status }}
+          </div>
+          {{ form.status.errors }}
+        </div>
+
+        <div>
+          <label class="stat-label">
+            Bedrooms <span style="color:#dc2626;">*</span>
+          </label>
+          <div style="margin-top:6px;">
+            {{ form.beds }}
+          </div>
+          {{ form.beds.errors }}
+        </div>
+
+        <div>
+          <label class="stat-label">
+            Full Baths <span style="color:#dc2626;">*</span>
+          </label>
+          <div style="margin-top:6px;">
+            {{ form.bathrooms_full }}
+          </div>
+          {{ form.bathrooms_full.errors }}
+        </div>
+
+        <div>
+          <label class="stat-label">
+            Half Baths <span style="color:#dc2626;">*</span>
+          </label>
+          <div style="margin-top:6px;">
+            {{ form.bathrooms_half }}
+          </div>
+          {{ form.bathrooms_half.errors }}
+        </div>
+
+        <div>
+          <label class="stat-label">
+            Square Feet <span style="color:#dc2626;">*</span>
+          </label>
+          <div style="margin-top:6px;">
+            {{ form.sqft }}
+          </div>
+          {{ form.sqft.errors }}
+        </div>
+
+        <div>
+          <label class="stat-label">Market Rent</label>
+          <div style="margin-top:6px;">
+            {{ form.market_rent }}
+          </div>
+          {{ form.market_rent.errors }}
+        </div>
+
+      </div>
+
+      <div style="margin-top:24px;">
+        <label class="stat-label">Notes</label>
+        <div style="margin-top:6px;">
+          {{ form.notes }}
+        </div>
+        {{ form.notes.errors }}
+      </div>
+
+      <div style="
+          display:flex;
+          justify-content:flex-end;
+          gap:10px;
+          margin-top:24px;">
+
+        <a href="{% url 'portal:property_detail' property_obj.id %}"
+           class="btn"
+           style="background:#f1f5f9;">
+          Cancel
+        </a>
+
+        <button type="submit"
+                class="btn btn-primary">
+          {{ submit_label }}
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+
+{% endblock %}

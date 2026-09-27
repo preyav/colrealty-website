@@ -1,0 +1,93 @@
+{% extends "portal/base.html" %}
+
+{% block title %}{{ page_heading }} | Col Realty Portal{% endblock %}
+{% block page_title %}{{ page_heading }}{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom:18px;">
+  <a href="{% url 'portal:lease_detail' lease.id %}"
+     style="color:#2563eb;text-decoration:none;font-size:0.85rem;">
+    ← Back to Lease 360
+  </a>
+</div>
+
+<div class="card" style="max-width:760px;">
+
+  <div class="card-header">
+    <h2>{{ page_heading }}</h2>
+  </div>
+
+  <div style="padding:20px;">
+
+    <div style="
+        background:#f8fafc;
+        border:1px solid #e2e8f0;
+        border-radius:8px;
+        padding:14px 16px;
+        margin-bottom:20px;
+        line-height:1.6;">
+      <strong>{{ lease.unit.property.street_address }}</strong>
+      {% if lease.unit.unit_number %}
+        — Unit {{ lease.unit.unit_number }}
+      {% endif %}
+      <br>
+      {{ lease.start_date|date:"M d, Y" }} – {{ lease.end_date|date:"M d, Y" }}
+      <br>
+      <span style="color:#64748b;">{{ intro_text }}</span>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div style="
+            background:#fee2e2;
+            color:#991b1b;
+            padding:12px;
+            border-radius:6px;
+            margin-bottom:16px;">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
+
+      {% for field in form %}
+        <div style="margin-bottom:16px;">
+          <label for="{{ field.id_for_label }}"
+                 style="display:block;font-weight:600;margin-bottom:6px;">
+            {{ field.label }}
+          </label>
+
+          {{ field }}
+
+          {% if field.help_text %}
+            <div style="font-size:0.8rem;color:#64748b;margin-top:4px;">
+              {{ field.help_text }}
+            </div>
+          {% endif %}
+
+          {% for error in field.errors %}
+            <div style="color:#b91c1c;font-size:0.85rem;margin-top:4px;">
+              {{ error }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endfor %}
+
+      <div style="display:flex;gap:10px;margin-top:22px;">
+        <button type="submit" class="btn btn-primary">
+          {{ submit_label }}
+        </button>
+
+        <a href="{% url 'portal:lease_detail' lease.id %}"
+           class="btn"
+           style="background:#f1f5f9;">
+          Cancel
+        </a>
+      </div>
+    </form>
+
+  </div>
+</div>
+
+{% endblock %}

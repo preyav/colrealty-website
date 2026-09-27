@@ -1,0 +1,156 @@
+{% extends "portal/base.html" %}
+{% block title %}Properties | Col Realty Portal{% endblock %}
+{% block page_title %}Properties ({{ total }}){% endblock %}
+
+{% block content %}
+
+<div class="card">
+
+  <div class="card-header">
+
+    <h2>Property Directory</h2>
+
+    <a href="{% url 'portal:create_property' %}"
+       class="btn btn-primary btn-sm">
+      + Add Property
+    </a>
+
+  </div>
+
+  <form method="get" class="filter-bar">
+    <input
+      type="text"
+      name="q"
+      placeholder="Search address, city, ZIP..."
+      value="{{ search }}"
+    />
+
+    <select name="status">
+      <option value="">All Status</option>
+
+      <option value="prospect"
+        {% if status_filter == "prospect" %}selected{% endif %}>
+        Prospect
+      </option>
+
+      <option value="onboarding"
+        {% if status_filter == "onboarding" %}selected{% endif %}>
+        Onboarding
+      </option>
+
+      <option value="active"
+        {% if status_filter == "active" %}selected{% endif %}>
+        Active
+      </option>
+
+      <option value="inactive"
+        {% if status_filter == "inactive" %}selected{% endif %}>
+        Inactive
+      </option>
+    </select>
+
+    <button type="submit" class="btn btn-primary btn-sm">
+      Filter
+    </button>
+
+    {% if search or status_filter %}
+      <a href="{% url 'portal:properties' %}"
+         class="btn btn-sm"
+         style="background:#f1f5f9;">
+        Clear
+      </a>
+    {% endif %}
+  </form>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Property</th>
+        <th>Type</th>
+        <th>Units</th>
+        <th>Owner</th>
+        <th>Status</th>
+        <th>Updated</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+
+    <tbody>
+
+      {% for property in properties %}
+      <tr>
+
+        <td>
+          <strong>{{ property.street_address }}</strong>
+          <div style="color:#64748b;font-size:0.78rem;">
+            {{ property.city }}, {{ property.state }}
+            {{ property.zip_code }}
+          </div>
+        </td>
+
+        <td>
+          {{ property.property_type|default:"—" }}
+        </td>
+
+        <td>
+          {{ property.units.count }}
+        </td>
+
+        <td>
+          {% for ownership in property.ownerships.all %}
+            {% if ownership.is_primary_contact %}
+              {{ ownership.owner }}
+            {% endif %}
+          {% empty %}
+            —
+          {% endfor %}
+        </td>
+
+        <td>
+          {% if property.management_status == "active" %}
+            <span class="badge badge-green">Active</span>
+
+          {% elif property.management_status == "onboarding" %}
+            <span class="badge badge-blue">Onboarding</span>
+
+          {% elif property.management_status == "prospect" %}
+            <span class="badge badge-orange">Prospect</span>
+
+          {% else %}
+            <span class="badge badge-gray">Inactive</span>
+          {% endif %}
+        </td>
+
+        <td style="color:#94a3b8;font-size:0.78rem;">
+          {{ property.updated_at|date:"M d, Y" }}
+        </td>
+
+        <td>
+          <a
+            href="{% url 'portal:property_detail' property.id %}"
+            class="btn btn-primary btn-sm">
+            View
+          </a>
+        </td>
+
+      </tr>
+
+      {% empty %}
+
+      <tr>
+        <td colspan="7"
+            style="text-align:center;
+                   color:#94a3b8;
+                   padding:32px;">
+          No managed properties found.
+        </td>
+      </tr>
+
+      {% endfor %}
+
+    </tbody>
+  </table>
+
+</div>
+
+{% endblock %}

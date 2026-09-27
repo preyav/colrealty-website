@@ -1,0 +1,31 @@
+{% extends "portal/base.html" %}
+{% block title %}Change Vendor | Col Realty Portal{% endblock %}
+{% block page_title %}Change Vendor{% endblock %}
+{% block content %}
+<div style="margin-bottom:18px;">
+  <a href="{% url 'portal:work_order_detail' work_order.id %}" style="color:#2563eb;text-decoration:none;font-size:.85rem;">← Back to Work Order #{{ work_order.id }}</a>
+</div>
+<div class="card">
+  <div class="card-header"><div><h2 style="margin-bottom:4px;">Change Active Vendor</h2><div style="font-size:.82rem;color:#64748b;font-weight:400;">End the current award with a documented reason, then choose an existing alternative or return to sourcing.</div></div></div>
+  <div style="padding:20px;">
+    <div style="padding:14px 16px;margin-bottom:20px;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;">
+      <div class="stat-label">Current active vendor</div>
+      <strong>{{ active_award.vendor }}</strong>
+      {% if active_award.estimate %}<span style="margin-left:10px;">Awarded quote: ${{ active_award.estimate.amount|floatformat:2 }}</span>{% endif %}
+    </div>
+    <form method="post">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        <div><label class="stat-label">Reason for vendor change</label><div style="margin-top:6px;">{{ form.reason }}</div>{{ form.reason.errors }}</div>
+        <div><label class="stat-label">{{ form.replacement_estimate.label }}</label><div style="margin-top:6px;">{{ form.replacement_estimate }}</div><div style="font-size:.76rem;color:#64748b;margin-top:5px;">Only received alternative quotes appear here.</div>{{ form.replacement_estimate.errors }}</div>
+      </div>
+      <div style="margin-top:20px;"><label class="stat-label">Explanation / internal notes</label><div style="margin-top:6px;">{{ form.notes }}</div>{{ form.notes.errors }}</div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:24px;">
+        <a href="{% url 'portal:work_order_detail' work_order.id %}" class="btn" style="background:#f1f5f9;">Cancel</a>
+        <button type="submit" class="btn" style="background:#dc2626;color:#fff;">Confirm Vendor Change</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

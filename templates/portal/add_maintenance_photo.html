@@ -1,0 +1,51 @@
+{% extends "portal/base.html" %}
+
+{% block title %}Add Maintenance Photo | Col Realty Portal{% endblock %}
+{% block page_title %}Add Maintenance Photo{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom:18px;">
+  <a href="{% url 'portal:maintenance_detail' maintenance_request.id %}"
+     style="color:#2563eb;text-decoration:none;font-size:0.85rem;">
+    ← Back to Maintenance Request
+  </a>
+</div>
+
+<div class="card">
+
+  <div class="card-header">
+    <h2>{{ maintenance_request.title }}</h2>
+  </div>
+
+  <div style="padding:20px;">
+
+    <form method="post"
+          enctype="multipart/form-data">
+
+      {% csrf_token %}
+
+      {{ form.as_p }}
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">
+
+        <a href="{% url 'portal:maintenance_detail' maintenance_request.id %}"
+           class="btn"
+           style="background:#f1f5f9;">
+          Cancel
+        </a>
+
+        <button type="submit"
+                class="btn btn-primary">
+          Upload Photo
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+
+{% endblock %}
