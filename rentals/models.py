@@ -136,6 +136,38 @@ class Rental(models.Model):
     def full_address(self):
         return f"{self.street_address}, {self.city}, {self.state} {self.zip_code}"
 
+    @property
+    def display_image_urls(self):
+        """
+        Permanently cached images that are safe for public display.
+
+        Raw MLS Grid URLs may remain in image_urls for background processing,
+        but are never exposed through this presentation property.
+        """
+        s3_marker = "colrealty-media.s3"
+        urls = []
+
+        # Keep the true main image first when it has been cached.
+        if self.main_image_url and s3_marker in self.main_image_url:
+            urls.append(self.main_image_url)
+
+        # Add cached gallery images in their existing MLS order.
+        for url in self.image_urls or []:
+            if url and s3_marker in url and url not in urls:
+                urls.append(url)
+
+        return urls
+
+    @property
+    def display_image_url(self):
+        """
+        Best permanently cached image for public display.
+
+        Never expose a temporary MLS Grid URL to the public website.
+        """
+        urls = self.display_image_urls
+        return urls[0] if urls else ""
+    
     def interior_features_list(self):
         return [f.strip() for f in self.interior_features.split(",") if f.strip()]
 

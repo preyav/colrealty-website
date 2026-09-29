@@ -86,25 +86,47 @@ def _build_rental_markers(qs):
 # ─────────────────────────────────────────────
 
 def home(request):
-    new_listings = Listing.objects.filter(
-        status="active"
-    ).exclude(
-        property_type__in=LEASE_TYPES
-    ).order_by("-id")[:8]
+    def with_display_images(queryset, limit=8):
+        """
+        Return the newest records that already have a permanent
+        cached image safe for public display.
+        """
+        results = []
 
-    recent_rentals = Rental.objects.filter(
-        status="active"
-    ).order_by("-id")[:8]
+        for obj in queryset.iterator():
+            if obj.display_image_url:
+                results.append(obj)
 
-    land_listings = Listing.objects.filter(
-        status="active",
-        property_type__in=["Land", "Farm"]
-    ).order_by("-id")[:8]
+                if len(results) >= limit:
+                    break
+
+        return results
+
+    new_listings = with_display_images(
+        Listing.objects.filter(
+            status="active"
+        ).exclude(
+            property_type__in=LEASE_TYPES
+        ).order_by("-id")
+    )
+
+    recent_rentals = with_display_images(
+        Rental.objects.filter(
+            status="active"
+        ).order_by("-id")
+    )
+
+    land_listings = with_display_images(
+        Listing.objects.filter(
+            status="active",
+            property_type__in=["Land", "Farm"]
+        ).order_by("-id")
+    )
 
     return render(request, "pages/home.html", {
-        "new_listings":   new_listings,
+        "new_listings": new_listings,
         "recent_rentals": recent_rentals,
-        "land_listings":  land_listings,
+        "land_listings": land_listings,
     })
 
 
