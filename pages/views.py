@@ -86,41 +86,43 @@ def _build_rental_markers(qs):
 # ─────────────────────────────────────────────
 
 def home(request):
-    def with_display_images(queryset, limit=8):
-        """
-        Return the newest records that already have a permanent
-        cached image safe for public display.
-        """
-        results = []
+    """
+    Homepage inventory.
 
-        for obj in queryset.iterator():
-            if obj.display_image_url:
-                results.append(obj)
+    Only show active properties whose primary image has already been
+    permanently cached in COL Realty's configured S3 storage.
 
-                if len(results) >= limit:
-                    break
+    Filtering happens in PostgreSQL and is limited to 8 records per
+    section so the homepage never scans the MLS inventory in Python.
+    """
+    from django.conf import settings
 
-        return results
+    bucket_name = settings.AWS_STORAGE_BUCKET_NAME
 
-    new_listings = with_display_images(
-        Listing.objects.filter(
-            status="active"
-        ).exclude(
-            property_type__in=LEASE_TYPES
-        ).order_by("-id")
-    )
-
-    recent_rentals = with_display_images(
-        Rental.objects.filter(
-            status="active"
-        ).order_by("-id")
-    )
-
-    land_listings = with_display_images(
+    new_listings = (
         Listing.objects.filter(
             status="active",
-            property_type__in=["Land", "Farm"]
-        ).order_by("-id")
+            main_image_url__contains=bucket_name,
+        )
+        .exclude(property_type__in=LEASE_TYPES)
+        .order_by("-id")[:8]
+    )
+
+    recent_rentals = (
+        Rental.objects.filter(
+            status="active",
+            main_image_url__contains=bucket_name,
+        )
+        .order_by("-id")[:8]
+    )
+
+    land_listings = (
+        Listing.objects.filter(
+            status="active",
+            property_type__in=["Land", "Farm"],
+            main_image_url__contains=bucket_name,
+        )
+        .order_by("-id")[:8]
     )
 
     return render(request, "pages/home.html", {
