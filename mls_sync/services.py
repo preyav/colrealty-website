@@ -2,6 +2,7 @@ import logging
 from datetime import timezone
 from typing import Optional
 
+from django.conf import settings
 from django.db import transaction
 from django.db.models import Max
 
@@ -10,6 +11,25 @@ from .client import MLSClient
 from .mappers import map_property_to_listing_data
 
 logger = logging.getLogger(__name__)
+
+def is_permanent_media_url(url: str) -> bool:
+    """
+    Return True when an image URL points to COL Realty's configured
+    permanent media storage.
+
+    Production uses the configured S3 bucket. Local development may
+    use Django's MEDIA_URL.
+    """
+    if not url:
+        return False
+
+    bucket_name = getattr(settings, "AWS_STORAGE_BUCKET_NAME", None)
+
+    if bucket_name:
+        return bucket_name in url
+
+    media_url = getattr(settings, "MEDIA_URL", "/media/")
+    return bool(media_url and url.startswith(media_url))
 
 
 def get_latest_mls_modification_timestamp() -> Optional[str]:
@@ -40,9 +60,11 @@ def sync_mls_listings(updated_since: Optional[str] = None) -> int:
 
     Image downloading is intentionally NOT performed here.
 
-    The separate cache_images command handles permanent S3 image caching.
-    Existing S3 URLs are preserved individually so an MLS sync does not
-    overwrite cached images with temporary MLS Grid URLs.
+    Media URLs received in the incremental MLS Grid record are stored with
+    the listing for later processing by the separate cache_images command.
+
+    Existing permanent image URLs are preserved individually so an MLS sync
+    does not overwrite cached images with temporary MLS Grid URLs.
     """
     client = MLSClient()
 
@@ -88,12 +110,11 @@ def sync_mls_listings(updated_since: Optional[str] = None) -> int:
             ).first()
 
             if existing:
-                s3_marker = "colrealty-media.s3"
 
                 existing_main_image = existing.main_image_url or ""
 
                 # Preserve the true main image if it is already cached.
-                if s3_marker in existing_main_image:
+                if is_permanent_media_url(existing_main_image):
                     data["main_image_url"] = existing_main_image
 
                 # Preserve each cached image by its original MLS position.
@@ -107,8 +128,7 @@ def sync_mls_listings(updated_since: Optional[str] = None) -> int:
 
                     for index, existing_url in enumerate(existing_images):
                         if (
-                            existing_url
-                            and s3_marker in existing_url
+                            is_permanent_media_url(existing_url)
                             and index < len(merged_images)
                         ):
                             merged_images[index] = existing_url

@@ -1,14 +1,19 @@
 """
 mls_sync/management/commands/cache_images.py
 
-Fetches fresh MLS image URLs and caches them permanently to storage.
+Caches MLS images permanently using Media URLs already stored in the
+Listing/Rental database records.
+
+IMPORTANT:
+This command does NOT scan the MLS Grid Property feed. The normal
+incremental MLS sync is responsible for receiving Media URLs and storing
+them in image_urls. This command processes a small, bounded database
+backlog and copies those images into permanent storage.
+
 Run manually:
     python manage.py cache_images
     python manage.py cache_images --mls-id ACT220365592
-    python manage.py cache_images --limit 100
-
-Add to crontab for nightly runs:
-    0 2 * * * cd /home/ec2-user/colrealty && venv/bin/python manage.py cache_images --limit 500 >> logs/cache_images.log 2>&1
+    python manage.py cache_images --limit 10
 """
 
 import json
@@ -16,11 +21,11 @@ import logging
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from django.core.management.base import BaseCommand
+from django.conf import settings
+from django.core.management.base import BaseCommand, CommandError
 
 from listings.models import Listing
 from rentals.models import Rental
-from mls_sync.client import MLSClient
 from mls_sync.image_cache import cache_listing_photos
 
 
@@ -31,6 +36,26 @@ NOT_FOUND_COOLDOWN_DAYS = 7
 
 MAIN_IMAGE_COOLDOWN_FILE = Path("logs/cache_images_main_cooldown.json")
 MAIN_IMAGE_COOLDOWN_HOURS = 12
+
+DEFAULT_LIMIT = 10
+
+
+def is_permanent_media_url(url):
+    """
+    Return True when a URL points to COL Realty's configured
+    permanent media storage.
+    """
+    if not url:
+        return False
+
+    bucket_name = getattr(settings, "AWS_STORAGE_BUCKET_NAME", None)
+
+    if bucket_name:
+        return bucket_name in url
+
+    media_url = getattr(settings, "MEDIA_URL", "/media/")
+    return bool(media_url and url.startswith(media_url))
+
 
 def load_not_found_cache():
     if not NOT_FOUND_FILE.exists():
@@ -49,6 +74,7 @@ def save_not_found_cache(data):
     with NOT_FOUND_FILE.open("w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, sort_keys=True)
 
+
 def load_main_image_cooldown():
     if not MAIN_IMAGE_COOLDOWN_FILE.exists():
         return {}
@@ -66,26 +92,39 @@ def save_main_image_cooldown(data):
     with MAIN_IMAGE_COOLDOWN_FILE.open("w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, sort_keys=True)
 
+
 class Command(BaseCommand):
-    help = "Cache MLS images permanently for listings/rentals with non-S3 images"
+    help = (
+        "Cache MLS images permanently using Media URLs already stored "
+        "in Listing/Rental records"
+    )
 
     def add_arguments(self, parser):
         parser.add_argument(
             "--mls-id",
             type=str,
-            help="Cache images for a single listing by MLS ID",
+            help="Cache images for a single record by MLS ID",
         )
+
         parser.add_argument(
             "--limit",
             type=int,
-            default=200,
-            help="Max number of records to process in one run (default: 200)",
+            default=DEFAULT_LIMIT,
+            help=(
+                "Max number of records to process in one run "
+                f"(default: {DEFAULT_LIMIT})"
+            ),
         )
+
         parser.add_argument(
             "--all",
             action="store_true",
-            help="Process ALL active records, not just those missing S3 images",
+            help=(
+                "Allow active records even when their main image is "
+                "already permanently cached"
+            ),
         )
+
         parser.add_argument(
             "--rentals",
             action="store_true",
@@ -98,6 +137,9 @@ class Command(BaseCommand):
         process_all = options.get("all")
         use_rentals = options.get("rentals")
 
+        if limit is None or limit < 1:
+            raise CommandError("--limit must be at least 1.")
+
         Model = Rental if use_rentals else Listing
         model_name = "Rental" if use_rentals else "Listing"
 
@@ -107,25 +149,55 @@ class Command(BaseCommand):
             )
         )
 
-        # ── Build queryset ─────────────────────────────────────────────
+        self.stdout.write(
+            "Source: image URLs already stored in PostgreSQL. "
+            "No MLS Property-feed scan will be performed."
+        )
+
+        # -------------------------------------------------------------
+        # Build candidate queryset.
+        # -------------------------------------------------------------
         if mls_id:
             qs = Model.objects.filter(mls_id=mls_id)
+
             self.stdout.write(
                 f"Targeting single {model_name}: {mls_id}"
             )
 
         elif process_all:
             qs = Model.objects.filter(status="active")
+
             self.stdout.write(
-                f"Processing ALL active {model_name} records..."
+                f"Processing active {model_name} records..."
             )
 
         else:
-            qs = Model.objects.filter(status="active").exclude(
-                main_image_url__startswith="https://colrealty-media.s3"
-            )
+            # We intentionally avoid hard-coding the S3 bucket into the
+            # database query. Permanent-storage detection is performed
+            # below using Django's configured storage settings.
+            qs = Model.objects.filter(status="active")
+
             self.stdout.write(
-                f"Processing {model_name} records with non-S3 images..."
+                f"Looking for active {model_name} records "
+                f"without a permanent main image..."
+            )
+
+        # Only retain records that actually need image work unless
+        # --all or a specific --mls-id was requested.
+        if not process_all and not mls_id:
+            candidate_ids = []
+
+            for record in qs.only(
+                "mls_id",
+                "main_image_url",
+            ).iterator(chunk_size=500):
+                if not is_permanent_media_url(
+                    record.main_image_url or ""
+                ):
+                    candidate_ids.append(record.mls_id)
+
+            qs = Model.objects.filter(
+                mls_id__in=candidate_ids
             )
 
         total_before_cooldown = qs.count()
@@ -136,7 +208,13 @@ class Command(BaseCommand):
             f"Limit: {limit}"
         )
 
-        # ── Load not-found cooldown list ───────────────────────────────
+        # -------------------------------------------------------------
+        # Load no-image cooldown.
+        #
+        # In the old implementation this represented records not found
+        # while scanning MLS. We now use it for records that currently
+        # have no usable image URLs stored in PostgreSQL.
+        # -------------------------------------------------------------
         not_found_cache = load_not_found_cache()
 
         cooldown_cutoff = (
@@ -156,17 +234,18 @@ class Command(BaseCommand):
             except (TypeError, ValueError):
                 continue
 
-        # A manually requested --mls-id should always be allowed
+        # A manually requested --mls-id always bypasses cooldown.
         if cooldown_ids and not mls_id:
             qs = qs.exclude(mls_id__in=cooldown_ids)
 
             self.stdout.write(
                 f"Skipping {len(cooldown_ids)} MLS IDs still within "
-                f"{NOT_FOUND_COOLDOWN_DAYS}-day not-found cooldown."
+                f"{NOT_FOUND_COOLDOWN_DAYS}-day no-image cooldown."
             )
-        # Load listings whose main image recently failed to cache.
-        # These are temporarily excluded so nearly-complete listings
-        # do not consume the hourly cache slots repeatedly.
+
+        # -------------------------------------------------------------
+        # Load main-image retry cooldown.
+        # -------------------------------------------------------------
         main_image_cooldown = load_main_image_cooldown()
 
         main_cooldown_cutoff = (
@@ -186,7 +265,6 @@ class Command(BaseCommand):
             except (TypeError, ValueError):
                 continue
 
-        # A manually requested --mls-id should always bypass cooldown.
         if main_cooldown_ids and not mls_id:
             qs = qs.exclude(mls_id__in=main_cooldown_ids)
 
@@ -194,7 +272,6 @@ class Command(BaseCommand):
                 f"Skipping {len(main_cooldown_ids)} MLS IDs still within "
                 f"{MAIN_IMAGE_COOLDOWN_HOURS}-hour main-image cooldown."
             )
-
 
         total = qs.count()
 
@@ -209,10 +286,16 @@ class Command(BaseCommand):
             )
             return
 
-        # ── Select records to process ─────────────────────────────────
-        # For listings, prioritize records created during the last 24 hours.
-        # Fill any remaining capacity with the oldest uncached listings so
-        # the historical backlog continues to shrink.
+        # -------------------------------------------------------------
+        # Select a strictly bounded batch.
+        #
+        # Listings:
+        #   1. newest records from the last 24 hours
+        #   2. oldest backlog records with remaining capacity
+        #
+        # This keeps new inventory fresh while steadily shrinking the
+        # historical backlog.
+        # -------------------------------------------------------------
         if not use_rentals and not mls_id:
             recent_cutoff = (
                 datetime.now(timezone.utc)
@@ -224,12 +307,15 @@ class Command(BaseCommand):
                     created_at__gte=recent_cutoff
                 )
                 .order_by("-created_at")
-                .values_list("mls_id", flat=True)[:limit]
+                .values_list(
+                    "mls_id",
+                    flat=True,
+                )[:limit]
             )
 
             remaining_slots = max(
                 0,
-                limit - len(recent_ids)
+                limit - len(recent_ids),
             )
 
             backlog_ids = []
@@ -255,205 +341,259 @@ class Command(BaseCommand):
 
         else:
             selected_ids = list(
-                qs.values_list(
+                qs.order_by("created_at")
+                .values_list(
                     "mls_id",
                     flat=True,
                 )[:limit]
             )
 
-        # ── Fetch fresh URLs from MLS and cache ───────────────────────
-        client = MLSClient()
+        if not selected_ids:
+            self.stdout.write(
+                self.style.SUCCESS("Nothing selected.")
+            )
+            return
+
+        # Fetch only the selected rows from PostgreSQL.
+        records_by_id = {
+            record.mls_id: record
+            for record in Model.objects.filter(
+                mls_id__in=selected_ids
+            )
+        }
 
         processed = 0
         success = 0
         skipped = 0
-        records_scanned = 0
-
-        target_ids = set(selected_ids)
+        no_stored_images = 0
 
         self.stdout.write(
-            f"Fetching fresh URLs from MLS API "
-            f"for {len(target_ids)} records..."
+            f"Processing {len(selected_ids)} database-selected "
+            f"{model_name} records..."
         )
 
-        for record in client.iter_properties(
-            updated_since="2020-01-01T00:00:00Z"
-        ):
-            listing_key = (
-                record.get("ListingKey")
-                or record.get("ListingId", "")
-            )
+        # -------------------------------------------------------------
+        # Cache using URLs already stored in PostgreSQL.
+        #
+        # There is deliberately NO MLSClient here and NO Property API
+        # traversal.
+        # -------------------------------------------------------------
+        for listing_key in selected_ids:
+            record = records_by_id.get(listing_key)
 
-            records_scanned += 1
-
-            if listing_key not in target_ids:
-                continue
-
-            media = record.get("Media") or []
-
-            image_urls = [
-                m["MediaURL"]
-                for m in sorted(
-                    media,
-                    key=lambda x: x.get("Order", 0)
-                )
-                if m.get("MediaURL")
-            ]
-
-            if not image_urls:
+            if record is None:
                 self.stdout.write(
-                    f"  {listing_key}: "
-                    f"no images in MLS, skipping"
+                    self.style.WARNING(
+                        f"  {listing_key}: database record disappeared; "
+                        f"skipping"
+                    )
                 )
 
                 skipped += 1
-                target_ids.discard(listing_key)
                 processed += 1
+                continue
 
-            else:
+            stored_urls = list(
+                record.image_urls or []
+            )
+
+            # Keep only usable strings and preserve their MLS order.
+            image_urls = [
+                url.strip()
+                for url in stored_urls
+                if isinstance(url, str) and url.strip()
+            ]
+
+            # If image_urls is empty but main_image_url contains a
+            # temporary source URL, retain it as a last-resort source.
+            if (
+                not image_urls
+                and record.main_image_url
+                and not is_permanent_media_url(
+                    record.main_image_url
+                )
+            ):
+                image_urls = [
+                    record.main_image_url
+                ]
+
+            if not image_urls:
                 self.stdout.write(
-                    f"  {listing_key}: "
-                    f"caching {len(image_urls)} images..."
+                    self.style.WARNING(
+                        f"  {listing_key}: no image URLs stored "
+                        f"in PostgreSQL; skipping"
+                    )
                 )
 
-                try:
-                    main_url, cached_urls = (
-                        cache_listing_photos(
+                not_found_cache[listing_key] = (
+                    datetime.now(timezone.utc).isoformat()
+                )
+
+                save_not_found_cache(
+                    not_found_cache
+                )
+
+                no_stored_images += 1
+                skipped += 1
+                processed += 1
+                continue
+
+            self.stdout.write(
+                f"  {listing_key}: "
+                f"caching {len(image_urls)} stored images..."
+            )
+
+            try:
+                main_url, cached_urls = (
+                    cache_listing_photos(
+                        listing_key,
+                        image_urls,
+                    )
+                )
+
+                Model.objects.filter(
+                    mls_id=listing_key
+                ).update(
+                    main_image_url=main_url,
+                    image_urls=cached_urls,
+                )
+
+                cached_count = sum(
+                    1
+                    for url in cached_urls
+                    if is_permanent_media_url(url)
+                )
+
+                main_cached = (
+                    is_permanent_media_url(main_url)
+                )
+
+                if main_cached:
+                    self.stdout.write(
+                        self.style.SUCCESS(
+                            f"  ✓ {listing_key}: "
+                            f"cached {cached_count}/"
+                            f"{len(image_urls)} images"
+                        )
+                    )
+
+                    success += 1
+
+                    # Clear stale cooldown entries after success.
+                    cooldown_changed = False
+
+                    if listing_key in not_found_cache:
+                        not_found_cache.pop(
                             listing_key,
-                            image_urls,
+                            None,
+                        )
+                        save_not_found_cache(
+                            not_found_cache
+                        )
+                        cooldown_changed = True
+
+                    if listing_key in main_image_cooldown:
+                        main_image_cooldown.pop(
+                            listing_key,
+                            None,
+                        )
+                        save_main_image_cooldown(
+                            main_image_cooldown
+                        )
+                        cooldown_changed = True
+
+                    if cooldown_changed:
+                        logger.info(
+                            "Cleared image cooldown for %s",
+                            listing_key,
+                        )
+
+                else:
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f"  ⚠ {listing_key}: "
+                            f"cached {cached_count}/"
+                            f"{len(image_urls)} images; "
+                            f"main image NOT cached"
                         )
                     )
 
-                    Model.objects.filter(
-                        mls_id=listing_key
-                    ).update(
-                        main_image_url=main_url,
-                        image_urls=cached_urls,
+                    # If all secondary images are cached and only the
+                    # main image remains, avoid repeatedly consuming a
+                    # processing slot.
+                    secondary_count = max(
+                        0,
+                        len(image_urls) - 1,
                     )
 
-                    cached_count = sum(
-                        1
-                        for url in cached_urls
-                        if "colrealty-media.s3" in (url or "")
-                    )
-
-                    main_cached = (
-                        "colrealty-media.s3" in (main_url or "")
-                    )
-
-                    if main_cached:
-                        self.stdout.write(
-                            self.style.SUCCESS(
-                                f"  ✓ {listing_key}: "
-                                f"cached {cached_count}/{len(image_urls)} images"
-                            )
-                        )
-                        success += 1
-                    else:
-                        self.stdout.write(
-                            self.style.WARNING(
-                                f"  ⚠ {listing_key}: "
-                                f"cached {cached_count}/{len(image_urls)} images; "
-                                f"main image NOT cached"
-                            )
-                        )
-
-                        # If all secondary images are cached and only the main
-                        # image remains, cool this listing down before retrying.
-                        secondary_count = max(0, len(image_urls) - 1)
-
-                        if cached_count >= secondary_count:
-                            main_image_cooldown[listing_key] = datetime.now(
+                    if cached_count >= secondary_count:
+                        main_image_cooldown[listing_key] = (
+                            datetime.now(
                                 timezone.utc
                             ).isoformat()
-
-                            save_main_image_cooldown(
-                                main_image_cooldown
-                            )
-
-                            self.stdout.write(
-                                f"  Main image retry deferred for "
-                                f"{MAIN_IMAGE_COOLDOWN_HOURS} hours."
-                            )
-
-                        skipped += 1
-
-                except Exception as e:
-                    self.stdout.write(
-                        self.style.ERROR(
-                            f"  ✗ {listing_key}: "
-                            f"error — {e}"
                         )
-                    )
+
+                        save_main_image_cooldown(
+                            main_image_cooldown
+                        )
+
+                        self.stdout.write(
+                            f"  Main image retry deferred for "
+                            f"{MAIN_IMAGE_COOLDOWN_HOURS} hours."
+                        )
 
                     skipped += 1
 
-                target_ids.discard(listing_key)
-                processed += 1
+            except Exception as exc:
+                logger.exception(
+                    "Image caching failed for %s",
+                    listing_key,
+                )
+
+                self.stdout.write(
+                    self.style.ERROR(
+                        f"  ✗ {listing_key}: "
+                        f"error — {exc}"
+                    )
+                )
+
+                skipped += 1
+
+            processed += 1
 
             if processed % 10 == 0:
                 self.stdout.write(
                     f"  Progress: "
-                    f"{processed}/{min(total, limit)} "
-                    f"| MLS records scanned: "
-                    f"{records_scanned}"
+                    f"{processed}/{len(selected_ids)}"
                 )
 
-            if not target_ids:
-                break
-
-        # ── Summary ───────────────────────────────────────────────────
-        self.stdout.write("\n" + "=" * 40)
+        # -------------------------------------------------------------
+        # Summary.
+        # -------------------------------------------------------------
+        self.stdout.write(
+            "\n" + "=" * 40
+        )
 
         self.stdout.write(
             self.style.SUCCESS("Done!")
         )
 
         self.stdout.write(
-            f"  Processed : {processed}"
+            f"  Processed        : {processed}"
         )
 
         self.stdout.write(
-            f"  Cached    : {success}"
+            f"  Cached           : {success}"
         )
 
         self.stdout.write(
-            f"  Skipped   : {skipped}"
+            f"  Skipped          : {skipped}"
         )
 
         self.stdout.write(
-            f"  Not found : {len(target_ids)}"
+            f"  No stored images : {no_stored_images}"
         )
 
         self.stdout.write(
-            f"  MLS records scanned : {records_scanned}"
+            "  MLS feed scans   : 0"
         )
-
-        # ── Record MLS IDs that were not found ────────────────────────
-        if target_ids:
-            self.stdout.write(
-                "\nNot found in MLS "
-                "(may be expired/removed):"
-            )
-
-            now_iso = datetime.now(
-                timezone.utc
-            ).isoformat()
-
-            for mid in target_ids:
-                not_found_cache[mid] = now_iso
-
-            save_not_found_cache(
-                not_found_cache
-            )
-
-            for mid in list(target_ids)[:10]:
-                self.stdout.write(
-                    f"  - {mid}"
-                )
-
-            self.stdout.write(
-                f"  Added {len(target_ids)} "
-                f"MLS IDs to "
-                f"{NOT_FOUND_COOLDOWN_DAYS}-day cooldown."
-            )
