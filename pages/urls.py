@@ -1,5 +1,6 @@
 ﻿# pages/urls.py
 from django.urls import path
+from django.views.generic import RedirectView
 from . import views
 
 app_name = "pages"
@@ -56,7 +57,12 @@ urlpatterns = [
     path("colcircle/blog/", views.colcircle_blog, name="blog"),
 
     # COL CIRCLE
-    path("colcircle/colcircle/", views.colcircle_colcircle, name="colcircle"),
+    path("colcircle/", views.colcircle_colcircle, name="colcircle"),
+    path(
+        "colcircle/colcircle/",
+        RedirectView.as_view(pattern_name="pages:colcircle", permanent=True),
+        name="colcircle_legacy",
+    ),
 
     # NEIGHBORHOODS
     path("explore/neighborhoods/",
