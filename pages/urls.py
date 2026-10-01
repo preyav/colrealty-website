@@ -1,4 +1,4 @@
-# pages/urls.py
+﻿# pages/urls.py
 from django.urls import path
 from . import views
 
@@ -43,6 +43,9 @@ urlpatterns = [
    # ABOUT US
     path("company/aboutus/", views.company_aboutus, name="aboutus"),
 
+    # JOIN US
+    path("company/joinus/", views.company_joinus, name="joinus"),
+
     # CONTACT US
     path("company/contactus/", views.company_contactus, name="contactus"),
 
@@ -74,3 +77,4 @@ urlpatterns = [
     path('legal/iabs/', views.legal_iabs, name='legal_iabs'),
 
 ]
+
