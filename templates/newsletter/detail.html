@@ -27,12 +27,14 @@
 
       <div class="newsletter-sidebar-content">
         <h1 class="newsletter-cover-title">
-          Spring Is Here — And So Is the Market
+          {{ issue.hero_title|default:issue.title }}
         </h1>
 
-        <p class="newsletter-cover-subtitle">
-          Your monthly real estate update for Austin and Central Texas.
-        </p>
+        {% if issue.hero_subtitle %}
+          <p class="newsletter-cover-subtitle">
+            {{ issue.hero_subtitle }}
+          </p>
+        {% endif %}
       </div>
     </aside>
 
