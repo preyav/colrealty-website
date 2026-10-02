@@ -97,13 +97,19 @@ def home(request):
     """
     from django.conf import settings
 
-    bucket_name = settings.AWS_STORAGE_BUCKET_NAME
+    bucket_name = getattr(settings, "AWS_STORAGE_BUCKET_NAME", None)
+    image_filter = (
+        {"main_image_url__contains": bucket_name}
+        if bucket_name
+        else {"main_image_url__isnull": False}
+    )
 
     new_listings = (
         Listing.objects.filter(
             status="active",
-            main_image_url__contains=bucket_name,
+            **image_filter,
         )
+        .exclude(main_image_url="")
         .exclude(property_type__in=LEASE_TYPES)
         .order_by("-id")[:8]
     )
@@ -111,8 +117,9 @@ def home(request):
     recent_rentals = (
         Rental.objects.filter(
             status="active",
-            main_image_url__contains=bucket_name,
+            **image_filter,
         )
+        .exclude(main_image_url="")
         .order_by("-id")[:8]
     )
 
@@ -120,8 +127,9 @@ def home(request):
         Listing.objects.filter(
             status="active",
             property_type__in=["Land", "Farm"],
-            main_image_url__contains=bucket_name,
+            **image_filter,
         )
+        .exclude(main_image_url="")
         .order_by("-id")[:8]
     )
 
