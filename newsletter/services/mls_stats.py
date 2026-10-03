@@ -37,15 +37,15 @@ def get_market_stats(city=None):
 
     qs = Listing.objects.all()
     if city:
-        qs = qs.filter(city__iexact=city)
+        qs = qs.filter(city=city)
 
-    active_qs = qs.filter(status__iexact="active")
+    active_qs = qs.filter(status="active")
     since_30 = timezone.now() - timedelta(days=30)
 
     new_30d_qs = qs.filter(created_at__gte=since_30)
 
     # Your model does NOT have sold_date, so use updated_at as fallback
-    sold_qs = qs.filter(status__iexact="sold", updated_at__gte=since_30)
+    sold_qs = qs.filter(status="sold", updated_at__gte=since_30)
 
     active_prices = list(active_qs.values_list("price", flat=True)[:10000])
     median_price_active = _median_decimal(active_prices)
