@@ -168,3 +168,54 @@ def cache_listing_photos(
     main = permanent_urls[0] if permanent_urls else ""
 
     return main, permanent_urls
+
+
+# Conservative limits for primary-photo recovery. No retry and no gallery.
+PRIMARY_MAX_BYTES = 5 * 1024 * 1024
+
+
+def cache_primary_photo(mls_id: str, url: str) -> str | None:
+    """Cache only photo_000, with a hard per-image byte cap and one request."""
+    from urllib.parse import urlparse
+    from django.core.files.base import ContentFile
+    from django.core.files.storage import default_storage
+
+    parsed = urlparse(url)
+    if parsed.scheme != "https" or not parsed.hostname:
+        logger.warning("Primary cache: rejected invalid image URL for %s", mls_id)
+        return None
+
+    rel_path = _get_cache_path(mls_id, 0, url)
+    if default_storage.exists(rel_path):
+        return default_storage.url(rel_path)
+
+    try:
+        with requests.get(url, timeout=REQUEST_TIMEOUT, stream=True) as response:
+            if response.status_code == 429:
+                logger.warning("Primary cache: rate limited for %s; stopping", mls_id)
+                return None
+            response.raise_for_status()
+            content_type = response.headers.get("Content-Type", "").lower()
+            if not content_type.startswith("image/"):
+                logger.warning("Primary cache: non-image response for %s", mls_id)
+                return None
+            declared_size = response.headers.get("Content-Length")
+            if declared_size and int(declared_size) > PRIMARY_MAX_BYTES:
+                logger.warning("Primary cache: image too large for %s", mls_id)
+                return None
+            chunks = []
+            total = 0
+            for chunk in response.iter_content(chunk_size=65536):
+                total += len(chunk)
+                if total > PRIMARY_MAX_BYTES:
+                    logger.warning("Primary cache: download size cap hit for %s", mls_id)
+                    return None
+                chunks.append(chunk)
+            if total < 1000:
+                logger.warning("Primary cache: image too small for %s", mls_id)
+                return None
+            saved_path = default_storage.save(rel_path, ContentFile(b"".join(chunks)))
+            return default_storage.url(saved_path)
+    except (requests.RequestException, OSError, ValueError) as exc:
+        logger.warning("Primary cache: failed for %s: %s", mls_id, exc)
+        return None

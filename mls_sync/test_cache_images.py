@@ -25,7 +25,7 @@ class CacheImagesCommandTests(TestCase):
 
     @patch(
         "mls_sync.management.commands.cache_images."
-        "cache_listing_photos"
+        "cache_primary_photo"
     )
     def test_cache_images_uses_urls_stored_in_database(
         self,
@@ -42,10 +42,7 @@ class CacheImagesCommandTests(TestCase):
             ),
         ]
 
-        mock_cache.return_value = (
-            cached_urls[0],
-            cached_urls,
-        )
+        mock_cache.return_value = cached_urls[0]
 
         call_command(
             "cache_images",
@@ -55,7 +52,7 @@ class CacheImagesCommandTests(TestCase):
 
         mock_cache.assert_called_once_with(
             "TEST-CACHE-001",
-            self.source_urls,
+            self.source_urls[0],
         )
 
         self.listing.refresh_from_db()
@@ -66,7 +63,7 @@ class CacheImagesCommandTests(TestCase):
         )
         self.assertEqual(
             self.listing.image_urls,
-            cached_urls,
+            self.source_urls,
         )
 
     def test_cache_images_command_has_no_mls_client(self):
@@ -89,7 +86,7 @@ class CacheImagesCommandTests(TestCase):
     )
     @patch(
         "mls_sync.management.commands.cache_images."
-        "cache_listing_photos"
+        "cache_primary_photo"
     )
     def test_cache_images_never_exceeds_limit(
         self,
@@ -114,13 +111,13 @@ class CacheImagesCommandTests(TestCase):
                 image_urls=[source_url],
             )
 
-        def fake_cache(mls_id, image_urls):
+        def fake_cache(mls_id, source_url):
             permanent_url = (
                 "https://test-colrealty-media.s3.amazonaws.com/"
                 f"listings/{mls_id}/photo_000.jpg"
             )
 
-            return permanent_url, [permanent_url]
+            return permanent_url
 
         mock_cache.side_effect = fake_cache
 

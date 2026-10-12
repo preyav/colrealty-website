@@ -26,7 +26,7 @@ from django.core.management.base import BaseCommand, CommandError
 
 from listings.models import Listing
 from rentals.models import Rental
-from mls_sync.image_cache import cache_listing_photos
+from mls_sync.image_cache import cache_primary_photo
 
 
 logger = logging.getLogger(__name__)
@@ -185,20 +185,17 @@ class Command(BaseCommand):
         # Only retain records that actually need image work unless
         # --all or a specific --mls-id was requested.
         if not process_all and not mls_id:
-            candidate_ids = []
-
-            for record in qs.only(
-                "mls_id",
-                "main_image_url",
-            ).iterator(chunk_size=500):
-                if not is_permanent_media_url(
-                    record.main_image_url or ""
-                ):
-                    candidate_ids.append(record.mls_id)
-
-            qs = Model.objects.filter(
-                mls_id__in=candidate_ids
-            )
+            bucket_name = getattr(settings, "AWS_STORAGE_BUCKET_NAME", None)
+            if bucket_name:
+                # Avoid materializing tens of thousands of IDs in Python.
+                qs = qs.exclude(main_image_url__contains=bucket_name)
+            else:
+                candidate_ids = [
+                    record.mls_id
+                    for record in qs.only("mls_id", "main_image_url").iterator(chunk_size=500)
+                    if not is_permanent_media_url(record.main_image_url or "")
+                ]
+                qs = Model.objects.filter(mls_id__in=candidate_ids)
 
         total_before_cooldown = qs.count()
 
@@ -438,110 +435,42 @@ class Command(BaseCommand):
                 processed += 1
                 continue
 
-            self.stdout.write(
-                f"  {listing_key}: "
-                f"caching {len(image_urls)} stored images..."
-            )
+            # Main image only. Keep gallery URLs unchanged for future work.
+            source_url = image_urls[0]
+            if is_permanent_media_url(source_url):
+                main_url = source_url
+            else:
+                main_url = None
+
+            self.stdout.write(f"  {listing_key}: caching primary image only...")
 
             try:
-                main_url, cached_urls = (
-                    cache_listing_photos(
-                        listing_key,
-                        image_urls,
+                if main_url is None:
+                    main_url = cache_primary_photo(listing_key, source_url)
+
+                if main_url and is_permanent_media_url(main_url):
+                    Model.objects.filter(mls_id=listing_key).update(
+                        main_image_url=main_url,
                     )
-                )
-
-                Model.objects.filter(
-                    mls_id=listing_key
-                ).update(
-                    main_image_url=main_url,
-                    image_urls=cached_urls,
-                )
-
-                cached_count = sum(
-                    1
-                    for url in cached_urls
-                    if is_permanent_media_url(url)
-                )
-
-                main_cached = (
-                    is_permanent_media_url(main_url)
-                )
-
-                if main_cached:
-                    self.stdout.write(
-                        self.style.SUCCESS(
-                            f"  ✓ {listing_key}: "
-                            f"cached {cached_count}/"
-                            f"{len(image_urls)} images"
-                        )
-                    )
-
                     success += 1
-
-                    # Clear stale cooldown entries after success.
-                    cooldown_changed = False
-
+                    self.stdout.write(self.style.SUCCESS(
+                        f"  ✓ {listing_key}: primary image cached"
+                    ))
                     if listing_key in not_found_cache:
-                        not_found_cache.pop(
-                            listing_key,
-                            None,
-                        )
-                        save_not_found_cache(
-                            not_found_cache
-                        )
-                        cooldown_changed = True
-
+                        not_found_cache.pop(listing_key, None)
+                        save_not_found_cache(not_found_cache)
                     if listing_key in main_image_cooldown:
-                        main_image_cooldown.pop(
-                            listing_key,
-                            None,
-                        )
-                        save_main_image_cooldown(
-                            main_image_cooldown
-                        )
-                        cooldown_changed = True
-
-                    if cooldown_changed:
-                        logger.info(
-                            "Cleared image cooldown for %s",
-                            listing_key,
-                        )
-
+                        main_image_cooldown.pop(listing_key, None)
+                        save_main_image_cooldown(main_image_cooldown)
                 else:
-                    self.stdout.write(
-                        self.style.WARNING(
-                            f"  ⚠ {listing_key}: "
-                            f"cached {cached_count}/"
-                            f"{len(image_urls)} images; "
-                            f"main image NOT cached"
-                        )
+                    # Never replace an existing database URL on failure.
+                    main_image_cooldown[listing_key] = (
+                        datetime.now(timezone.utc).isoformat()
                     )
-
-                    # If all secondary images are cached and only the
-                    # main image remains, avoid repeatedly consuming a
-                    # processing slot.
-                    secondary_count = max(
-                        0,
-                        len(image_urls) - 1,
-                    )
-
-                    if cached_count >= secondary_count:
-                        main_image_cooldown[listing_key] = (
-                            datetime.now(
-                                timezone.utc
-                            ).isoformat()
-                        )
-
-                        save_main_image_cooldown(
-                            main_image_cooldown
-                        )
-
-                        self.stdout.write(
-                            f"  Main image retry deferred for "
-                            f"{MAIN_IMAGE_COOLDOWN_HOURS} hours."
-                        )
-
+                    save_main_image_cooldown(main_image_cooldown)
+                    self.stdout.write(self.style.WARNING(
+                        f"  ⚠ {listing_key}: primary image not cached"
+                    ))
                     skipped += 1
 
             except Exception as exc:
