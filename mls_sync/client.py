@@ -44,40 +44,35 @@ class MLSClient:
         }
 
     def get_property_media(self, listing_key: str) -> list[dict]:
-        """Fetch Media for exactly one permitted ListingKey; never paginate."""
+        """Retrieve media for one ListingKey without scanning the MLS feed."""
         if not isinstance(listing_key, str) or not listing_key.strip():
             raise MLSClientError("A nonempty ListingKey is required")
-        # OData quoted string literal escaping prevents filter injection.
-        key = listing_key.strip().replace("'", "''")
-        origin = self.originating.replace("'", "''")
-        params = {
-            "$filter": (
-                f"ListingKey eq '{key}' and "
-                f"OriginatingSystemName eq '{origin}' and MlgCanView eq true"
-            ),
-            "$expand": "Media",
-            "$top": "1",
-        }
+
+        key = listing_key.strip()
+        if not key.isalnum():
+            raise MLSClientError("Invalid ListingKey")
+
         try:
             response = requests.get(
-                f"{self.base_url}/Property",
+                f"{self.base_url}/Property('{key}')",
                 headers=self._headers(),
-                params=params,
+                params={"$expand": "Media"},
                 timeout=30,
             )
             response.raise_for_status()
-            data = response.json()
+            record = response.json()
         except (requests.RequestException, ValueError) as exc:
-            # Do not include response body or URL; they may contain sensitive data.
             raise MLSClientError("Single-property MLS media lookup failed") from exc
-        if not isinstance(data, dict) or not isinstance(data.get("value"), list):
+
+        if not isinstance(record, dict):
             raise MLSClientError("Unexpected MLS Grid response")
-        records = data["value"]
-        if len(records) != 1:
-            raise MLSClientError("MLS Grid returned zero or multiple properties")
-        record = records[0]
-        if not isinstance(record, dict) or str(record.get("ListingKey")) != listing_key.strip():
+        if str(record.get("ListingKey")) != key:
             raise MLSClientError("MLS Grid returned a different ListingKey")
+        if record.get("OriginatingSystemName") != self.originating:
+            raise MLSClientError("Unexpected originating system")
+        if record.get("MlgCanView") is not True:
+            raise MLSClientError("Property is not permitted for display")
+
         media = record.get("Media") or []
         if not isinstance(media, list):
             raise MLSClientError("Unexpected MLS Grid Media data")
