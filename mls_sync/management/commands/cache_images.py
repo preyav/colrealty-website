@@ -27,6 +27,9 @@ from django.core.management.base import BaseCommand, CommandError
 from listings.models import Listing
 from rentals.models import Rental
 from mls_sync.image_cache import cache_primary_photo
+from mls_sync.client import MLSClient, MLSClientError
+from django.core.files.storage import default_storage
+from mls_sync.image_cache import _get_cache_path
 
 
 logger = logging.getLogger(__name__)
@@ -101,6 +104,11 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
+            "--refresh-media",
+            action="store_true",
+            help="Fetch fresh primary Media for exactly one --mls-id (no bulk scan)",
+        )
+        parser.add_argument(
             "--mls-id",
             type=str,
             help="Cache images for a single record by MLS ID",
@@ -131,7 +139,71 @@ class Command(BaseCommand):
             help="Process Rental model instead of Listing model",
         )
 
+    def _refresh_one(self, mls_id, use_rentals):
+        """Opt-in single-ID recovery; no feed traversal or gallery mutation."""
+        Model = Rental if use_rentals else Listing
+        record = Model.objects.filter(mls_id=mls_id).first()
+        if record is None:
+            raise CommandError(f"No local record found for MLS ID {mls_id}")
+
+        # Do not touch records whose existing permanent main photo is usable.
+        existing = record.main_image_url or ""
+        if is_permanent_media_url(existing):
+            self.stdout.write(self.style.SUCCESS(
+                f"{mls_id}: permanent primary URL already set; skipping"
+            ))
+            return
+
+        # S3 may already contain a photo even if the DB points to an expired URL.
+        # Avoid an MLS request when an existing primary photo can be reused.
+        for ext in (".jpg", ".jpeg", ".png", ".webp"):
+            path = f"listings/{mls_id}/photo_000{ext}"
+            if default_storage.exists(path):
+                Model.objects.filter(pk=record.pk).update(
+                    main_image_url=default_storage.url(path)
+                )
+                self.stdout.write(self.style.SUCCESS(
+                    f"{mls_id}: reused existing primary image"
+                ))
+                return
+
+        try:
+            media = MLSClient().get_property_media(mls_id)
+        except MLSClientError as exc:
+            raise CommandError(str(exc)) from exc
+        urls = []
+        for item in media:
+            if not isinstance(item, dict):
+                continue
+            url = item.get("MediaURL") or item.get("MediaURLLarge") or item.get("MediaURLMedium")
+            if isinstance(url, str) and url.strip():
+                urls.append(url.strip())
+        if not urls:
+            self.stdout.write(self.style.WARNING(
+                f"{mls_id}: MLS Grid returned no photo URL; unchanged"
+            ))
+            return
+
+        cached_url = cache_primary_photo(mls_id, urls[0])
+        if not cached_url or not is_permanent_media_url(cached_url):
+            self.stdout.write(self.style.WARNING(
+                f"{mls_id}: primary photo could not be cached; unchanged"
+            ))
+            return
+        Model.objects.filter(pk=record.pk).update(main_image_url=cached_url)
+        self.stdout.write(self.style.SUCCESS(
+            f"{mls_id}: primary image recovered; gallery preserved"
+        ))
+
     def handle(self, *args, **options):
+        if options.get("refresh_media"):
+            single_id = options.get("mls_id")
+            if not single_id:
+                raise CommandError("--refresh-media requires --mls-id")
+            if options.get("all"):
+                raise CommandError("--refresh-media cannot be combined with --all")
+            return self._refresh_one(single_id, options.get("rentals", False))
+
         mls_id = options.get("mls_id")
         limit = options.get("limit")
         process_all = options.get("all")

@@ -43,6 +43,46 @@ class MLSClient:
             "Accept-Encoding": "gzip,deflate",
         }
 
+    def get_property_media(self, listing_key: str) -> list[dict]:
+        """Fetch Media for exactly one permitted ListingKey; never paginate."""
+        if not isinstance(listing_key, str) or not listing_key.strip():
+            raise MLSClientError("A nonempty ListingKey is required")
+        # OData quoted string literal escaping prevents filter injection.
+        key = listing_key.strip().replace("'", "''")
+        origin = self.originating.replace("'", "''")
+        params = {
+            "$filter": (
+                f"ListingKey eq '{key}' and "
+                f"OriginatingSystemName eq '{origin}' and MlgCanView eq true"
+            ),
+            "$expand": "Media",
+            "$top": "1",
+        }
+        try:
+            response = requests.get(
+                f"{self.base_url}/Property",
+                headers=self._headers(),
+                params=params,
+                timeout=30,
+            )
+            response.raise_for_status()
+            data = response.json()
+        except (requests.RequestException, ValueError) as exc:
+            # Do not include response body or URL; they may contain sensitive data.
+            raise MLSClientError("Single-property MLS media lookup failed") from exc
+        if not isinstance(data, dict) or not isinstance(data.get("value"), list):
+            raise MLSClientError("Unexpected MLS Grid response")
+        records = data["value"]
+        if len(records) != 1:
+            raise MLSClientError("MLS Grid returned zero or multiple properties")
+        record = records[0]
+        if not isinstance(record, dict) or str(record.get("ListingKey")) != listing_key.strip():
+            raise MLSClientError("MLS Grid returned a different ListingKey")
+        media = record.get("Media") or []
+        if not isinstance(media, list):
+            raise MLSClientError("Unexpected MLS Grid Media data")
+        return media
+
     # ---------- PROPERTY RESOURCE ----------
 
     def _initial_property_url(self) -> str:

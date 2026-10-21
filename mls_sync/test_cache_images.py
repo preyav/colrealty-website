@@ -66,13 +66,23 @@ class CacheImagesCommandTests(TestCase):
             self.source_urls,
         )
 
-    def test_cache_images_command_has_no_mls_client(self):
-        from mls_sync.management.commands import cache_images
-
-        self.assertFalse(
-            hasattr(cache_images, "MLSClient"),
-            "cache_images must not import or use MLSClient",
+    @patch("mls_sync.management.commands.cache_images.MLSClient")
+    @patch("mls_sync.management.commands.cache_images.cache_primary_photo")
+    def test_normal_cache_does_not_contact_mls_grid(
+        self, mock_cache, mock_mls_client
+    ):
+        mock_cache.return_value = (
+            "https://test-colrealty-media.s3.amazonaws.com/"
+            "listings/TEST-CACHE-001/photo_000.jpg"
         )
+
+        call_command(
+            "cache_images",
+            mls_id="TEST-CACHE-001",
+            limit=1,
+        )
+
+        mock_mls_client.assert_not_called()
 
     @patch(
         "mls_sync.management.commands.cache_images."
@@ -131,3 +141,58 @@ class CacheImagesCommandTests(TestCase):
             2,
             "cache_images processed more listings than the configured limit",
         )
+
+    @patch("mls_sync.management.commands.cache_images.default_storage.exists", return_value=False)
+    @patch("mls_sync.management.commands.cache_images.cache_primary_photo")
+    @patch("mls_sync.management.commands.cache_images.MLSClient")
+    def test_refresh_media_recovers_one_listing(self, mock_client, mock_cache, mock_exists):
+        permanent_url = (
+            "https://test-colrealty-media.s3.amazonaws.com/"
+            "listings/TEST-CACHE-001/photo_000.jpg"
+        )
+        mock_client.return_value.get_property_media.return_value = [
+            {"MediaURL": "https://media.example.test/fresh.jpg"}
+        ]
+        mock_cache.return_value = permanent_url
+
+        call_command("cache_images", refresh_media=True, mls_id="TEST-CACHE-001")
+
+        mock_client.return_value.get_property_media.assert_called_once_with("TEST-CACHE-001")
+        mock_cache.assert_called_once_with(
+            "TEST-CACHE-001", "https://media.example.test/fresh.jpg"
+        )
+        self.listing.refresh_from_db()
+        self.assertEqual(self.listing.main_image_url, permanent_url)
+        self.assertEqual(self.listing.image_urls, self.source_urls)
+
+    @patch("mls_sync.management.commands.cache_images.default_storage.exists", return_value=False)
+    @patch("mls_sync.management.commands.cache_images.cache_primary_photo", return_value=None)
+    @patch("mls_sync.management.commands.cache_images.MLSClient")
+    def test_refresh_media_failed_download_preserves_database(self, mock_client, mock_cache, mock_exists):
+        mock_client.return_value.get_property_media.return_value = [
+            {"MediaURL": "https://media.example.test/fresh.jpg"}
+        ]
+
+        call_command("cache_images", refresh_media=True, mls_id="TEST-CACHE-001")
+
+        self.listing.refresh_from_db()
+        self.assertEqual(self.listing.main_image_url, self.source_urls[0])
+        self.assertEqual(self.listing.image_urls, self.source_urls)
+
+    @patch("mls_sync.management.commands.cache_images.default_storage.url")
+    @patch("mls_sync.management.commands.cache_images.default_storage.exists")
+    @patch("mls_sync.management.commands.cache_images.MLSClient")
+    def test_refresh_media_reuses_existing_s3_photo(self, mock_client, mock_exists, mock_url):
+        mock_exists.side_effect = lambda path: path.endswith("photo_000.jpg")
+        permanent_url = (
+            "https://test-colrealty-media.s3.amazonaws.com/"
+            "listings/TEST-CACHE-001/photo_000.jpg"
+        )
+        mock_url.return_value = permanent_url
+
+        call_command("cache_images", refresh_media=True, mls_id="TEST-CACHE-001")
+
+        mock_client.assert_not_called()
+        self.listing.refresh_from_db()
+        self.assertEqual(self.listing.main_image_url, permanent_url)
+        self.assertEqual(self.listing.image_urls, self.source_urls)
