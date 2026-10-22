@@ -1,0 +1,178 @@
+{{ formset.management_form }}
+<div id="{{ kind }}-entries">
+{% for entry in formset %}{% if kind == 'documents' %}{% include 'portal/property_document_compact_entry.html' %}{% else %}{% include 'portal/property_reference_entry.html' with show_sustainability=forloop.first %}{% endif %}{% endfor %}
+</div>
+<template id="{{ kind }}-empty">{% if kind == 'documents' %}{% include 'portal/property_document_compact_entry.html' with entry=formset.empty_form %}{% else %}{% include 'portal/property_reference_entry.html' with entry=formset.empty_form show_sustainability=False %}{% endif %}</template>
+{% if kind != 'certifications' %}<div style="padding:0 22px 22px;">
+{% if kind == 'documents' %}
+<details data-document-add-menu style="position:relative;display:inline-block;">
+<summary class="btn" style="cursor:pointer;">+ Add Document</summary>
+<div style="position:absolute;left:0;top:100%;z-index:20;min-width:180px;padding:8px;background:white;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 4px 12px #0002;">
+<button type="button" class="btn" style="display:block;width:100%;text-align:left;margin-bottom:6px;" data-add-reference="documents" data-pick-property-document data-upload-url="{% url 'portal:property_document_upload' %}" data-property-id="{{ property_obj.pk|default:'' }}">Upload File</button>
+<button type="button" class="btn" style="display:block;width:100%;text-align:left;" data-add-reference="documents" data-add-document-link>Paste Link</button>
+</div>
+</details>
+<input type="file" hidden data-property-document-file>
+<p class="property-help" data-property-document-status role="status" aria-live="polite">Upload a document or add an existing link.</p>
+{% else %}
+<button type="button" class="btn" data-add-reference="{{ kind }}">+ Add {{ label }}</button>
+{% endif %}
+</div>{% endif %}
+{% if kind == 'documents' %}
+<dialog data-document-paste-dialog aria-labelledby="document-paste-heading" style="border:1px solid #cbd5e1;border-radius:10px;padding:22px;max-width:480px;width:90%;">
+<h3 id="document-paste-heading">Paste Document Link</h3>
+<label for="document-paste-url">Document URL</label>
+<input id="document-paste-url" form="document-link-dialog" data-paste-url type="url" required class="form-control" placeholder="https://…">
+<label for="document-paste-title">Display name (optional)</label>
+<input id="document-paste-title" form="document-link-dialog" data-paste-title type="text" maxlength="255" class="form-control">
+<div style="display:flex;gap:10px;margin-top:16px;"><button type="button" class="btn btn-primary" data-paste-confirm>Add Link</button><button type="button" class="btn" data-paste-cancel>Cancel</button></div>
+</dialog>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const form = document.getElementById('property-form');
+  const upload = document.querySelector('[data-pick-property-document]');
+  const paste = document.querySelector('[data-add-document-link]');
+  const picker = document.querySelector('[data-property-document-file]');
+  const status = document.querySelector('[data-property-document-status]');
+  const entries = document.getElementById('documents-entries');
+  const menu = document.querySelector('[data-document-add-menu]');
+  const dialog = document.querySelector('[data-document-paste-dialog]');
+  if (!form || !upload || !paste || !entries || !dialog) return;
+  let busy = false;
+  const control = (row, name) => row.querySelector('[name$="-' + name + '"]');
+  function safeUrl(value) {
+    try { const url = new URL(value); return ['http:', 'https:'].includes(url.protocol) ? url : null; }
+    catch (error) { return null; }
+  }
+  function displayName(value) {
+    const url = safeUrl(value);
+    if (!url) return 'Document';
+    try { return decodeURIComponent(url.pathname.split('/').filter(Boolean).pop() || url.hostname).slice(0, 255); }
+    catch (error) { return url.hostname; }
+  }
+  function updateRow(row) {
+    const urlInput = control(row, 'url');
+    const title = control(row, 'title');
+    const deleted = control(row, 'DELETE');
+    const link = row.querySelector('[data-document-link]');
+    const hasValue = Boolean(urlInput.value || title.value || row.querySelector('.errorlist'));
+    row.hidden = deleted.checked || !hasValue;
+    row.querySelectorAll('input:not([type=hidden]), select, textarea').forEach(input => {
+      if (input !== deleted) input.disabled = deleted.checked || !hasValue;
+    });
+    const url = safeUrl(urlInput.value);
+    if (url) link.href = url.href; else link.removeAttribute('href');
+    link.textContent = title.value || displayName(urlInput.value);
+    row.querySelector('[data-document-pending]').hidden = row.dataset.documentSaved === 'true';
+    if (row.querySelector('.errorlist')) row.querySelector('[data-document-editor]').hidden = false;
+  }
+  function addRow(title, url) {
+    let row = Array.from(entries.querySelectorAll('[data-document-row]')).find(item =>
+      !control(item, 'DELETE').checked && !control(item, 'title').value && !control(item, 'url').value);
+    if (!row) {
+      const total = document.getElementById('id_documents-TOTAL_FORMS');
+      const maximum = document.getElementById('id_documents-MAX_NUM_FORMS');
+      if (Number(total.value) >= Number(maximum.value)) throw new Error('The maximum number of document entries has been reached.');
+      const wrapper = document.createElement('div');
+      wrapper.appendChild(document.getElementById('documents-empty').content.cloneNode(true));
+      wrapper.innerHTML = wrapper.innerHTML.replaceAll('__prefix__', total.value);
+      row = wrapper.querySelector('[data-document-row]');
+      entries.append(...wrapper.childNodes);
+      total.value = Number(total.value) + 1;
+    }
+    control(row, 'title').value = title || displayName(url);
+    control(row, 'url').value = url;
+    row.dataset.documentSaved = 'false';
+    updateRow(row);
+    row.querySelector('[data-document-editor]').hidden = true;
+    row.querySelector('[data-document-link]').focus();
+    return row;
+  }
+  entries.querySelectorAll('[data-document-row]').forEach(updateRow);
+  entries.addEventListener('input', event => {
+    const row = event.target.closest('[data-document-row]');
+    if (row) { row.dataset.documentSaved = 'false'; updateRow(row); }
+  });
+  entries.addEventListener('click', event => {
+    const row = event.target.closest('[data-document-row]');
+    if (!row) return;
+    const editor = row.querySelector('[data-document-editor]');
+    if (event.target.closest('[data-document-edit]')) {
+      editor.hidden = !editor.hidden;
+      if (!editor.hidden) control(row, 'title').focus();
+    } else if (event.target.closest('[data-document-done]')) {
+      const url = control(row, 'url');
+      if (url.value.trim() && !safeUrl(url.value.trim())) {
+        status.textContent = 'Enter a valid document URL or leave it blank.';
+        return;
+      }
+      if (!control(row, 'title').value.trim() && url.value.trim()) control(row, 'title').value = displayName(url.value.trim());
+      updateRow(row); editor.hidden = true;
+    } else if (event.target.closest('[data-document-remove]')) {
+      control(row, 'DELETE').checked = true;
+      updateRow(row);
+      status.textContent = 'Document removed from this list. Save the property to confirm.';
+    }
+  });
+  [upload, paste].forEach(button => button.addEventListener('click', event => {
+    event.preventDefault(); event.stopImmediatePropagation();
+    if (busy) return;
+    menu.open = false;
+    if (button === upload) { picker.value = ''; picker.click(); }
+    else {
+      dialog.querySelector('[data-paste-url]').value = '';
+      dialog.querySelector('[data-paste-title]').value = '';
+      dialog.showModal();
+      dialog.querySelector('[data-paste-url]').focus();
+    }
+  }, true));
+  dialog.querySelector('[data-paste-cancel]').addEventListener('click', () => dialog.close());
+  dialog.querySelector('[data-paste-confirm]').addEventListener('click', () => {
+    const input = dialog.querySelector('[data-paste-url]');
+    const value = input.value.trim();
+    input.setCustomValidity(safeUrl(value) ? '' : 'Enter a valid http or https document URL.');
+    if (!input.reportValidity()) return;
+    try {
+      addRow(dialog.querySelector('[data-paste-title]').value.trim(), value);
+      dialog.close();
+      status.textContent = 'Link added. Save the property to attach it.';
+    } catch (error) { status.textContent = error.message; }
+  });
+  dialog.querySelector('[data-paste-url]').addEventListener('input', event => event.target.setCustomValidity(''));
+  dialog.addEventListener('keydown', event => {
+    if (event.key === 'Enter') { event.preventDefault(); dialog.querySelector('[data-paste-confirm]').click(); }
+  });
+  document.addEventListener('click', event => { if (!menu.contains(event.target)) menu.open = false; });
+  menu.addEventListener('keydown', event => {
+    if (event.key === 'Escape') { menu.open = false; menu.querySelector('summary').focus(); }
+  });
+  form.addEventListener('invalid', event => {
+    const row = event.target.closest('[data-document-row]');
+    if (row) row.querySelector('[data-document-editor]').hidden = false;
+  }, true);
+  form.addEventListener('submit', event => {
+    if (busy) { event.preventDefault(); status.textContent = 'Please wait for the upload to finish before saving.'; }
+  }, true);
+  picker.addEventListener('change', async () => {
+    const file = picker.files[0];
+    if (!file) return;
+    busy = true; upload.disabled = true; paste.disabled = true;
+    status.textContent = 'Uploading ' + file.name + '…';
+    const data = new FormData();
+    data.append('file', file);
+    data.append('csrfmiddlewaretoken', form.querySelector('[name=csrfmiddlewaretoken]').value);
+    if (upload.dataset.propertyId) data.append('property_id', upload.dataset.propertyId);
+    try {
+      const response = await fetch(upload.dataset.uploadUrl, {method: 'POST', body: data, credentials: 'same-origin'});
+      if (response.redirected) throw new Error('Your session may have expired. Sign in again before uploading.');
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'The document could not be uploaded.');
+      try { addRow(result.title, result.url); }
+      catch (error) { throw new Error(error.message + ' Uploaded document link: ' + result.url); }
+      status.textContent = result.filename + ' uploaded. Save the property to attach it.';
+    } catch (error) { status.textContent = error.message || 'The document could not be uploaded.'; }
+    finally { busy = false; upload.disabled = false; paste.disabled = false; picker.value = ''; }
+  });
+});
+</script>
+{% endif %}

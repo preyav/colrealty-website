@@ -1,67 +1,111 @@
 {% extends "portal/base.html" %}
 
-{% block title %}Add Vendor Invoice | Col Realty Portal{% endblock %}
-{% block page_title %}Add Vendor Invoice{% endblock %}
+{% block title %}{% if is_editing %}Edit{% else %}Add{% endif %} Vendor Invoice | Col Realty Portal{% endblock %}
+{% block page_title %}{% if is_editing %}Edit{% else %}Add{% endif %} Vendor Invoice{% endblock %}
 
 {% block content %}
 
 <div style="margin-bottom:18px;">
-  <a href="{% url 'portal:work_order_detail' work_order.id %}"
+  <a href="{% if invoice %}{% url 'portal:finance_vendor_invoice_detail' invoice.id %}{% else %}{% url 'portal:finance_vendor_invoices' %}{% endif %}"
      style="color:#2563eb;text-decoration:none;font-size:0.85rem;">
-    ← Back to Work Order #{{ work_order.id }}
+    ← Back to Vendor Bills
   </a>
 </div>
 
-<div class="card">
+<div class="card" style="max-width:1040px;margin-left:auto;margin-right:auto;">
 
   <div class="card-header">
     <h2>Work Order #{{ work_order.id }}</h2>
   </div>
 
-  <div style="padding:20px;">
-    <strong>{{ work_order.title }}</strong>
-
-    <div style="margin-top:8px;color:#64748b;">
-      {{ work_order.unit.property.street_address }}
+  <div style="padding:22px 24px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:center;">
+    <div>
+      <strong style="display:block;font-size:1rem;">{{ work_order.title }}</strong>
+      <div style="margin-top:7px;color:#64748b;">
+        {{ work_order.unit.property.street_address }}{% if work_order.unit.unit_number %} · Unit {{ work_order.unit.unit_number }}{% endif %}
+      </div>
     </div>
-
-    <div style="margin-top:14px;">
-      Estimated:
+    <div style="display:flex;gap:26px;flex-wrap:wrap;">
+      <div>
+        <div class="stat-label">Estimated</div>
+        <strong>
       {% if work_order.estimated_cost %}
         ${{ work_order.estimated_cost|floatformat:2 }}
       {% else %}
         —
       {% endif %}
-
-      &nbsp; | &nbsp;
-
-      Actual:
+        </strong>
+      </div>
+      <div>
+        <div class="stat-label">Final Actual Cost</div>
+        <strong style="color:#16a34a;">
       {% if work_order.actual_cost %}
         ${{ work_order.actual_cost|floatformat:2 }}
       {% else %}
         —
       {% endif %}
+        </strong>
+      </div>
     </div>
   </div>
 
 </div>
 
-<div class="card">
+<div class="card" style="max-width:1040px;margin-left:auto;margin-right:auto;">
 
   <div class="card-header">
-    <h2>Invoice Details</h2>
+    <h2>{% if is_editing %}Edit Invoice Details{% else %}Invoice Details{% endif %}</h2>
   </div>
 
-  <div style="padding:20px;">
+  <div style="padding:24px;">
 
     <form method="post">
       {% csrf_token %}
 
-      {{ form.as_p }}
+      {% if form.non_field_errors %}
+        <div style="margin-bottom:18px;padding:12px 14px;border:1px solid #fecaca;background:#fef2f2;color:#b91c1c;border-radius:8px;">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
 
-      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 24px;">
+        <div>
+          <label for="{{ form.vendor.id_for_label }}" style="display:block;font-weight:600;margin-bottom:7px;">Vendor <span style="color:#dc2626;">*</span></label>
+          {{ form.vendor }}
+          {{ form.vendor.errors }}
+        </div>
+        <div>
+          <label for="{{ form.invoice_number.id_for_label }}" style="display:block;font-weight:600;margin-bottom:7px;">{{ form.invoice_number.label }} <span style="color:#dc2626;">*</span></label>
+          {{ form.invoice_number }}
+          <div style="margin-top:6px;color:#64748b;font-size:0.8rem;">Use the exact number printed on the vendor's invoice.</div>
+          {{ form.invoice_number.errors }}
+        </div>
+        <div>
+          <label for="{{ form.amount.id_for_label }}" style="display:block;font-weight:600;margin-bottom:7px;">Amount <span style="color:#dc2626;">*</span></label>
+          {{ form.amount }}
+          {{ form.amount.errors }}
+        </div>
+        <div>
+          <label for="{{ form.invoice_date.id_for_label }}" style="display:block;font-weight:600;margin-bottom:7px;">Invoice Date <span style="color:#dc2626;">*</span></label>
+          {{ form.invoice_date }}
+          {{ form.invoice_date.errors }}
+        </div>
+        <div>
+          <label for="{{ form.due_date.id_for_label }}" style="display:block;font-weight:600;margin-bottom:7px;">Due Date <span style="color:#dc2626;">*</span></label>
+          {{ form.due_date }}
+          <div style="margin-top:6px;color:#64748b;font-size:0.8rem;">Defaults to Net 30 and can be adjusted to match the invoice.</div>
+          {{ form.due_date.errors }}
+        </div>
+      </div>
 
-        <a href="{% url 'portal:work_order_detail' work_order.id %}"
+      <div style="margin-top:20px;">
+        <label for="{{ form.notes.id_for_label }}" style="display:block;font-weight:600;margin-bottom:7px;">Notes</label>
+        {{ form.notes }}
+        {{ form.notes.errors }}
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:24px;padding-top:20px;border-top:1px solid #e2e8f0;">
+
+        <a href="{% if invoice %}{% url 'portal:finance_vendor_invoice_detail' invoice.id %}{% else %}{% url 'portal:finance_vendor_invoices' %}{% endif %}"
            class="btn"
            style="background:#f1f5f9;">
           Cancel
@@ -69,7 +113,7 @@
 
         <button type="submit"
                 class="btn btn-primary">
-          Add Invoice
+          {% if is_editing %}Update Invoice{% else %}Save Invoice{% endif %}
         </button>
 
       </div>

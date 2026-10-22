@@ -264,6 +264,31 @@ class WorkOrder(models.Model):
         db_index=True,
     )
 
+    performer_tenant = models.ForeignKey(TenantProfile, null=True, blank=True, on_delete=models.PROTECT, related_name='performed_work_orders')
+    performer_owner = models.ForeignKey('owners.OwnerProfile', null=True, blank=True, on_delete=models.PROTECT, related_name='performed_work_orders')
+
+    @property
+    def is_self_performed(self):
+        return bool(self.performer_tenant_id or self.performer_owner_id)
+
+    tenant_work_terms = models.TextField(blank=True)
+    tenant_work_document = models.URLField(blank=True)
+    tenant_expected_completion = models.DateTimeField(null=True, blank=True)
+    tenant_arranged_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.PROTECT, related_name='+')
+    tenant_arranged_at = models.DateTimeField(null=True, blank=True)
+
+    @property
+    def approval_actor(self):
+        if self.approved_by_id:return self.approved_by
+        mr=self.maintenance_request if self.maintenance_request_id else None
+        return mr.reviewed_by if mr and mr.status in ('approved','converted','completed') else None
+
+    @property
+    def approval_time(self):
+        if self.approved_at:return self.approved_at
+        mr=self.maintenance_request if self.maintenance_request_id else None
+        return mr.reviewed_at if mr and mr.status in ('approved','converted','completed') else None
+
     approved_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,
@@ -280,6 +305,18 @@ class WorkOrder(models.Model):
     scheduled_for = models.DateTimeField(
         null=True,
         blank=True,
+    )
+
+    scheduled_until = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="End of the vendor's scheduled arrival window.",
+    )
+
+    started_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Actual date and time work began.",
     )
 
     completed_at = models.DateTimeField(
@@ -315,6 +352,7 @@ class WorkOrder(models.Model):
     class Meta:
         ordering = ["-created_at"]
         constraints = [
+            models.CheckConstraint(condition=~(models.Q(performer_tenant__isnull=False) & models.Q(performer_owner__isnull=False)), name='work_order_single_self_performer'),
             models.UniqueConstraint(
                 fields=["maintenance_request"],
                 condition=(
@@ -327,7 +365,7 @@ class WorkOrder(models.Model):
 
     def clean(self):
         super().clean()
-        if self._state.adding and self.scheduled_for:
+        if self.scheduled_for:
             current_minute = timezone.now().replace(second=0, microsecond=0)
             if self.scheduled_for < current_minute:
                 raise ValidationError(
@@ -336,6 +374,21 @@ class WorkOrder(models.Model):
                             "The scheduled date and time cannot be in the past."
                         )
                     }
+                )
+        if self.scheduled_until and not self.scheduled_for:
+            raise ValidationError(
+                {"scheduled_until": "A schedule start is required."}
+            )
+        if self.scheduled_for and self.scheduled_until:
+            start = timezone.localtime(self.scheduled_for)
+            end = timezone.localtime(self.scheduled_until)
+            if end.date() != start.date():
+                raise ValidationError(
+                    {"scheduled_until": "The arrival window must start and end on the same date."}
+                )
+            if end <= start:
+                raise ValidationError(
+                    {"scheduled_until": "The arrival-window end must be later than its start."}
                 )
 
     def __str__(self):
@@ -382,6 +435,12 @@ class VendorAssignment(models.Model):
         blank=True,
     )
 
+    scheduled_until = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="End of the vendor's scheduled arrival window.",
+    )
+
     completed_at = models.DateTimeField(
         null=True,
         blank=True,
@@ -401,6 +460,24 @@ class VendorAssignment(models.Model):
                 name="unique_workorder_vendor",
             )
         ]
+
+    def clean(self):
+        super().clean()
+        if self.scheduled_until and not self.scheduled_for:
+            raise ValidationError(
+                {"scheduled_until": "A schedule start is required."}
+            )
+        if self.scheduled_for and self.scheduled_until:
+            start = timezone.localtime(self.scheduled_for)
+            end = timezone.localtime(self.scheduled_until)
+            if end.date() != start.date():
+                raise ValidationError(
+                    {"scheduled_until": "The arrival window must start and end on the same date."}
+                )
+            if end <= start:
+                raise ValidationError(
+                    {"scheduled_until": "The arrival-window end must be later than its start."}
+                )
 
     def __str__(self):
         return f"{self.vendor} → {self.work_order}"
@@ -793,6 +870,7 @@ class VendorInvoice(models.Model):
     STATUS_CHOICES = [
         ("submitted", "Submitted"),
         ("approved", "Approved"),
+        ("partially_paid", "Partially Paid"),
         ("paid", "Paid"),
         ("disputed", "Disputed"),
         ("void", "Void"),
@@ -868,6 +946,11 @@ class VendorInvoice(models.Model):
 
         constraints = [
             models.UniqueConstraint(
+                fields=["work_order"],
+                condition=~models.Q(status="void"),
+                name="maintenance_one_current_vendor_invoice",
+            ),
+            models.UniqueConstraint(
                 fields=["vendor", "invoice_number"],
                 condition=~models.Q(invoice_number=""),
                 name="unique_vendor_invoice_number",
@@ -882,6 +965,127 @@ class VendorInvoice(models.Model):
             ),
         ]
 
+    def save(self,*args,**kwargs):
+        if self.pk:
+            from accounting.book_models import BookPosting
+            if BookPosting.objects.filter(source_key='bill:'+str(self.pk)).exists():
+                old=type(self).objects.get(pk=self.pk)
+                if any(getattr(old,key)!=getattr(self,key) for key in ['work_order_id','vendor_id','amount','invoice_date','due_date']) or self.status=='void':
+                    raise ValidationError('This bill is posted. Use a bill credit/refund; preserve its original dates and amount.')
+        return super().save(*args,**kwargs)
+
     def __str__(self):
         invoice_label = self.invoice_number or f"Invoice #{self.pk}"
         return f"{self.vendor} - {invoice_label} - ${self.amount}"
+
+    @property
+    def paid_amount(self):
+        return sum(
+            (payment.amount for payment in self.payments.all() if payment.status == "recorded"),
+            Decimal("0.00"),
+        )
+
+    @property
+    def outstanding_amount(self):
+        from accounting.book_models import FundsEvent
+        credits=sum((e.amount for e in FundsEvent.objects.filter(invoice=self,kind='bill_credit')),Decimal('0'))
+        refunds=sum((e.amount for e in FundsEvent.objects.filter(invoice=self,kind='bill_refund')),Decimal('0'))
+        return self.amount - self.paid_amount - credits + refunds
+
+
+class VendorPayment(models.Model):
+    """An immutable payment transaction applied to an approved vendor invoice."""
+
+    METHOD_CHOICES = [
+        ("ach", "ACH"),
+        ("check", "Check"),
+        ("card", "Card"),
+        ("cash", "Cash"),
+        ("electronic_transfer", "Electronic Transfer"),
+        ("other", "Other"),
+    ]
+    STATUS_CHOICES = [
+        ("recorded", "Recorded"),
+        ("void", "Void"),
+    ]
+
+    invoice = models.ForeignKey(
+        VendorInvoice,
+        on_delete=models.PROTECT,
+        related_name="payments",
+    )
+    amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal("0.01"))],
+    )
+    payment_date = models.DateField()
+    payment_method = models.CharField(max_length=30, choices=METHOD_CHOICES)
+    reference_number = models.CharField(max_length=150, blank=True)
+    payment_account = models.CharField(max_length=150, blank=True)
+    financial_account = models.ForeignKey(
+        "accounting.FinancialAccount",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="vendor_payments",
+    )
+    notes = models.TextField(blank=True)
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="recorded",
+        db_index=True,
+    )
+    recorded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="recorded_vendor_payments",
+    )
+    recorded_at = models.DateTimeField(auto_now_add=True)
+    voided_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="voided_vendor_payments",
+    )
+    voided_at = models.DateTimeField(null=True, blank=True)
+    void_reason = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["-payment_date", "-recorded_at"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(amount__gt=0),
+                name="vendor_payment_amount_positive",
+            ),
+        ]
+
+    def save(self,*args,**kwargs):
+        if self.pk and not getattr(self,'_books_correction',False):
+            from accounting.reimbursement_models import OnBehalfSettlement
+            if OnBehalfSettlement.objects.filter(payment_id=self.pk).exists():
+                old=type(self).objects.get(pk=self.pk)
+                if any(getattr(old,key)!=getattr(self,key) for key in ['invoice_id','amount','payment_date','financial_account_id','payment_method','reference_number','payment_account','status']):
+                    raise ValidationError('On-behalf payments are immutable. Use a reviewed void after reversing reimbursements.')
+        if self.pk and not getattr(self,'_books_correction',False):
+            from accounting.book_models import BookPosting
+            if BookPosting.objects.filter(source_key='bill-payment:'+str(self.pk)).exists():
+                old=type(self).objects.get(pk=self.pk)
+                if any(getattr(old,key)!=getattr(self,key) for key in ['invoice_id','amount','payment_date','financial_account_id','status']):
+                    raise ValidationError('This payment is posted. Correct it in Accounting operations to preserve both books.')
+        return super().save(*args,**kwargs)
+
+    def __str__(self):
+        return f"Payment ${self.amount} for {self.invoice}"
+
+    @property
+    def paid_from_display(self):
+        if hasattr(self,'on_behalf'):
+            return self.on_behalf.payer.name
+        return str(self.financial_account) if self.financial_account_id else (self.payment_account or "—")
+
+from .register_models import PropertyInspection, PropertyAsset

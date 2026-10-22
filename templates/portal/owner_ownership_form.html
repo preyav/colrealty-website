@@ -1,0 +1,27 @@
+{% extends "portal/base.html" %}
+{% load owner_flow %}
+{% block title %}{{ page_heading }}{% endblock %}
+{% block page_title %}{{ page_heading }}{% endblock %}
+{% block content %}
+{% owner_flow_actions as flow %}
+{% include "portal/owner_info_styles.html" %}
+<div style="margin-bottom:18px"><a href="{% url 'portal:property_detail' property_obj.id %}">{{ flow.back_property }}</a></div>
+<section class="card">
+<div class="card-header"><h2>{% if ownership %}{{ flow.edit_ownership }}{% else %}{{ flow.add_ownership }}{% endif %}</h2></div>
+<style>.maintenance-form-match #owner-ownership-form textarea {min-height:96px;}</style>
+<form method="post" id="owner-ownership-form" style="padding:22px">
+{% csrf_token %}{{ form.non_field_errors }}
+<div style="padding:14px;margin-bottom:20px;background:#f8fafc;border-radius:7px"><div class="stat-label">{{ flow.property }}</div><strong>{{ property_obj.full_address }}</strong></div>
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 24px">
+{% ownership_form_fields form as ownership_fields %}
+{% for field in ownership_fields %}{% if field.is_hidden %}{{ field }}{% else %}
+<div{% if field.name == 'notes' or field.name == 'distribution_instructions' %} style="grid-column:1/-1"{% endif %}>
+<div class="owner-field-label"><label for="{{ field.id_for_label }}">{% if field.name == 'start_date' %}{{ flow.ownership_from }}{% elif field.name == 'end_date' %}{{ flow.ownership_until }}{% else %}{{ field.label }}{% endif %}</label>{% include "portal/owner_field_info.html" %}</div>{{ field }}{{ field.errors }}{% if field.name == 'end_date' %}<div style="font-size:.85rem;color:#64748b;margin-top:6px">{{ flow.ownership_until_help }}</div>{% endif %}
+</div>{% endif %}{% endfor %}
+</div>
+<div style="display:flex;justify-content:flex-end;flex-wrap:wrap;gap:10px;margin-top:22px">
+<a class="btn" href="{% url 'portal:property_detail' property_obj.id %}">{{ flow.cancel }}</a>
+<button class="btn btn-primary" type="submit" name="save_add_another" value="1">{{ flow.save_add_another }}</button>
+<button class="btn btn-primary" type="submit">{% if ownership %}{{ flow.save_changes }}{% else %}{{ flow.save_ownership }}{% endif %}</button>
+</div></form></section>
+{% endblock %}

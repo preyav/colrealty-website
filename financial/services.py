@@ -12,9 +12,8 @@ PROVIDERS = {
 }
 
 
-@lru_cache(maxsize=1)
-def get_financial_provider():
-    key = str(getattr(settings, "COL360_FINANCIAL_PROVIDER", "disabled")).strip().lower()
+@lru_cache(maxsize=None)
+def _get_financial_provider_for_key(key):
     provider_path = PROVIDERS.get(key)
     if not provider_path:
         valid = ", ".join(sorted(PROVIDERS))
@@ -22,6 +21,11 @@ def get_financial_provider():
             f"Unknown COL360_FINANCIAL_PROVIDER '{key}'. Valid providers: {valid}."
         )
     return import_string(provider_path)()
+
+
+def get_financial_provider():
+    key = str(getattr(settings, "COL360_FINANCIAL_PROVIDER", "disabled")).strip().lower()
+    return _get_financial_provider_for_key(key)
 
 
 def get_work_order_financials(work_order):

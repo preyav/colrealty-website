@@ -31,6 +31,7 @@ class BaseFinancialProvider(ABC):
             "enabled": self.enabled,
             "capabilities": self.capabilities(),
             "invoices": [],
+            "payments": [],
             "total_invoiced": Decimal("0.00"),
             "total_paid": Decimal("0.00"),
             "outstanding": Decimal("0.00"),
@@ -53,5 +54,14 @@ class BaseFinancialProvider(ABC):
     def approve_invoice(self, *args, **kwargs):
         self._disabled()
 
-    def mark_invoice_paid(self, *args, **kwargs):
+    def get_payment_form(self, *args, **kwargs):
+        self._disabled()
+
+    def record_payment(self, *args, **kwargs):
+        self._disabled()
+
+    def get_payment(self, *args, **kwargs):
+        self._disabled()
+
+    def void_payment(self, *args, **kwargs):
         self._disabled()

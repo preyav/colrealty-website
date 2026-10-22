@@ -1,0 +1,65 @@
+<dialog class="school-help-dialog" id="help-{{ field.auto_id }}" aria-labelledby="help-title-{{ field.auto_id }}">
+<div class="school-help-header btn-primary"><h3 id="help-title-{{ field.auto_id }}">Lot Features Help</h3><button type="button" data-school-help-close aria-label="Close help">×</button></div>
+<div class="school-help-body">
+{% if field.field.required %}<p>Rule Help:</p><ul><li>Lot Features is required.</li></ul>{% endif %}
+<p>General Field Help:</p><p>A list of features or description of the lot included in the sale/lease.</p>
+<ul style="padding-left:24px"><li><strong>Agricultural:</strong> The lot has agricultural features.</li>
+<li><strong>Alley Access:</strong> The lot has alley access.</li>
+<li><strong>Back to Park/Greenbelt:</strong> The lot backs to a section of a park/Greenbelt.</li>
+<li><strong>Back Yard:</strong> The lot has a back yard.</li>
+<li><strong>Bluff:</strong> The lot is on or near a bluff.</li>
+<li><strong>City Lot:</strong> The lot is in a city/urban setting.</li>
+<li><strong>Cleared:</strong> The lot has been cleared.</li>
+<li><strong>Close to Clubhouse:</strong> The lot is located close to the community clubhouse.</li>
+<li><strong>Corner Lot:</strong> The lot is located on the corner of an intersection.</li>
+<li><strong>Cul-de-sac:</strong> The lot is located on a street that is closed on one end in a circular shape. Cul-de-sac translates literally from French as “the bottom of the bag,” which helps explain the circular shape.</li>
+<li><strong>Curbs:</strong> The lot has curbs.</li>
+<li><strong>Farm:</strong> The lot is, or has characteristics of, a farm.</li>
+<li><strong>Few Trees:</strong> The lot has a few trees.</li>
+<li><strong>Flag Lot:</strong> Named for the shape, a flag lot has a long driveway leading to the property; together they may have the appearance of a pole and flag. The driveway typically runs between two other properties.</li>
+<li><strong>Front Yard:</strong> The lot has a front yard.</li>
+<li><strong>Garden:</strong> The lot has a garden.</li>
+<li><strong>Gentle Sloping:</strong> The lot’s slope is gentle.</li>
+<li><strong>Interior Lot:</strong> Also referred to as an inside lot, an interior lot faces the street on only one side.</li>
+<li><strong>Irregular Lot:</strong> The lot is not a rectangle.</li>
+<li><strong>Landscaped:</strong> The lot has been fully or partially landscaped.</li>
+<li><strong>Level:</strong> The lot is level/flat.</li>
+<li><strong>Native Plants:</strong> The lot’s landscaping includes native plants.</li>
+<li><strong>Near Golf Course:</strong> The lot is near a golf course.</li>
+<li><strong>Near Public Transit:</strong> The lot is near public transportation.</li>
+<li><strong>Open Lot:</strong> The lot is open.</li>
+<li><strong>Orchard(s):</strong> The lot includes one or more orchards.</li>
+<li><strong>Pie Shaped Lot:</strong> The lot is pie or triangle shaped, typically narrow at the front and wide at the back. The reverse, a wide front, may be referred to as pie shaped or reverse pie shaped.</li>
+<li><strong>Private:</strong> The lot is private or has features that provide privacy from adjacent areas such as neighbors or roads.</li>
+<li><strong>Private Maintained Road:</strong> The lot has a road that is privately maintained.</li>
+<li><strong>Public Maintained Road:</strong> The lot contains a road kept/maintained by the city rather than the property owner.</li>
+<li><strong>Road Maintenance Agreement:</strong> The lot includes an agreement for maintaining the road.</li>
+<li><strong>Rock Outcropping:</strong> Rock features or barriers that transition a grading in the landscape.</li>
+<li><strong>Rolling Slope:</strong> The slope of the property varies in a rolling or wavy fashion.</li>
+<li><strong>Sloped Down:</strong> The lot slopes down, typically from the perspective of looking at the property from the street.</li>
+<li><strong>Sloped Up:</strong> The lot slopes up, typically from the perspective of looking at the property from the street.</li>
+<li><strong>Split Possible:</strong> It may be possible to split the lot into two or more parcels.</li>
+<li><strong>Sprinkler - Automatic:</strong> The lot comes with an automatic sprinkler system.</li>
+<li><strong>Sprinkler - Back Yard:</strong> The lot contains an integrated system of piping and sprinklers installed in the back yard to water the ground.</li>
+<li><strong>Sprinkler - Drip Only/Bubblers:</strong> The lot contains subsurface irrigation systems that provide water to plants at their root zone through a network of valves, pipes, tubing, and emitters. These components minimize evaporative water losses and overspray associated with sprinkler systems.</li>
+<li><strong>Sprinkler - In Front:</strong> There are irrigation sprinklers on the front of the lot.</li>
+<li><strong>Sprinkler - In-ground:</strong> The lot comes with underground sprinklers that function through basic electronic and hydraulic technology.</li>
+<li><strong>Sprinkler - Manual:</strong> The lot comes with a manual sprinkler system.</li>
+<li><strong>Sprinkler - Partial:</strong> The lot contains a sprinkler system that only partially covers the lot.</li>
+<li><strong>Sprinkler - Rain Sensor:</strong> The irrigation system includes materials that swell when wet, preventing automatic sprinklers from operating while it is raining or after recent rain. When these materials dry, the system resumes its normal cycle settings.</li>
+<li><strong>Sprinkler - Side Yard:</strong> The lot contains a sprinkler system in the side yard.</li>
+<li><strong>Steep Slope:</strong> The lot slopes steeply.</li>
+<li><strong>Subdivided:</strong> The lot has been subdivided into two or more parcels.</li>
+<li><strong>Trees - Heavy:</strong> The lot has a heavily wooded area as part of the parcel.</li>
+<li><strong>Trees - Large (Over 40 Ft):</strong> The lot contains large trees over 40 feet tall.</li>
+<li><strong>Trees - Many:</strong> The lot has many trees.</li>
+<li><strong>Trees - Medium (20 Ft - 40 Ft):</strong> The lot has medium-sized trees, 20 to 40 feet tall.</li>
+<li><strong>Trees - Moderate:</strong> The lot has a moderate amount of trees.</li>
+<li><strong>Trees - Small (Under 20 Ft):</strong> The lot has small trees under 20 feet tall.</li>
+<li><strong>Trees - Sparse:</strong> The lot has a sparse amount of trees.</li>
+<li><strong>Views:</strong> There are views from the lot.</li>
+<li><strong>Waterfall:</strong> The lot has a waterfall.</li>
+<li><strong>Wetlands:</strong> The lot is located near or within wetlands.</li>
+<li><strong>Xeriscape:</strong> The lot contains creative landscaping for water and energy efficiency and lower maintenance. The seven xeriscape principles are good planning and design; practical lawn areas; efficient irrigation; soil improvement; use of mulches; low water demand plants; and good maintenance.</li>
+<li><strong>Zero Lot Line:</strong> The structure comes up to, or very near, the property line. Attached single-family residences, row homes, garden homes, and patio homes may all be zero lot line homes.</li></ul></div></dialog>
+<style>.school-help-body li{margin-bottom:18px}</style>

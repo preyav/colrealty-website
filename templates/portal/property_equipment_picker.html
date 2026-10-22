@@ -1,0 +1,46 @@
+<fieldset class="equipment-picker" data-limit="{{ field.selection_limit }}">
+  <legend>{{ field.label }}{% if field.feature_help_template %}{% include "portal/property_feature_information.html" %}{% endif %}{% if field.lot_features_help %}<button type="button" class="school-help-button btn-primary" aria-label="Information about Lot Features" data-school-help="help-{{ field.auto_id }}">i</button>{% endif %}{% if field.field.required %} <span aria-label="required">*</span>{% endif %}</legend>
+  {% if field.feature_help_template %}{% include "portal/property_feature_information_dialog.html" %}{% endif %}
+  {% if field.lot_features_help %}{% include 'portal/property_lot_features_help.html' %}{% endif %}
+  <details {% if field.errors %}open{% endif %}>
+    <summary data-summary></summary>
+    <div class="equipment-panel">
+      <div class="equipment-options">{% for option in field %}<div data-option>{{ option }}</div>{% endfor %}</div>
+      <p data-empty hidden>No matching options.</p>
+    </div>
+  </details>
+  <p data-rule hidden>None cannot be combined with another feature.</p>
+  {% if field.selection_limit %}<p class="equipment-limit">Select up to {{ field.selection_limit }} options.</p>{% endif %}
+  {{ field.errors }}
+</fieldset>
+<style>
+.equipment-picker{border:0;padding:0;min-width:0}.equipment-picker legend{font-size:.9rem;font-weight:600;margin-bottom:7px}.equipment-picker details{border:1px solid #cbd5e1;border-radius:7px;background:white}.equipment-picker summary{padding:10px 12px;cursor:pointer;overflow-wrap:anywhere}.equipment-panel{padding:12px;border-top:1px solid #e2e8f0}.equipment-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:280px;overflow:auto;margin-top:12px}.equipment-options label{display:flex;align-items:center;gap:8px;font-weight:400;margin:0;padding:7px}.equipment-options input[type=checkbox]{width:18px;height:18px;flex:none}.equipment-options input:disabled+label,.equipment-options [data-disabled=true]{opacity:.45}.equipment-limit{font-size:.85rem;color:#64748b}@media(max-width:450px){.equipment-options{grid-template-columns:1fr}}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('.equipment-picker').forEach(picker => {
+    if (picker.dataset.ready) return;
+    picker.dataset.ready = 'true';
+    const entries = Array.from(picker.querySelectorAll('[data-option]'));
+    const inputs = entries.map(entry => entry.querySelector('input'));
+    const none = inputs.find(input => input.value === 'none');
+    const limit = Number(picker.dataset.limit) || Infinity;
+    function update(changed) {
+      if (changed === none && none.checked) inputs.forEach(input => {if(input !== none) input.checked = false;});
+      const count = inputs.filter(input => input.checked).length;
+      inputs.forEach((input,index) => {
+        input.disabled = (none && none.checked && input !== none) || (count >= limit && !input.checked && input !== none);
+        entries[index].dataset.disabled = String(input.disabled);
+      });
+      picker.querySelector('[data-rule]').hidden = !(none && none.checked);
+      picker.querySelector('[data-summary]').textContent = entries.filter(entry => entry.querySelector('input').checked).map(entry => entry.textContent.trim()).join(', ') || '';
+    }
+    inputs.forEach(input => input.addEventListener('change', () => update(input)));
+    picker.addEventListener('keydown', event => {
+      if (event.key === 'Escape') {picker.querySelector('details').open = false;picker.querySelector('summary').focus();}
+      if (event.key === 'Enter' && event.target.type === 'search') event.preventDefault();
+    });
+    update();
+  });
+});
+</script>

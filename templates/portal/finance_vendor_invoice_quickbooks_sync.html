@@ -1,0 +1,41 @@
+{% extends "portal/base.html" %}
+{% block title %}Sync Vendor Bill | COL360 Finance{% endblock %}
+{% block page_title %}Sync Vendor Bill to QuickBooks{% endblock %}
+{% block content %}
+<div style="max-width:900px;">
+  <a href="{% url 'portal:finance_vendor_invoice_detail' invoice.id %}" style="color:#2563eb;text-decoration:none;">← Back to Vendor Bill</a>
+
+  <div class="card" style="margin-top:18px;">
+    <div class="card-header"><h2>Review QuickBooks Bill</h2><span class="badge badge-green">Approved Invoice</span></div>
+    <div style="padding:22px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;">
+      <div><div class="stat-label">QuickBooks Company</div><strong>{{ connection.company_name|default:connection.realm_id }}</strong></div>
+      <div><div class="stat-label">Vendor</div><strong>{{ invoice.vendor }}</strong><div style="color:#64748b;font-size:13px;margin-top:3px;">The vendor will be matched or synchronized automatically.</div></div>
+      <div><div class="stat-label">Invoice Number</div><strong>{{ invoice.invoice_number|default:"Generated from work order" }}</strong></div>
+      <div><div class="stat-label">Invoice Total</div><strong>${{ invoice.amount|floatformat:2 }}</strong></div>
+      <div><div class="stat-label">Invoice Date</div><strong>{{ invoice.invoice_date|date:"M d, Y" }}</strong></div>
+      <div><div class="stat-label">Due Date</div><strong>{{ invoice.due_date|date:"M d, Y" }}</strong></div>
+      <div style="grid-column:1/-1;"><div class="stat-label">Work Order / Property</div><strong>#{{ work_order.id }} · {{ work_order.title }}</strong><div style="margin-top:3px;color:#64748b;">{{ work_order.unit.property.street_address }}{% if work_order.unit.unit_number %} · Unit {{ work_order.unit.unit_number }}{% endif %}</div></div>
+    </div>
+  </div>
+
+  <form method="post" class="card" style="margin-top:18px;">
+    {% csrf_token %}
+    <div class="card-header"><h2>QuickBooks Coding</h2></div>
+    <div style="padding:22px;">
+      <label for="expense_account_id" style="display:block;font-weight:600;margin-bottom:7px;">Expense Account</label>
+      <select id="expense_account_id" name="expense_account_id" class="form-control" required style="max-width:520px;">
+        <option value="">Select an expense account</option>
+        {% for account in accounts %}
+          <option value="{{ account.Id }}" {% if selected_account_id == account.Id|stringformat:'s' %}selected{% endif %}>{{ account.FullyQualifiedName|default:account.Name }} · {{ account.AccountType }}</option>
+        {% endfor %}
+      </select>
+      <p style="margin:8px 0 0;color:#64748b;font-size:13px;">This determines where the maintenance cost is recorded in QuickBooks.</p>
+      {% if not accounts %}<div style="margin-top:14px;padding:12px 14px;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;color:#9a3412;">No active QuickBooks expense accounts were returned. Create or activate an expense account in QuickBooks, then try again.</div>{% endif %}
+    </div>
+    <div style="padding:0 22px 22px;display:flex;justify-content:flex-end;gap:10px;">
+      <a class="btn" style="background:#f1f5f9;" href="{% url 'portal:finance_vendor_invoice_detail' invoice.id %}">Cancel</a>
+      <button class="btn btn-primary" {% if not accounts %}disabled{% endif %}>Sync Bill to QuickBooks</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

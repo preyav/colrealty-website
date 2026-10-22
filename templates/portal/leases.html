@@ -78,11 +78,11 @@
         <td style="white-space:nowrap;">
           {{ lease.start_date|date:"M d, Y" }}
           -
-          {{ lease.end_date|date:"M d, Y" }}
+          {{ lease.current_terms.expiration_date|date:"M d, Y" }}
         </td>
 
         <td style="font-weight:600;">
-          ${{ lease.monthly_rent|floatformat:2 }}
+          ${{ lease.current_terms.monthly_rent|floatformat:2 }}
         </td>
 
         <td>

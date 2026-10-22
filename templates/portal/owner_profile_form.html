@@ -1,0 +1,44 @@
+{% extends "portal/base.html" %}
+{% load owner_flow %}
+{% block title %}{% if owner %}{{ form.owner_ui.edit }}{% else %}{{ form.owner_ui.create }}{% endif %}{% endblock %}
+{% block page_title %}{% if owner %}{{ form.owner_ui.edit }}{% else %}{{ form.owner_ui.create }}{% endif %}{% endblock %}
+{% block content %}
+{% owner_flow_actions as flow %}
+{% include "portal/owner_info_styles.html" %}
+<div style="margin-bottom:18px"><a href="{% url 'portal:owners' %}">{{ form.owner_ui.back }}</a></div>
+<section class="card">
+<div class="card-header"><h2>{% if owner %}{{ form.owner_ui.edit }}{% else %}{{ form.owner_ui.create }}{% endif %}</h2></div>
+<form method="post" id="owner-profile-form" style="padding:22px">
+{% csrf_token %}{{ form.non_field_errors }}
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 24px">
+{% for field in form %}{% if field.is_hidden %}{{ field }}{% else %}
+<div data-owner-field="{{ field.name }}"{% if field.name == 'entity_name' or field.name == 'mailing_address' or field.name == 'notes' %} style="grid-column:1/-1"{% endif %}>
+<div class="owner-field-label"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{% include "portal/owner_field_info.html" %}</div>{{ field }}{{ field.errors }}
+</div>{% endif %}{% endfor %}
+</div>
+<div style="display:flex;justify-content:flex-end;flex-wrap:wrap;gap:10px;margin-top:22px">
+<a class="btn" href="{% url 'portal:owners' %}">{{ form.owner_ui.cancel }}</a>
+<button class="btn btn-primary" type="submit" name="save_add_another" value="1">{{ flow.save_add_another }}</button>
+<button class="btn btn-primary" type="submit">{% if owner %}{{ form.owner_ui.save }}{% else %}{{ form.owner_ui.create }}{% endif %}</button>
+</div>
+</form></section>
+{{ form.owner_labels|json_script:"owner-profile-labels" }}
+<script>
+(() => {
+  const form = document.getElementById('owner-profile-form');
+  const type = form.elements.namedItem('owner_type');
+  const labels = JSON.parse(document.getElementById('owner-profile-labels').textContent);
+  function update() {
+    Object.entries(labels).forEach(([name, variants]) => {
+      const wrap = form.querySelector(`[data-owner-field="${name}"]`);
+      if (!wrap) return;
+      const label = wrap.querySelector('label');
+      if (label && variants[type.value]) label.textContent = variants[type.value];
+      // Preserve values when switching types; only entity name is inapplicable to individuals.
+      if (name === 'entity_name' || name.startsWith('representative_')) wrap.hidden = type.value === 'individual' && !wrap.querySelector('.errorlist');
+    });
+  }
+  type.addEventListener('change', update); update();
+})();
+</script>
+{% endblock %}

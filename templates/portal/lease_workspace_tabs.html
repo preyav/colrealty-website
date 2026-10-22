@@ -1,0 +1,46 @@
+<style>
+.lease-workspace [hidden],.lease-workspace [role="tabpanel"][hidden]{display:none!important}
+.lease-workspace [role="tab"]:focus-visible{outline:2px solid #01AACE;outline-offset:3px}
+.lease-workspace [role="tabpanel"]{min-height:220px}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+ const nav=document.querySelector('[data-lease-tabs]');if(!nav)return;
+ const tabs=[...nav.querySelectorAll('[data-lease-section-link]')];
+ const panels=tabs.map(tab=>document.getElementById(tab.hash.slice(1)));
+ if(!tabs.length||panels.some(panel=>!panel))return;
+ nav.setAttribute('role','tablist');nav.setAttribute('aria-orientation','horizontal');
+ tabs.forEach((tab,index)=>{
+  tab.id='lease-tab-'+index;tab.setAttribute('role','tab');tab.setAttribute('aria-controls',panels[index].id);
+  panels[index].setAttribute('role','tabpanel');panels[index].setAttribute('aria-labelledby',tab.id);
+  panels[index].tabIndex=0;
+ });
+ function activate(index,focus=false,remember=false){
+  document.querySelector('.lease-workspace-columns').hidden=panels[index].id==='lease-financials';
+  const actions=document.querySelector('.lease-overview-actions');if(actions)actions.hidden=panels[index].id==='lease-financials';
+  tabs.forEach((tab,i)=>{const selected=i===index;
+   tab.setAttribute('aria-selected',String(selected));tab.tabIndex=selected?0:-1;
+   tab.classList.toggle('active',selected);panels[i].hidden=!selected;
+   if(!selected)panels[i].querySelectorAll('details[open]').forEach(detail=>detail.open=false);
+  });
+  if(focus)tabs[index].focus({preventScroll:true});
+  if(remember&&location.hash!==tabs[index].hash)history.pushState(null,'',tabs[index].hash);
+ }
+ function fromLocation(){const hash=location.hash==='#lease-operations'?'#lease-essentials':location.hash;const index=tabs.findIndex(tab=>tab.hash===hash);activate(index<0?0:index);}
+ tabs.forEach((tab,index)=>{
+  tab.addEventListener('click',event=>{if(event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;event.preventDefault();activate(index,false,true);});
+  tab.addEventListener('keydown',event=>{
+   let next=index;
+   if(event.key==='ArrowRight')next=(index+1)%tabs.length;
+   else if(event.key==='ArrowLeft')next=(index+tabs.length-1)%tabs.length;
+   else if(event.key==='Home')next=0;
+   else if(event.key==='End')next=tabs.length-1;
+   else return;
+   event.preventDefault();activate(next,true,true);
+  });
+ });
+ document.querySelectorAll('[data-open-financials]').forEach(link=>link.addEventListener('click',event=>{event.preventDefault();activate(tabs.findIndex(tab=>tab.hash==='#lease-financials'),false,true);}));
+ window.addEventListener('popstate',fromLocation);window.addEventListener('hashchange',fromLocation);
+ fromLocation();
+});
+</script>

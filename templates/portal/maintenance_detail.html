@@ -556,7 +556,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   <div class="card-header">
     <h2>Vendor Assignments</h2>
-    <button type="button" class="section-toggle btn btn-primary btn-sm"
+    <button data-portal-disclosure type="button" class="section-toggle btn btn-primary btn-sm"
             data-target="vendor-assignments-content" aria-expanded="false">
       Show More
     </button>
@@ -623,7 +623,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   <div class="card-header">
     <h2>Vendor Estimates</h2>
-    <button type="button" class="section-toggle btn btn-primary btn-sm"
+    <button data-portal-disclosure type="button" class="section-toggle btn btn-primary btn-sm"
             data-target="vendor-estimates-content" aria-expanded="false">
       Show More
     </button>
@@ -654,7 +654,7 @@ document.addEventListener("DOMContentLoaded", function () {
         <td>{{ estimate.submitted_at|date:"M d, Y" }}</td>
         <td>{{ estimate.approved_at|date:"M d, Y"|default:"—" }}</td>
         <td>
-          <button type="button"
+          <button data-portal-disclosure type="button"
                   class="estimate-toggle"
                   data-target="estimate-details-{{ estimate.id }}"
                   aria-expanded="false"
@@ -750,7 +750,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   <div class="card-header">
     <h2>Vendor Invoices</h2>
-    <button type="button" class="section-toggle btn btn-primary btn-sm"
+    <button data-portal-disclosure type="button" class="section-toggle btn btn-primary btn-sm"
             data-target="vendor-invoices-content" aria-expanded="false">
       Show More
     </button>
@@ -816,7 +816,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   <div class="card-header">
     <h2>Work Order History</h2>
-    <button type="button" class="section-toggle btn btn-primary btn-sm"
+    <button data-portal-disclosure type="button" class="section-toggle btn btn-primary btn-sm"
             data-target="work-order-history-content" aria-expanded="false">
       Show More
     </button>
@@ -926,7 +926,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   {% if property_history|length > 3 %}
     <div style="padding:12px 20px;border-top:1px solid #e2e8f0;text-align:right;">
-      <button type="button"
+      <button data-portal-disclosure type="button"
               id="property-history-toggle"
               class="btn btn-primary btn-sm"
               aria-expanded="false">

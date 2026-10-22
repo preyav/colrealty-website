@@ -134,6 +134,7 @@ INSTALLED_APPS = [
     "owners",
     "tenants",
     "leasing",
+    "accounting.apps.AccountingConfig",
     "maintenance",
     "vendors",
     "pages",
@@ -196,13 +197,11 @@ TEMPLATES = [
 # Database
 # ─────────────────────────────────────────────────────────────────────────────
 
-if not DEBUG:
-    _require_env("DATABASE_URL")
-    DATABASES = {"default": env.db("DATABASE_URL")}
-else:
-    DATABASES = {
-        "default": env.db("DATABASE_URL", default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}")
-    }
+_require_env("DATABASE_URL")
+
+DATABASES = {
+    "default": env.db("DATABASE_URL")
+}
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -316,18 +315,29 @@ MLS_ORIGINATING_SYSTEM_NAME = env(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Email — Gmail SMTP
+# Email
 # ─────────────────────────────────────────────────────────────────────────────
 
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = env("EMAIL_HOST", default="smtp.gmail.com")
 EMAIL_PORT = env.int("EMAIL_PORT", default=587)
 EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
 EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
 
-DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL",
-                         default=EMAIL_HOST_USER or "no-reply@colrealty.com")
+EMAIL_BACKEND = env(
+    "EMAIL_BACKEND",
+    default=(
+        "django.core.mail.backends.console.EmailBackend"
+        if DEBUG
+        else "django.core.mail.backends.smtp.EmailBackend"
+    ),
+)
+
+DEFAULT_FROM_EMAIL = env(
+    "DEFAULT_FROM_EMAIL",
+    default=EMAIL_HOST_USER,
+)
+
 SERVER_EMAIL = env("SERVER_EMAIL", default=DEFAULT_FROM_EMAIL)
 
 
@@ -390,3 +400,37 @@ COL360_FINANCIAL_PROVIDER = env(
     "COL360_FINANCIAL_PROVIDER",
     default="disabled",
 ).strip().lower()
+
+# QuickBooks Online OAuth configuration. Secrets and environment-specific
+# values are supplied through environment variables, never hard-coded here.
+QUICKBOOKS_CLIENT_ID = env("QUICKBOOKS_CLIENT_ID", default="")
+QUICKBOOKS_CLIENT_SECRET = env("QUICKBOOKS_CLIENT_SECRET", default="")
+QUICKBOOKS_REDIRECT_URI = env("QUICKBOOKS_REDIRECT_URI", default="")
+QUICKBOOKS_ENVIRONMENT = env(
+    "QUICKBOOKS_ENVIRONMENT", default="sandbox"
+).strip().lower()
+
+
+# Property documents are private and separate from public listing media.
+PROPERTY_DOCUMENT_MAX_UPLOAD_BYTES = env.int('PROPERTY_DOCUMENT_MAX_UPLOAD_BYTES', default=20 * 1024 * 1024)
+PROPERTY_DOCUMENT_ALLOWED_EXTENSIONS = tuple(env.list('PROPERTY_DOCUMENT_ALLOWED_EXTENSIONS', default=['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.csv', '.txt', '.jpg', '.jpeg', '.png']))
+_property_document_bucket = env('PROPERTY_DOCUMENT_S3_BUCKET', default='')
+if _property_document_bucket:
+    STORAGES['property_documents'] = {
+        'BACKEND': 'storages.backends.s3boto3.S3Boto3Storage',
+        'OPTIONS': {
+            'bucket_name': _property_document_bucket,
+            'region_name': env('PROPERTY_DOCUMENT_S3_REGION', default='us-east-1'),
+            'location': 'property-documents',
+            'default_acl': None,
+            'custom_domain': None,
+            'querystring_auth': True,
+            'file_overwrite': False,
+        },
+    }
+elif DEBUG:
+    STORAGES['property_documents'] = {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+        'OPTIONS': {'location': env('PROPERTY_DOCUMENT_ROOT', default=str(BASE_DIR / 'private_documents')), 'base_url': None},
+    }
+# In deployment, a dedicated bucket with Block Public Access enabled is required.

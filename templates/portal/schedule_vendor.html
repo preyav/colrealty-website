@@ -58,19 +58,46 @@
 
       {% csrf_token %}
 
-      <div style="margin-bottom:20px;">
-
-        <label class="stat-label">
-          Scheduled Date & Time
-        </label>
-
-        <div style="margin-top:6px;">
-          {{ form.scheduled_for }}
+      {% if work_order.maintenance_request.availability_date %}
+        <div style="margin-bottom:20px;padding:12px 14px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;">
+          <div class="stat-label">Tenant availability</div>
+          <strong>
+            {{ work_order.maintenance_request.availability_date|date:"M d, Y" }} ·
+            {{ work_order.maintenance_request.availability_start_time|time:"g:i A" }}–{{ work_order.maintenance_request.availability_end_time|time:"g:i A" }}
+          </strong>
         </div>
+      {% endif %}
 
-        {{ form.scheduled_for.errors }}
+      {{ form.non_field_errors }}
 
-      </div>
+      <fieldset style="border:1px solid #dbe3ef;border-radius:10px;padding:14px 16px 16px;margin:0 0 20px;background:#f8fafc;">
+        <legend style="padding:0 8px;font-weight:600;color:#0f172a;">Scheduled Date &amp; Time</legend>
+        <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;">
+          <div style="flex:0 0 165px;">
+            <label class="stat-label">Date</label>
+            <div style="margin-top:6px;">{{ form.scheduled_date }}</div>
+            {{ form.scheduled_date.errors }}
+          </div>
+          <div style="flex:0 0 auto;">
+            <label class="stat-label">Arrival Window</label>
+            <div style="display:flex;align-items:center;gap:7px;margin-top:6px;">
+              <div style="width:125px;">{{ form.arrival_start_time }}</div>
+              <span aria-hidden="true" style="color:#64748b;font-weight:600;line-height:1;">to</span>
+              <div style="width:125px;">{{ form.arrival_end_time }}</div>
+            </div>
+            {{ form.arrival_start_time.errors }}
+            {{ form.arrival_end_time.errors }}
+          </div>
+        </div>
+      </fieldset>
+
+      {% if assignment.scheduled_for %}
+        <div style="margin-bottom:20px;">
+          <label class="stat-label">{{ form.reschedule_reason.label }}</label>
+          <div style="margin-top:6px;">{{ form.reschedule_reason }}</div>
+          {{ form.reschedule_reason.errors }}
+        </div>
+      {% endif %}
 
       <div style="margin-bottom:24px;">
 
@@ -99,7 +126,7 @@
 
         <button type="submit"
                 class="btn btn-primary">
-          Schedule Vendor
+          Confirm Schedule
         </button>
 
       </div>

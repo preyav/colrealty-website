@@ -1,0 +1,19 @@
+{% extends "portal/base.html" %}
+{% load lease_documents %}
+{% block title %}{% if agreement %}{{ agreement.title }}{% else %}{{ agreement_ui.create.label }}{% endif %} | COL360{% endblock %}
+{% block page_title %}{% if agreement %}{{ agreement.title }}{% else %}{{ agreement_ui.create.label }}{% endif %}{% endblock %}
+{% block content %}
+{% include "portal/lease_section_navigation.html" with sections=None %}
+<div class="agreement-page-header"><a href="{% url 'portal:lease_detail' lease.id %}#lease-agreement-history">{{ agreement_ui.back.label }}</a><strong>{{ lease.unit.property.full_address }}</strong></div>
+<form method="post">{% csrf_token %}{{ form.non_field_errors }}
+{% for group in agreement_groups %}
+<section class="card lease-section agreement-page-section" id="agreement-{{ group.key }}"><h2>{{ group.label }}</h2><div class="lease-field-grid">
+{% for field in group.fields %}<div><div class="lease-label-line"><label for="{{ field.id_for_label }}">{{ field.label }}{% if agreement_editable and field.field.required %} *{% endif %}</label>{% include "portal/lease_field_info.html" with title=field.label information=field.field.lease_information %}</div>{{ field }}{{ field.errors }}</div>{% endfor %}
+</div></section>{% endfor %}
+{% if agreement_editable %}<p><button class="btn btn-primary" type="submit">{{ agreement_ui.save.label }}</button></p>{% endif %}
+</form>
+{% if agreement %}<section class="card lease-section agreement-page-section">{% lease_document_panel lease agreement %}</section>{% endif %}
+<style>
+.agreement-page-header{position:sticky;top:0;z-index:100;background:#fff;padding:16px 20px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;gap:16px;margin-bottom:20px}.agreement-page-header a{color:#087c96}.agreement-page-section{padding:24px;margin-bottom:18px;overflow:visible}.agreement-page-section h2{font-size:1rem;margin:0 0 18px}.agreement-page-section :disabled{opacity:1;color:#334155;background:#f8fafc;border-color:#e2e8f0}.agreement-page-section textarea{min-height:110px}.agreement-page-section .lease-field-grid>div:has(textarea){grid-column:1/-1}@media(max-width:700px){.agreement-page-header{flex-direction:column}}
+</style>
+{% endblock %}

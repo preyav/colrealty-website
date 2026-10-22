@@ -1,0 +1,11 @@
+<section class="card"><div class="card-header"><h2>{{ overview.ui.maintenance }}</h2><div class="p360-actions"><a class="btn btn-sm" href="{% url 'portal:create_maintenance_request' %}{% if overview.single_unit %}?unit_id={{ overview.single_unit.pk }}{% endif %}">{{ overview.ui.new_request }}</a><a class="btn btn-sm" href="{% url 'portal:maintenance' %}?q={{ property.street_address|urlencode }}">{{ overview.ui.view_all }}</a></div></div>
+<div class="p360-body">
+{% for row in overview.maintenance %}
+  <details class="p360-maintenance"><summary><span><a href="{% url 'portal:maintenance_detail' row.request.pk %}">{{ row.request.title }}</a></span><span>{{ row.request.get_status_display }} · {{ row.request.submitted_at|date:'m/d/Y' }}</span></summary>
+    <p class="p360-muted">{{ row.request.reported_by_tenant|default:'—' }} · {{ row.request.get_priority_display }}</p>
+    {% include 'portal/property_work_order_rows.html' with orders=row.work_orders %}
+  </details>
+{% empty %}<p class="p360-muted">{{ overview.ui.no_requests }}</p>{% endfor %}
+{% if overview.standalone_work_orders %}<details class="p360-maintenance"><summary>{{ overview.ui.direct_work }}</summary>{% include 'portal/property_work_order_rows.html' with orders=overview.standalone_work_orders %}</details>{% endif %}
+<p><a href="{% url 'portal:work_orders' %}?q={{ property.street_address|urlencode }}">{{ overview.ui.all_work }}</a></p>
+</div></section>

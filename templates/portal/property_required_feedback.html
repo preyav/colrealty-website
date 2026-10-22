@@ -1,0 +1,58 @@
+<style>
+#property-form .required-missing input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+#property-form .required-missing select,
+#property-form .required-missing textarea,
+#property-form .required-missing summary {background:#f9e5ec;border:1px solid #dc3545;}
+#property-form .required-field-message {color:#c53440;margin:6px 0 0;font-size:.95rem;}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const form = document.getElementById('property-form');
+  const requiredFields = [
+    {% for section in property_sections %}{% for field in section.fields %}{% if field.field.required %}
+    {name: '{{ field.name|escapejs }}', label: '{{ field.label|escapejs }}'},
+    {% endif %}{% endfor %}{% endfor %}
+  ];
+  requiredFields.forEach(config => {
+    const wrapper = Array.from(form.querySelectorAll('[data-field]')).find(el => el.dataset.field === config.name);
+    if (!wrapper) return;
+    const label = config.label.replace(/\s*\(max\s+\d+\)\s*$/i, '').trim();
+    const message = document.createElement('p');
+    message.className = 'required-field-message';
+    message.id = 'required-message-' + config.name;
+    message.textContent = label + ' is required.';
+    wrapper.appendChild(message);
+    function update() {
+      const controls = Array.from(wrapper.querySelectorAll('input,select,textarea')).filter(el =>
+        !el.closest('dialog') && !['hidden','search','button','submit'].includes(el.type) &&
+        !el.placeholder?.toLowerCase().includes('filter'));
+      const choices = controls.filter(el => ['checkbox','radio'].includes(el.type));
+      const empty = choices.length ? !choices.some(el => el.checked) :
+        !controls.some(el => el.value.trim() !== '' && el.value !== 'unknown');
+      const active = !wrapper.hidden && !wrapper.closest('[hidden]');
+      const missing = active && empty;
+      wrapper.classList.toggle('required-missing', missing);
+      message.hidden = !missing;
+      wrapper.querySelectorAll('summary,input,select,textarea').forEach(el => {
+        if (el.closest('dialog')) return;
+        if (missing) el.setAttribute('aria-invalid','true');
+        else el.removeAttribute('aria-invalid');
+        const described = new Set((el.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean));
+        if (missing) described.add(message.id); else described.delete(message.id);
+        if (described.size) el.setAttribute('aria-describedby',Array.from(described).join(' '));
+        else el.removeAttribute('aria-describedby');
+      });
+      // The inline message replaces only the identical server required error.
+      wrapper.querySelectorAll('.errorlist li').forEach(li => {
+        if (li.textContent.trim() === message.textContent) li.hidden = true;
+      });
+      const dropdown = wrapper.querySelector('.application-required-dropdown');
+      if (dropdown) dropdown.classList.toggle('has-errors',missing);
+    }
+    wrapper.addEventListener('input',update);
+    wrapper.addEventListener('change',update);
+    new MutationObserver(update).observe(wrapper,{attributes:true,attributeFilter:['hidden']});
+    update();
+  });
+});
+</script>

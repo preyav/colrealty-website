@@ -1,0 +1,30 @@
+from django.core.management.base import BaseCommand
+from common.models import FormFieldSetting
+from accounting.book_models import FundsEvent
+
+class Command(BaseCommand):
+    help='Initialize editable accounting wording and defaults. Creates no entities, bank balances or transactions.'
+    def handle(self,*args,**kwargs):
+        groups={
+            'defaults':{'basis':'cash'},
+            'event_kinds':dict(FundsEvent.KINDS),
+            'ui':{'vendor_credits':'Vendor credit balances','fund_history':'Client and owner funds history','type':'Transaction type','reference':'Reference','assign_legacy':'Assign a reviewed existing journal','journal_id':'Existing journal ID','cash_basis':'Cash basis','accrual_basis':'Accrual basis','assign':'Assign without rewriting journal','legacy_review':'I checked the original journal, its entity, reporting basis and source. I will not import the same source a second time.','correct_bill_payment':'Correct a posted vendor payment','payment_id':'Vendor payment ID','reason':'Reason','void_payment':'Void payment and retain history','title':'Accounting operations','entity':'Accounting entity','tenant_balances':'Tenant balances','unpaid_bills':'Unpaid bills','owner_funds':'Owner funds','pending':'Review sources before posting','post':'Post reviewed source','reviewed':'I checked this source against the original record and confirmed it is not already in the ledger.','review_required':'Review the source and check the confirmation before posting.','funds':'Client and owner funds','save':'Record transaction','saved':'Accounting transaction saved.','missing_record':'The requested record was not found. Check its ID.','retry':'Another request changed these records. Reload and review before retrying.','reconciliation':'Bank reconciliation','preview':'Preview difference','finalize':'Finalize statement','date':'Date','amount':'Amount','property':'Property','lease':'Lease','outstanding':'Unpaid charges','overdue':'Overdue','credit':'Unapplied credit','vendor':'Vendor / bill','cash':'Posted cash','deposits':'Refundable deposits','advances':'Advance rent','credits':'Client credits','payable':'Unpaid posted bills','reserve':'Reserve','available':'Available for distribution','provisional':'Provisional funds','incomplete':'Posting review or bank reconciliation is incomplete. Available for distribution is held at zero.','difference':'Statement difference','setup':'Create an accounting entity, property books and entity bank mapping in Django admin before enabling posting. Historical records are never automatically converted.','empty':'No records.','history':'Finalized bank statements','load':'Load bank transactions'},
+        }
+        labels={'invoice':('Vendor bill','Required only for a vendor bill credit or refund.'),'property':('Property','Select the property whose entity owns this transaction.'),'lease':('Lease','Required for tenant funds.'),'kind':('Transaction type','Refundable deposits, advance rent and unapplied credits remain separate.'),'date':('Transaction date','Actual receipt, refund or application date. Do not substitute the due date.'),'amount':('Amount','Positive amount in the account currency.'),'bank':('Bank account','Required for money received or paid; leave blank for non-cash applications.'),'source':('Original funds receipt','Required when refunding or applying a deposit or advance.'),'receipt':('Original rent payment','Required only for an unapplied credit refund.'),'charge':('Rent charge','Required for an advance/deposit application or charge credit.'),'reference':('Reference','Bank reference or document identifier.'),'notes':('Notes','Additional context for the audit history.'),'statement_start':('Statement start','First date on the bank statement.'),'statement_end':('Statement end','Last date on the bank statement.'),'opening_balance':('Statement opening balance','Must continue the previous finalized statement.'),'closing_balance':('Statement closing balance','Copy from the bank statement.'),'lines':('Cleared transactions','Select only entries shown on this statement. Outstanding items remain uncleared.')}
+        for key,options in groups.items():
+            row,_=FormFieldSetting.objects.get_or_create(form_key='accounting_books',field_key=key,defaults={'label':key.replace('_',' ').title(),'option_labels':options})
+            merged=dict(row.option_labels)
+            for name,value in options.items():merged.setdefault(name,value)
+            if merged!=row.option_labels:row.option_labels=merged;row.save(update_fields=['option_labels'])
+        for key,(label,help_text) in labels.items():FormFieldSetting.objects.get_or_create(form_key='accounting_books',field_key=key,defaults={'label':label,'help_text':help_text})
+        for form_key,field_key,options in [('accounting_workspace','ui',{'operations':'Accounting operations'}),('lease_financials','ui',{'funds':'Funds adjustment'}),('financials','ui',{'book_coverage':'Cash reports recognize classified receipts and paid expenses on payment dates. Accrual reports use service recognition dates. Only reviewed, linked postings are included. Unposted historical records and unassigned journals need review; deposits, client credits and owner transfers are not income.'}),('general_ledger','ui',{'entity':'Accounting entity','basis':'Reporting basis'})]:
+            row=FormFieldSetting.objects.filter(form_key=form_key,field_key=field_key).first()
+            if row:
+                merged=dict(row.option_labels)
+                for key,value in options.items():merged.setdefault(key,value)
+                row.option_labels=merged;row.save(update_fields=['option_labels'])
+        self.stdout.write(self.style.SUCCESS('Accounting settings initialized. Existing records and configuration preserved.'))
+
+        row=FormFieldSetting.objects.filter(form_key='general_ledger',field_key='ui').first()
+        if row and row.option_labels.get('basis') in ('Accrual basis','Accrual · posted journals'):
+            options=dict(row.option_labels);options['basis']='Reporting basis';row.option_labels=options;row.save(update_fields=['option_labels'])

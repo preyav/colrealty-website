@@ -1,0 +1,64 @@
+<fieldset class="levels-picker">
+  <legend>Levels <button type="button" class="school-help-button btn-primary" aria-label="Information about Levels" data-school-help="help-level-types">i</button></legend>
+  <dialog class="school-help-dialog" id="help-level-types" aria-labelledby="help-title-level-types">
+    <div class="school-help-header btn-primary"><h3 id="help-title-level-types">Levels</h3><button type="button" data-school-help-close aria-label="Close help">×</button></div>
+    <div class="school-help-body"><p>{{ field.field_help }}</p></div>
+  </dialog>
+  <details class="levels-dropdown" {% if profile_form.level_types.errors %}open{% endif %}>
+    <summary><span data-levels-summary>Select Levels</span></summary>
+    <div class="levels-panel">
+      <label for="levels-search">Search Levels</label>
+      <input type="search" id="levels-search" placeholder="Type to filter options" autocomplete="off">
+      <div class="levels-options">
+        {% for option in profile_form.level_types %}
+        <div data-levels-option>{{ option }}</div>
+        {% endfor %}
+      </div>
+      <p data-levels-empty hidden>No matching levels.</p>
+    </div>
+  </details>
+  {{ profile_form.level_types.errors }}
+  <p class="levels-selection" data-levels-selected aria-live="polite"></p>
+</fieldset>
+<style>
+.levels-picker {border:0;min-width:0;}
+.levels-picker legend {font-size:.9rem;font-weight:600;color:#334155;margin-bottom:7px;}
+.levels-help {color:#64748b;font-size:.85rem;line-height:1.5;margin:6px 0 10px;}
+.levels-dropdown {border:1px solid #cbd5e1;border-radius:7px;background:white;margin-bottom:10px;}
+.levels-dropdown summary {padding:10px 12px;cursor:pointer;overflow-wrap:anywhere;}
+.levels-dropdown summary:focus-visible {outline:2px solid #2563eb;outline-offset:2px;}
+.levels-panel {padding:12px;border-top:1px solid #e2e8f0;}
+.levels-options {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:240px;overflow-y:auto;margin-top:12px;}
+.levels-options label {display:flex;align-items:center;gap:8px;padding:7px;margin:0;font-weight:400;cursor:pointer;}
+.levels-options label:hover {background:#f1f5f9;}
+.levels-options input[type=checkbox] {width:18px;height:18px;flex:none;}
+.levels-selection {font-size:.85rem;color:#334155;margin:8px 0 14px;overflow-wrap:anywhere;}
+@media(max-width:450px){.levels-options{grid-template-columns:1fr}}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const picker = document.querySelector('.levels-picker');
+  const entries = Array.from(picker.querySelectorAll('[data-levels-option]'));
+  const dropdown = picker.querySelector('details');
+  function updateSelection() {
+    const names = entries.filter(entry => entry.querySelector('input').checked)
+      .map(entry => entry.textContent.trim());
+    picker.querySelector('[data-levels-summary]').textContent = names.length ? names.join(', ') : 'Select Levels';
+    picker.querySelector('[data-levels-selected]').textContent = names.length ? 'Selected: ' + names.join(', ') : 'No levels selected.';
+  }
+  entries.forEach(entry => entry.querySelector('input').addEventListener('change', updateSelection));
+  picker.querySelector('#levels-search').addEventListener('input', function () {
+    const query = this.value.trim().toLocaleLowerCase();
+    entries.forEach(entry => {entry.hidden = !entry.textContent.toLocaleLowerCase().includes(query);});
+    picker.querySelector('[data-levels-empty]').hidden = entries.some(entry => !entry.hidden);
+  });
+  picker.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && dropdown.open) {
+      dropdown.open = false;
+      dropdown.querySelector('summary').focus();
+    }
+    if (event.key === 'Enter' && event.target.type === 'search') event.preventDefault();
+  });
+  updateSelection();
+});
+</script>

@@ -1,0 +1,18 @@
+{% if reimbursement_rows %}
+<section class="card" style="margin:0 auto 20px;max-width:1200px;">
+  <div class="card-header"><h2>{{ reimbursement_ui.heading }}</h2></div>
+  <div style="padding:20px;overflow-x:auto;">
+    <table style="width:100%;"><thead><tr><th>{{ reimbursement_ui.payer }}</th><th>{{ reimbursement_ui.payment_date }}</th><th>{{ reimbursement_ui.amount }}</th><th>{{ reimbursement_ui.repaid }}</th><th>{{ reimbursement_ui.remaining }}</th><th>{{ reimbursement_ui.actions }}</th></tr></thead>
+      <tbody>{% for row in reimbursement_rows %}<tr>
+        <td>{{ row.payer.name }} · {{ row.payment.get_status_display }}</td><td>{{ row.payment.payment_date|date:'m/d/Y' }}</td>
+        <td>${{ row.payment.amount|floatformat:2 }}</td><td>${{ row.reimbursed|floatformat:2 }}</td><td>${{ row.outstanding|floatformat:2 }}</td>
+        <td>{% if row.outstanding > 0 and perms.accounting.add_billreimbursement %}<a class="btn btn-primary" href="{% url 'portal:bill_reimbursement' row.pk %}">{{ reimbursement_ui.reimburse }}</a>{% endif %}</td>
+      </tr>
+      {% for repayment in row.reimbursements.all %}<tr><td colspan="2">{{ reimbursement_ui.repayment }} · {{ repayment.date|date:'m/d/Y' }} · {{ repayment.bank }} · {{ repayment.reference }} · {{ repayment.get_status_display }}</td><td>${{ repayment.amount|floatformat:2 }}</td><td colspan="3">
+        {% if repayment.status == 'recorded' and perms.accounting.change_billreimbursement %}<form method="post" action="{% url 'portal:bill_reimbursement_void' repayment.pk %}">{% csrf_token %}<input name="reason" required aria-label="{{ reimbursement_ui.reason }}" placeholder="{{ reimbursement_ui.reason }}"><button class="btn" type="submit">{{ reimbursement_ui.void }}</button></form>{% endif %}
+        {% if repayment.void_reason %}{{ repayment.void_reason }}{% endif %}
+      </td></tr>{% endfor %}{% endfor %}</tbody>
+    </table>
+  </div>
+</section>
+{% endif %}

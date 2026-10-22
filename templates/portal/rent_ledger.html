@@ -1,0 +1,28 @@
+{% extends "portal/base.html" %}
+{% block title %}{{ ui.title }}{% endblock %}{% block page_title %}{{ ui.title }}{% endblock %}
+{% block content %}{% include "portal/rent_styles.html" %}<div class="rent-page">
+<div class="rent-head"><a href="{% url 'portal:lease_detail' lease.id %}">{{ ui.back }}</a><strong>{{ lease.unit }}</strong></div>
+<p class="help">{{ ui.manual_help }}</p>
+<div class="stats"><div class="stat"><span>{{ ui.charged }}</span><strong>${{ ledger.charged|floatformat:2 }}</strong></div><div class="stat"><span>{{ ui.received }}</span><strong>${{ ledger.received|floatformat:2 }}</strong></div><div class="stat"><span>{{ ui.outstanding }}</span><strong>${{ ledger.outstanding|floatformat:2 }}</strong></div><div class="stat"><span>{{ ui.overdue }}</span><strong>${{ ledger.overdue|floatformat:2 }}</strong></div><div class="stat"><span>{{ ui.credit }}</span><strong>${{ ledger.credit|floatformat:2 }}</strong></div></div>
+<div class="rent-entry-panels">
+{% include "portal/rent_inline_form.html" with form=charge_form kind="charge" entry_token=charge_token %}
+{% include "portal/rent_inline_form.html" with form=receipt_form kind="receipt" entry_token=receipt_token %}
+</div>
+<section class="card"><div class="card-header"><h2>{{ ui.charges }}</h2></div><table><thead><tr><th>{{ ui.period }}</th><th>{{ ui.due }}</th><th>{{ ui.amount }}</th><th>{{ ui.applied }}</th><th>{{ ui.balance }}</th><th>{{ ui.status }}</th><th>{{ ui.actions }}</th></tr></thead><tbody>{% for charge in ledger.charges %}<tr><td>{{ charge.period_start }} – {{ charge.period_end }}{% if charge.notes %}<div class="help">{{ charge.notes|linebreaksbr }}</div>{% endif %}{% if charge.void_reason %}<div class="help">{{ charge.void_reason }}</div>{% endif %}</td><td>{{ charge.due_date }}</td><td>${{ charge.amount|floatformat:2 }}</td><td>${{ charge.applied|floatformat:2 }}</td><td>${{ charge.balance|floatformat:2 }}</td><td>{% if charge.status == 'void' %}{{ ui.void_status }}{% else %}{{ ui.posted }}{% endif %}</td><td>{% if charge.status == 'posted' %}<a class="btn danger" href="{% url 'portal:rent_void' lease.id 'charge' charge.id %}">{{ ui.void }}</a>{% endif %}</td></tr>{% empty %}<tr><td colspan="7">{{ ui.empty }}</td></tr>{% endfor %}</tbody></table></section>
+<section class="card"><div class="card-header"><h2>{{ ui.receipts }}</h2></div><table><thead><tr><th>{{ ui.date }}</th><th>{{ ui.amount }}</th><th>{{ ui.applied }}</th><th>{{ ui.credit }}</th><th>{{ ui.method }}</th><th>{{ ui.reference }}</th><th>{{ ui.status }}</th><th>{{ ui.actions }}</th></tr></thead><tbody>{% for receipt in ledger.receipts %}<tr><td>{{ receipt.received_date }}{% if receipt.notes %}<div class="help">{{ receipt.notes|linebreaksbr }}</div>{% endif %}{% if receipt.void_reason %}<div class="help">{{ receipt.void_reason }}</div>{% endif %}</td><td>${{ receipt.amount|floatformat:2 }}</td><td>${{ receipt.applied|floatformat:2 }}</td><td>${{ receipt.credit|floatformat:2 }}</td><td>{{ receipt.display_method }}</td><td>{{ receipt.reference }}</td><td>{% if receipt.status == 'void' %}{{ ui.void_status }}{% else %}{{ ui.recorded }}{% endif %}</td><td>{% if receipt.status == 'recorded' %}{% if receipt.credit > 0 %}<form method="post" action="{% url 'portal:rent_apply_credit' lease.id receipt.id %}">{% csrf_token %}<button class="btn btn-primary">{{ ui.apply_credit }}</button></form>{% endif %}<a class="btn danger" href="{% url 'portal:rent_void' lease.id 'receipt' receipt.id %}">{{ ui.void }}</a>{% endif %}</td></tr>{% empty %}<tr><td colspan="8">{{ ui.empty }}</td></tr>{% endfor %}</tbody></table></section>
+{{ ledger.outstanding|json_script:"rent-outstanding" }}
+<script>
+(() => {
+ const form=document.querySelector('#rent-receipt form');
+ if(!form)return;
+ const amount=form.querySelector('[name="amount"]');
+ const pending=document.querySelector('[data-pending]');
+ const excess=document.querySelector('[data-excess]');
+ const owed=Number(JSON.parse(document.getElementById('rent-outstanding').textContent));
+ function update(){const value=Number(amount.value);const valid=Number.isFinite(value)&&value>0;
+ pending.hidden=!valid||value>=owed;excess.hidden=!valid||value<=owed;
+ pending.querySelector('output').textContent=Math.max(0,owed-value).toFixed(2);
+ excess.querySelector('output').textContent=Math.max(0,value-owed).toFixed(2);}
+ amount.addEventListener('input',update);update();
+})();
+</script></div>{% endblock %}

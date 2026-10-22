@@ -1,11 +1,11 @@
 from decimal import Decimal
 
 from django.db import transaction
-from django.db.models import Q, Sum
+from django.db.models import Sum
 from django.utils import timezone
 
-from maintenance.models import VendorInvoice
-from portal.forms import VendorInvoiceForm
+from maintenance.models import VendorInvoice, VendorPayment
+from portal.forms import VendorInvoiceForm, VendorPaymentForm
 
 from .base import BaseFinancialProvider, FinancialProviderError
 
@@ -28,16 +28,21 @@ class COL360FinancialProvider(BaseFinancialProvider):
 
     def work_order_summary(self, work_order):
         invoices = list(
-            VendorInvoice.objects.filter(work_order=work_order)
+            VendorInvoice.objects.filter(work_order=work_order).exclude(status="void")
             .select_related("vendor", "approved_by")
+            .prefetch_related("payments__recorded_by", "payments__voided_by")
             .order_by("-created_at")
         )
-        totals = VendorInvoice.objects.filter(work_order=work_order).aggregate(
-            total_invoiced=Sum("amount"),
-            total_paid=Sum("amount", filter=Q(status="paid")),
-        )
-        total_invoiced = totals["total_invoiced"] or Decimal("0.00")
-        total_paid = totals["total_paid"] or Decimal("0.00")
+        invoice_totals = VendorInvoice.objects.filter(work_order=work_order).exclude(
+            status="void"
+        ).aggregate(total_invoiced=Sum("amount"))
+        payment_totals = VendorPayment.objects.filter(
+            invoice__work_order=work_order,
+            invoice__status__in=["approved", "partially_paid", "paid"],
+            status="recorded",
+        ).aggregate(total_paid=Sum("amount"))
+        total_invoiced = invoice_totals["total_invoiced"] or Decimal("0.00")
+        total_paid = payment_totals["total_paid"] or Decimal("0.00")
         summary = super().work_order_summary(work_order)
         summary.update({
             "enabled": True,
@@ -49,8 +54,15 @@ class COL360FinancialProvider(BaseFinancialProvider):
         })
         return summary
 
-    def get_invoice_form(self, data=None, *, vendor_queryset=None):
-        form = VendorInvoiceForm(data)
+    def get_invoice_form(
+        self,
+        data=None,
+        *,
+        vendor_queryset=None,
+        initial=None,
+        instance=None,
+    ):
+        form = VendorInvoiceForm(data, initial=initial, instance=instance)
         if vendor_queryset is not None:
             form.fields["vendor"].queryset = vendor_queryset
         return form
@@ -63,6 +75,17 @@ class COL360FinancialProvider(BaseFinancialProvider):
         invoice.status = "submitted"
         invoice.save()
         return invoice
+
+    def update_invoice(self, form, *, invoice):
+        if invoice.status != "submitted":
+            raise FinancialProviderError("Only a submitted invoice can be edited.")
+        if not form.is_valid():
+            raise FinancialProviderError("Invoice form is not valid.")
+        updated_invoice = form.save(commit=False)
+        updated_invoice.work_order = invoice.work_order
+        updated_invoice.status = "submitted"
+        updated_invoice.save()
+        return updated_invoice
 
     def get_invoice(self, invoice_id):
         try:
@@ -86,13 +109,82 @@ class COL360FinancialProvider(BaseFinancialProvider):
             invoice.save(update_fields=["status", "approved_by", "approved_at", "updated_at"])
         return invoice, "approved"
 
-    def mark_invoice_paid(self, invoice, *, actor=None):
-        if invoice.status == "paid":
-            return invoice, "already_paid"
-        if invoice.status != "approved":
-            raise FinancialProviderError("Only an approved invoice can be marked as paid.")
+    def get_payment_form(self, data=None, *, invoice, initial=None):
+        return VendorPaymentForm(data, invoice=invoice, initial=initial)
+
+    def record_payment(self, form, *, invoice, actor):
+        if not form.is_valid():
+            raise FinancialProviderError("Payment form is not valid.")
         with transaction.atomic():
-            invoice.status = "paid"
-            invoice.paid_at = timezone.now()
+            locked_invoice = VendorInvoice.objects.select_for_update().get(pk=invoice.pk)
+            if locked_invoice.status not in {"approved", "partially_paid"}:
+                raise FinancialProviderError(
+                    "Payments can only be recorded against an approved invoice with a balance due."
+                )
+            paid = locked_invoice.payments.filter(status="recorded").aggregate(
+                total=Sum("amount")
+            )["total"] or Decimal("0.00")
+            amount = form.cleaned_data["amount"]
+            outstanding = locked_invoice.amount - paid
+            if amount > outstanding:
+                raise FinancialProviderError(
+                    f"Payment cannot exceed the outstanding balance of ${outstanding:.2f}."
+                )
+            payment = form.save(commit=False)
+            payment.invoice = locked_invoice
+            payment.recorded_by = actor
+            payment.status = "recorded"
+            payment.save()
+            new_paid = paid + amount
+            if new_paid == locked_invoice.amount:
+                locked_invoice.status = "paid"
+                locked_invoice.paid_at = timezone.now()
+            else:
+                locked_invoice.status = "partially_paid"
+                locked_invoice.paid_at = None
+            locked_invoice.save(update_fields=["status", "paid_at", "updated_at"])
+        return payment, locked_invoice
+
+    def void_payment(self, payment, *, actor, reason):
+        reason = (reason or "").strip()
+        if not reason:
+            raise FinancialProviderError("A reason is required to void a payment.")
+        from accounting.reimbursement_models import OnBehalfSettlement
+        from accounting.book_models import BookPosting
+        if OnBehalfSettlement.objects.filter(payment=payment).exists() or BookPosting.objects.filter(source_key='bill-payment:'+str(payment.pk)).exists():
+            from accounting.book_services import void_bill_payment
+            from django.core.exceptions import ValidationError
+            try:
+                result = void_bill_payment(payment, reason, actor)
+            except ValidationError as exc:
+                raise FinancialProviderError('; '.join(exc.messages)) from exc
+            return result, result.invoice
+        with transaction.atomic():
+            payment = VendorPayment.objects.select_for_update().select_related(
+                "invoice"
+            ).get(pk=payment.pk)
+            if payment.status == "void":
+                raise FinancialProviderError("This payment is already void.")
+            invoice = VendorInvoice.objects.select_for_update().get(pk=payment.invoice_id)
+            payment.status = "void"
+            payment.voided_by = actor
+            payment.voided_at = timezone.now()
+            payment.void_reason = reason
+            payment.save(
+                update_fields=["status", "voided_by", "voided_at", "void_reason"]
+            )
+            paid = invoice.payments.filter(status="recorded").aggregate(
+                total=Sum("amount")
+            )["total"] or Decimal("0.00")
+            invoice.status = "partially_paid" if paid > 0 else "approved"
+            invoice.paid_at = None
             invoice.save(update_fields=["status", "paid_at", "updated_at"])
-        return invoice, "paid"
+        return payment, invoice
+
+    def get_payment(self, payment_id):
+        try:
+            return VendorPayment.objects.select_related(
+                "invoice__work_order", "invoice__vendor"
+            ).get(pk=payment_id)
+        except VendorPayment.DoesNotExist as exc:
+            raise FinancialProviderError("Payment not found.") from exc

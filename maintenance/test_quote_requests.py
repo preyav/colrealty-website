@@ -775,3 +775,66 @@ class VendorQuoteWorkflowTests(TestCase):
 
         self.assertContains(response, "Pending Vendor")
         self.assertContains(response, "Record Received Quote")
+
+    def test_completed_work_order_hides_vendor_mutation_actions(self):
+        estimate = VendorEstimate.objects.create(
+            work_order=self.work_order,
+            vendor=self.vendor,
+            amount=Decimal("425.00"),
+            status="approved",
+            source="email",
+        )
+        VendorAward.objects.create(
+            work_order=self.work_order,
+            vendor=self.vendor,
+            estimate=estimate,
+            method="quote",
+            status="active",
+        )
+        VendorAssignment.objects.create(
+            work_order=self.work_order,
+            vendor=self.vendor,
+            status="completed",
+        )
+        self.work_order.status = "completed"
+        self.work_order.save(update_fields=["status"])
+
+        response = self.client.get(
+            reverse("portal:work_order_detail", args=[self.work_order.pk])
+        )
+
+        self.assertNotContains(response, "Assign Work Order")
+        self.assertNotContains(response, "Change Vendor")
+        self.assertNotContains(response, "Change Selection")
+        self.assertContains(response, "More Details")
+
+    def test_completed_work_order_cannot_confirm_vendor_by_direct_post(self):
+        estimate = VendorEstimate.objects.create(
+            work_order=self.work_order,
+            vendor=self.vendor,
+            amount=Decimal("425.00"),
+            source="email",
+        )
+        award = VendorAward.objects.create(
+            work_order=self.work_order,
+            vendor=self.vendor,
+            estimate=estimate,
+            method="quote",
+            status="pending_confirmation",
+        )
+        self.work_order.status = "completed"
+        self.work_order.save(update_fields=["status"])
+
+        response = self.client.post(
+            reverse(
+                "portal:confirm_vendor",
+                args=[self.work_order.pk, award.pk],
+            )
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("portal:work_order_detail", args=[self.work_order.pk]),
+        )
+        award.refresh_from_db()
+        self.assertEqual(award.status, "pending_confirmation")

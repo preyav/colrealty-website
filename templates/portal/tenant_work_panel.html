@@ -1,0 +1,93 @@
+<style>
+.tenant-work .tenant-work-body {padding:24px;line-height:1.6;overflow-wrap:break-word;}
+.tenant-work .tenant-work-summary {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-bottom:22px;}
+.tenant-work .tenant-work-stat {padding:16px 18px;border:1px solid #e2e8f0;border-radius:9px;background:#f8fafc;min-width:0;}
+.tenant-work .tenant-work-label {display:block;color:#475569;font-size:.85rem;font-weight:600;margin-bottom:6px;}
+.tenant-work .tenant-work-value {font-size:1.05rem;font-weight:600;color:#0f172a;}
+.tenant-work .tenant-work-terms {white-space:pre-line;line-height:1.7;margin:0 0 18px;}
+.tenant-work .tenant-work-link {display:inline-block;color:#007f9c;margin-bottom:16px;text-underline-offset:3px;}
+.tenant-work .tenant-work-notice {padding:12px 16px;border-left:3px solid #01AACE;background:#f0f9fc;color:#475569;font-size:.9rem;margin:0 0 22px;}
+.tenant-work .tenant-work-editor {border-top:1px solid #e2e8f0;padding-top:18px;}
+.tenant-work .tenant-work-editor>summary {cursor:pointer;font-weight:600;color:#007f9c;padding:6px 0;}
+.tenant-work .tenant-work-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px 28px;margin:24px 0;}
+.tenant-work .tenant-work-field {min-width:0;}
+.tenant-work .tenant-work-wide {grid-column:1/-1;}
+.tenant-work .tenant-work-label-row {display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.tenant-work .tenant-work-label-row label {font-size:.9rem;font-weight:600;color:#334155;}
+.tenant-work input:not([type=checkbox]):not([type=hidden]),.tenant-work select,.tenant-work textarea {box-sizing:border-box;width:100%;min-height:44px;padding:11px 13px;border:1px solid #cbd5e1;border-radius:7px;background:white;color:#0f172a;font:inherit;line-height:1.5;}
+.tenant-work textarea {min-height:180px;resize:vertical;}
+.tenant-work input:focus-visible,.tenant-work select:focus-visible,.tenant-work textarea:focus-visible,.tenant-work summary:focus-visible {outline:2px solid #01AACE;outline-offset:3px;}
+.tenant-work .tenant-work-checkbox {display:flex;align-items:center;gap:12px;padding:14px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:7px;}
+.tenant-work input[type=checkbox] {width:19px;height:19px;accent-color:#01AACE;flex-shrink:0;}
+.tenant-work .tenant-work-checkbox .tenant-work-label-row {margin:0;}
+.tenant-work .tenant-work-info {position:relative;flex-shrink:0;}
+.tenant-work .tenant-work-info>summary {display:flex;align-items:center;justify-content:center;list-style:none;width:19px;height:19px;border-radius:50%;background:#01AACE;color:white;font:600 13px/1 sans-serif;cursor:pointer;}
+.tenant-work .tenant-work-info>summary::-webkit-details-marker {display:none;}
+.tenant-work .tenant-work-info>p {position:absolute;z-index:20;top:25px;left:0;width:280px;max-width:65vw;padding:14px;margin:0;background:white;color:#334155;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 8px 24px #0f172a26;font-size:.85rem;line-height:1.5;font-weight:400;}
+.tenant-work .tenant-work-actions {display:flex;justify-content:flex-end;border-top:1px solid #e2e8f0;padding-top:20px;}
+.tenant-work .tenant-work-actions button {padding:11px 18px;background:#01AACE;color:white;border:1px solid #01AACE;border-radius:7px;font-family:inherit;font-size:.9rem;font-weight:600;line-height:1.4;cursor:pointer;}
+.tenant-work.card {overflow:visible;}
+@media(max-width:760px) {.tenant-work .tenant-work-summary,.tenant-work .tenant-work-grid {grid-template-columns:minmax(0,1fr);}.tenant-work .tenant-work-body {padding:18px;}.tenant-work .tenant-work-info>p {left:auto;right:0;}}
+</style>
+<section class="card tenant-work">
+  <div class="card-header"><h2>{{ ui.title }}</h2></div>
+  <div class="tenant-work-body">
+    {% if work_order.is_self_performed %}
+    <div class="tenant-work-summary">
+      <div class="tenant-work-stat"><span class="tenant-work-label">{% if work_order.performer_owner_id %}{{ ui.owner }}{% else %}{{ ui.tenant }}{% endif %}</span><span class="tenant-work-value">{% if work_order.performer_owner_id %}{{ work_order.performer_owner }}{% else %}{{ work_order.performer_tenant }}{% endif %}</span></div>
+      <div class="tenant-work-stat"><span class="tenant-work-label">{{ ui.agreed_cost }}</span><span class="tenant-work-value">{% if work_order.estimated_cost != None %}${{ work_order.estimated_cost|floatformat:"2g" }}{% else %}—{% endif %}</span></div>
+      <div class="tenant-work-stat"><span class="tenant-work-label">{{ ui.scheduled_for }}</span><span class="tenant-work-value">{% if work_order.scheduled_for %}{{ work_order.scheduled_for|date:"M d, Y g:i A" }}{% else %}{{ ui.unconfirmed }}{% endif %}</span>{% if work_order.tenant_expected_completion %}<div>{{ ui.expected_completion }}: {{ work_order.tenant_expected_completion|date:"M d, Y g:i A" }}</div>{% endif %}</div>
+    </div>
+    <span class="tenant-work-label">{{ ui.terms }}</span>
+    <div class="tenant-work-terms">{{ work_order.tenant_work_terms }}</div>
+    {% if work_order.tenant_work_document %}<a class="tenant-work-link" href="{{ work_order.tenant_work_document }}" target="_blank" rel="noopener noreferrer">{{ ui.document }} ↗</a>{% endif %}
+    <p class="tenant-work-notice">{{ ui.financial_help }}</p>
+    {% endif %}
+    {% if eligible and work_order.status != 'completed' and work_order.status != 'cancelled' and work_order.status != 'in_progress' %}
+    <details class="tenant-work-editor"{% if not work_order.is_self_performed %} open{% endif %}>
+      <summary>{{ ui.edit }}</summary>
+      <form method="post" action="{% url 'portal:save_tenant_work' work_order.pk %}">
+        {% csrf_token %}<input type="hidden" name="version" value="{{ version }}">
+        <div class="tenant-work-grid">
+          {% for field in form %}
+          <div data-work-field="{{ field.name }}" class="tenant-work-field{% if field.name == 'terms' or field.name == 'document' or field.name == 'schedule_confirmed' or field.name == 'performer_kind' %} tenant-work-wide{% endif %}">
+            {% if field.name == 'schedule_confirmed' %}<div class="tenant-work-checkbox">{{ field }}{% endif %}
+            <div class="tenant-work-label-row">
+              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {% if field.help_text %}<details class="tenant-work-info"><summary aria-label="{{ field.label }}: information">i</summary><p>{{ field.help_text }}</p></details>{% endif %}
+            </div>
+            {% if field.name == 'schedule_confirmed' %}</div>{% else %}{{ field }}{% endif %}
+            {{ field.errors }}
+          </div>
+          {% endfor %}
+        </div>
+        <div class="tenant-work-actions"><button type="submit">{{ ui.save }}</button></div>
+      </form>
+    </details>
+    {% elif not eligible and not work_order.is_self_performed %}<p>{{ ui.no_tenant }}</p>{% endif %}
+  </div>
+</section>
+<script>
+(function(){
+  document.querySelectorAll('.tenant-work form').forEach(function(form){
+    const kind=form.querySelector('[name="performer_kind"]');
+    if(!kind)return;
+    const sync=function(){
+      const owner=kind.value==='owner';
+      ['tenant','owner'].forEach(function(name){
+        const wrapper=form.querySelector('[data-work-field="'+name+'"]');
+        const input=wrapper&&wrapper.querySelector('select');
+        if(wrapper)wrapper.hidden=(name==='owner')!==owner;
+        if(input)input.disabled=(name==='owner')!==owner;
+      });
+      const cost=form.querySelector('[name="agreed_cost"]');
+      if(cost)cost.required=!owner;
+    };
+    kind.addEventListener('change',sync);sync();
+  });
+  document.addEventListener('click',function(event){
+    document.querySelectorAll('.tenant-work-info[open]').forEach(function(info){if(!info.contains(event.target))info.removeAttribute('open');});
+  });
+  document.addEventListener('keydown',function(event){if(event.key==='Escape')document.querySelectorAll('.tenant-work-info[open]').forEach(function(info){info.removeAttribute('open');});});
+})();
+</script>

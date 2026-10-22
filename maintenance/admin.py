@@ -7,6 +7,7 @@ from .models import (
     VendorAward,
     VendorEstimate,
     VendorInvoice,
+    VendorPayment,
     VendorQuoteRequest,
     WorkOrder,
     WorkOrderStatusHistory,
@@ -71,6 +72,12 @@ class VendorEstimateInline(admin.TabularInline):
 class VendorInvoiceInline(admin.TabularInline):
     model = VendorInvoice
     extra = 0
+
+
+class VendorPaymentInline(admin.TabularInline):
+    model = VendorPayment
+    extra = 0
+    readonly_fields = ("recorded_at", "voided_at")
 
 @admin.register(WorkOrder)
 class WorkOrderAdmin(admin.ModelAdmin):
@@ -243,3 +250,27 @@ class VendorInvoiceAdmin(admin.ModelAdmin):
         "work_order__title",
         "work_order__unit__property__street_address",
     )
+
+    inlines = [VendorPaymentInline]
+
+
+@admin.register(VendorPayment)
+class VendorPaymentAdmin(admin.ModelAdmin):
+    list_display = (
+        "invoice",
+        "amount",
+        "payment_date",
+        "payment_method",
+        "reference_number",
+        "status",
+        "recorded_by",
+    )
+    list_filter = ("status", "payment_method", "payment_date")
+    search_fields = (
+        "invoice__invoice_number",
+        "invoice__vendor__name",
+        "invoice__vendor__company_name",
+        "reference_number",
+        "payment_account",
+    )
+    readonly_fields = ("recorded_at", "voided_at")

@@ -1,0 +1,6 @@
+{{ error_form.non_field_errors }}
+{% if error_form.errors %}<ul>
+{% for field in error_form %}{% for error in field.errors %}
+<li>{% if field.is_hidden %}<strong>{{ field.label }}:</strong>{% else %}<a href="#{{ field.auto_id }}" data-error-target="{{ field.auto_id }}">{{ field.label }}</a>:{% endif %} {{ error }}</li>
+{% endfor %}{% endfor %}
+</ul>{% endif %}

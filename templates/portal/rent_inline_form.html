@@ -1,0 +1,12 @@
+<section class="card" id="rent-{{ kind }}">
+<div class="card-header"><h2>{% if kind == 'charge' %}{{ ui.add_charge }}{% else %}{{ ui.add_receipt }}{% endif %}</h2></div>
+<form method="post" class="entry" action="{% url 'portal:rent_entry' lease.id kind %}">
+{% csrf_token %}<input type="hidden" name="entry_token" value="{{ entry_token }}">
+{% if kind == 'charge' %}<details class="rent-help"><summary aria-label="{{ ui.add_charge }}">i</summary><p class="help">{{ workspace.charge_defaults_help }}</p></details>{% endif %}{{ form.non_field_errors }}
+<div class="fields">{% for field in form %}<div{% if field.name == 'notes' %} class="wide"{% endif %}>
+<div class="rent-label-line"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{% if field.help_text %}<details class="rent-help"><summary aria-label="{{ field.label }}">i</summary><p class="help">{{ field.help_text }}</p></details>{% endif %}</div>
+{{ field }}{{ field.errors }}</div>{% endfor %}</div>
+{% if kind == 'receipt' %}<details class="rent-help"><summary aria-label="{{ ui.add_receipt }}">i</summary><p class="help">{{ workspace.preview_help }}</p></details>
+<p data-pending hidden>{{ workspace.pending }}: $<output></output></p><p data-excess hidden>{{ workspace.excess }}: $<output></output></p>{% endif %}
+<div class="buttons"><button class="btn btn-primary" type="submit">{% if kind == 'charge' %}{{ ui.add_charge }}{% else %}{{ ui.add_receipt }}{% endif %}</button></div>
+</form></section>

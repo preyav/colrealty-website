@@ -1,0 +1,24 @@
+{% if property_profile_sections %}
+<style>
+.profile-detail-fields {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 24px;padding:20px;}
+.profile-detail-wide {grid-column:1/-1;white-space:pre-wrap;}
+@media(max-width:700px){.profile-detail-fields{grid-template-columns:1fr}.profile-detail-wide{grid-column:auto}}
+</style>
+{% for section in property_profile_sections %}
+<details class="card" style="margin-bottom:20px;">
+<summary style="padding:16px 20px;cursor:pointer;font-weight:600;">{{ section.title }} — More Details</summary>
+<div class="profile-detail-fields">
+{% for field in section.fields %}
+<div {% if field.wide %}class="profile-detail-wide"{% endif %}><div class="stat-label">{{ field.label }}</div>
+{% if field.is_link %}<a href="{{ field.value }}" target="_blank" rel="noopener noreferrer">Open link</a>{% else %}{{ field.value }}{% endif %}</div>
+{% endfor %}
+{% for document in section.documents %}
+<div><div class="stat-label">{{ document.get_category_display }}</div><a href="{{ document.url }}" target="_blank" rel="noopener noreferrer">{{ document.title }}</a>{% if document.notes %}<p>{{ document.notes }}</p>{% endif %}</div>
+{% endfor %}
+{% for certification in section.certifications %}
+<div><div class="stat-label">Energy Certification</div><strong>{{ certification.verification_type }}</strong> · {{ certification.get_status_display }}{% if certification.year %} · {{ certification.year }}{% endif %}{% if certification.metric %}<div>{{ certification.metric }}{% if certification.rating %}: {{ certification.rating }}{% endif %}</div>{% endif %}</div>
+{% endfor %}
+</div>
+</details>
+{% endfor %}
+{% endif %}

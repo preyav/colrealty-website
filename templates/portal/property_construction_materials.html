@@ -1,0 +1,81 @@
+<fieldset class="construction-picker">
+  <legend>Construction Materials</legend>
+  <details class="construction-dropdown" {% if profile_form.construction_material_types.errors %}open{% endif %}>
+    <summary><span data-construction-summary>Select construction materials</span></summary>
+    <div class="construction-panel">
+      <label for="construction-search">Search construction materials</label>
+      <input type="search" id="construction-search" placeholder="Type to filter options" autocomplete="off">
+      <div class="construction-options">
+        {% for option in profile_form.construction_material_types %}
+        <div data-construction-option>{{ option }}</div>
+        {% endfor %}
+      </div>
+      <p data-construction-empty hidden>No matching construction materials.</p>
+    </div>
+  </details>
+  {{ profile_form.construction_material_types.errors }}
+  <p class="construction-selection" data-construction-selected aria-live="polite"></p>
+  <p data-construction-none hidden role="status">None cannot be combined with another feature.</p>
+  <div data-construction-details>
+  <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+  {{ field }}{{ field.errors }}
+  <p class="construction-help">{{ field.help_text }}</p>
+  </div>
+</fieldset>
+<style>
+.construction-picker [hidden] {display:none !important;}
+.construction-options [aria-disabled="true"] {opacity:.45;}
+.construction-options [aria-disabled="true"] label {cursor:not-allowed;}
+.construction-picker {border:0;min-width:0;}
+.construction-picker legend {font-size:.9rem;font-weight:600;color:#334155;margin-bottom:7px;}
+.construction-help {color:#64748b;font-size:.85rem;line-height:1.5;margin:6px 0 10px;}
+.construction-dropdown {border:1px solid #cbd5e1;border-radius:7px;background:white;margin-bottom:10px;}
+.construction-dropdown summary {padding:10px 12px;cursor:pointer;overflow-wrap:anywhere;}
+.construction-dropdown summary:focus-visible {outline:2px solid #2563eb;outline-offset:2px;}
+.construction-panel {padding:12px;border-top:1px solid #e2e8f0;}
+.construction-options {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:240px;overflow-y:auto;margin-top:12px;}
+.construction-options label {display:flex;align-items:center;gap:8px;padding:7px;margin:0;font-weight:400;cursor:pointer;}
+.construction-options label:hover {background:#f1f5f9;}
+.construction-options input[type=checkbox] {width:18px;height:18px;flex:none;}
+.construction-selection {font-size:.85rem;color:#334155;margin:8px 0 14px;overflow-wrap:anywhere;}
+@media(max-width:450px){.construction-options{grid-template-columns:1fr}}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const picker = document.querySelector('.construction-picker');
+  const entries = Array.from(picker.querySelectorAll('[data-construction-option]'));
+  const dropdown = picker.querySelector('details');
+  function updateSelection() {
+    const none = entries.find(entry => entry.querySelector('input').value === 'none');
+    const noneSelected = !!none && none.querySelector('input').checked;
+    entries.forEach(entry => {
+      const input = entry.querySelector('input');
+      input.disabled = noneSelected && input.value !== 'none';
+      if (input.disabled) input.checked = false;
+      entry.setAttribute('aria-disabled', String(input.disabled));
+    });
+    picker.querySelector('[data-construction-none]').hidden = !noneSelected;
+    const selected = entries.filter(entry => entry.querySelector('input').checked);
+    picker.querySelector('[data-construction-details]').hidden =
+      !(selected.length === 1 && selected[0].querySelector('input').value === 'other');
+    const names = entries.filter(entry => entry.querySelector('input').checked)
+      .map(entry => entry.textContent.trim());
+    picker.querySelector('[data-construction-summary]').textContent = names.length ? names.join(', ') : 'Select construction materials';
+    picker.querySelector('[data-construction-selected]').textContent = names.length ? 'Selected: ' + names.join(', ') : 'No construction materials selected.';
+  }
+  entries.forEach(entry => entry.querySelector('input').addEventListener('change', updateSelection));
+  picker.querySelector('#construction-search').addEventListener('input', function () {
+    const query = this.value.trim().toLocaleLowerCase();
+    entries.forEach(entry => {entry.hidden = !entry.textContent.toLocaleLowerCase().includes(query);});
+    picker.querySelector('[data-construction-empty]').hidden = entries.some(entry => !entry.hidden);
+  });
+  picker.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && dropdown.open) {
+      dropdown.open = false;
+      dropdown.querySelector('summary').focus();
+    }
+    if (event.key === 'Enter' && event.target.type === 'search') event.preventDefault();
+  });
+  updateSelection();
+});
+</script>

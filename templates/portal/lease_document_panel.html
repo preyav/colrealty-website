@@ -1,0 +1,49 @@
+<div class="lease-documents" data-agreement-id="{{ agreement.id|default:'' }}" data-delete-label="{{ document_ui.delete.label }}" data-delete-confirm="{{ document_ui.confirm_delete.label }}" data-deleting="{{ document_ui.deleting.label }}" data-deleted="{{ document_ui.deleted.label }}" data-delete-failed="{{ document_ui.delete_failed.label }}" data-session-expired="{{ document_ui.session_expired.label }}" data-add-url="{% url 'portal:lease_document_add' lease.id %}">
+<h3>Document Links</h3>
+<ul data-document-list style="padding-left:20px">
+{% for document in panel_documents %}<li style="margin:10px 0"><a href="{% if document.storage_key %}{% url 'portal:lease_document_download' lease.id document.id %}?view=1{% else %}{{ document.url }}{% endif %}" target="_blank" rel="noopener noreferrer" title="{{ document.title }}">{{ document.configured_category_label }}</a> <button type="button" class="lease-document-delete" data-delete-document="{% url 'portal:lease_document_delete' lease.id document.id %}">{{ document_ui.delete.label }}</button></li>{% empty %}<li data-empty-documents class="lease-help">No documents added yet.</li>{% endfor %}
+</ul>
+<details><summary class="btn" style="background:#01AACE;color:white;display:inline-block;cursor:pointer">+ Add Document</summary>
+<div style="padding:12px 0">
+<div>{% if document_type_help %}{% include "portal/lease_agreement_label.html" with label=document_type_label description=document_type_help %}{% else %}<label>{{ document_type_label }}</label>{% endif %}<select aria-label="{{ document_type_label }}" data-document-category form="lease-document-controls">{% for value,label in lease_document_categories %}<option value="{{ value }}" {% if value == document_category %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+<input type="file" data-document-file hidden form="lease-document-controls">
+<button type="button" class="btn" data-paste-link>Paste Link</button>
+<button type="button" class="btn" data-upload-file>Upload File</button>
+</div></details>
+<div data-link-entry hidden style="margin-top:12px">
+<label>Document Link <input type="url" data-link-url form="lease-document-controls" placeholder="https://"></label>
+<label>Title (optional) <input type="text" maxlength="255" data-link-title form="lease-document-controls"></label>
+<button type="button" class="btn" data-save-link>Add Link</button>
+<button type="button" class="btn" data-cancel-link>Cancel</button>
+</div>
+<p data-document-message role="status" aria-live="polite" class="lease-help">Documents are saved immediately, separately from lease terms.</p>
+{% csrf_token %}
+</div>
+<script>
+document.querySelectorAll('.lease-documents:not([data-ready])').forEach(panel=>{
+panel.dataset.ready='true';const file=panel.querySelector('[data-document-file]');const entry=panel.querySelector('[data-link-entry]');const message=panel.querySelector('[data-document-message]');
+panel.querySelector('[data-upload-file]').onclick=()=>file.click();
+panel.querySelector('[data-paste-link]').onclick=()=>{entry.hidden=false;panel.querySelector('details').open=false;panel.querySelector('[data-link-url]').focus();};
+panel.querySelector('[data-cancel-link]').onclick=()=>{entry.hidden=true;};
+let busy=false;
+panel.addEventListener('click',async event=>{
+ const button=event.target.closest('[data-delete-document]');if(!button||busy||!confirm(panel.dataset.deleteConfirm))return;
+ busy=true;button.disabled=true;message.textContent=panel.dataset.deleting;const data=new FormData();data.set('agreement_id',panel.dataset.agreementId||'');
+ try{const response=await fetch(button.dataset.deleteDocument,{method:'POST',headers:{'X-CSRFToken':panel.querySelector('[name=csrfmiddlewaretoken]').value},body:data});if(response.redirected)throw new Error(panel.dataset.sessionExpired);if(!response.ok)throw new Error(panel.dataset.deleteFailed);button.closest('li').remove();message.textContent=panel.dataset.deleted;}
+ catch(error){message.textContent=error.message;button.disabled=false;}finally{busy=false;}
+});
+async function add(data){
+if(busy)return;busy=true;panel.querySelectorAll('button').forEach(b=>b.disabled=true);message.textContent='Saving document…';
+data.set('category',panel.querySelector('[data-document-category]').value);if(panel.dataset.agreementId)data.set('agreement_id',panel.dataset.agreementId);
+try{const response=await fetch(panel.dataset.addUrl,{method:'POST',headers:{'X-CSRFToken':panel.querySelector('[name=csrfmiddlewaretoken]').value},body:data});
+if(response.redirected)throw new Error('Your session has expired. Sign in again.');
+const result=await response.json();if(!response.ok)throw new Error(result.error||'Could not save document.');
+panel.querySelector('[data-empty-documents]')?.remove();const li=document.createElement('li');li.style.margin='10px 0';const a=document.createElement('a');a.textContent=result.category;a.href=result.url;a.target='_blank';a.rel='noopener noreferrer';const remove=document.createElement('button');remove.type='button';remove.className='lease-document-delete';remove.dataset.deleteDocument=result.delete_url;remove.textContent=panel.dataset.deleteLabel;li.append(a,document.createTextNode(' '),remove);panel.querySelector('[data-document-list]').prepend(li);
+entry.hidden=true;panel.querySelector('details').open=false;panel.querySelector('[data-link-url]').value='';panel.querySelector('[data-link-title]').value='';message.textContent='Document saved.';
+}catch(error){message.textContent=error.message;}finally{busy=false;file.value='';panel.querySelectorAll('button').forEach(b=>b.disabled=false);}}
+file.onchange=()=>{if(file.files[0]){const data=new FormData();data.set('file',file.files[0]);add(data);}};
+panel.querySelector('[data-save-link]').onclick=()=>{const input=panel.querySelector('[data-link-url]');if(!input.value.trim()||!input.checkValidity()){message.textContent='Enter a valid document link.';input.focus();return;}const data=new FormData();data.set('url',input.value.trim());data.set('title',panel.querySelector('[data-link-title]').value.trim());add(data);};
+});
+</script>
+
+<style>.lease-document-delete{border:0;background:transparent;color:#b45309;cursor:pointer;font-size:.8rem;margin-left:12px;padding:4px 6px}.lease-document-delete:hover{text-decoration:underline}.lease-document-delete:disabled{opacity:.5;cursor:wait}</style>

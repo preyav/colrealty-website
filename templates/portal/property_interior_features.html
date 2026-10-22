@@ -1,0 +1,81 @@
+<fieldset class="interior-picker">
+  <legend>Interior Features</legend>
+  <details class="interior-dropdown" {% if profile_form.interior_feature_types.errors %}open{% endif %}>
+    <summary><span data-interior-summary>Select interior features</span></summary>
+    <div class="interior-panel">
+      <label for="interior-search">Search interior features</label>
+      <input type="search" id="interior-search" placeholder="Type to filter options" autocomplete="off">
+      <div class="interior-options">
+        {% for option in profile_form.interior_feature_types %}
+        <div data-interior-option>{{ option }}</div>
+        {% endfor %}
+      </div>
+      <p data-interior-empty hidden>No matching interior features.</p>
+    </div>
+  </details>
+  {{ profile_form.interior_feature_types.errors }}
+  <p class="interior-selection" data-interior-selected aria-live="polite"></p>
+  <p data-interior-none hidden role="status">None cannot be combined with another feature.</p>
+  <div data-interior-details>
+  <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+  {{ field }}{{ field.errors }}
+  <p class="interior-help">{{ field.help_text }}</p>
+  </div>
+</fieldset>
+<style>
+.interior-picker [hidden] {display:none !important;}
+.interior-options [aria-disabled="true"] {opacity:.45;}
+.interior-options [aria-disabled="true"] label {cursor:not-allowed;}
+.interior-picker {border:0;min-width:0;}
+.interior-picker legend {font-size:.9rem;font-weight:600;color:#334155;margin-bottom:7px;}
+.interior-help {color:#64748b;font-size:.85rem;line-height:1.5;margin:6px 0 10px;}
+.interior-dropdown {border:1px solid #cbd5e1;border-radius:7px;background:white;margin-bottom:10px;}
+.interior-dropdown summary {padding:10px 12px;cursor:pointer;overflow-wrap:anywhere;}
+.interior-dropdown summary:focus-visible {outline:2px solid #2563eb;outline-offset:2px;}
+.interior-panel {padding:12px;border-top:1px solid #e2e8f0;}
+.interior-options {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:240px;overflow-y:auto;margin-top:12px;}
+.interior-options label {display:flex;align-items:center;gap:8px;padding:7px;margin:0;font-weight:400;cursor:pointer;}
+.interior-options label:hover {background:#f1f5f9;}
+.interior-options input[type=checkbox] {width:18px;height:18px;flex:none;}
+.interior-selection {font-size:.85rem;color:#334155;margin:8px 0 14px;overflow-wrap:anywhere;}
+@media(max-width:450px){.interior-options{grid-template-columns:1fr}}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const picker = document.querySelector('.interior-picker');
+  const entries = Array.from(picker.querySelectorAll('[data-interior-option]'));
+  const dropdown = picker.querySelector('details');
+  function updateSelection() {
+    const none = entries.find(entry => entry.querySelector('input').value === 'none');
+    const noneSelected = !!none && none.querySelector('input').checked;
+    entries.forEach(entry => {
+      const input = entry.querySelector('input');
+      input.disabled = noneSelected && input.value !== 'none';
+      if (input.disabled) input.checked = false;
+      entry.setAttribute('aria-disabled', String(input.disabled));
+    });
+    picker.querySelector('[data-interior-none]').hidden = !noneSelected;
+    const selected = entries.filter(entry => entry.querySelector('input').checked);
+    picker.querySelector('[data-interior-details]').hidden =
+      !(selected.length === 1 && selected[0].querySelector('input').value === 'other');
+    const names = entries.filter(entry => entry.querySelector('input').checked)
+      .map(entry => entry.textContent.trim());
+    picker.querySelector('[data-interior-summary]').textContent = names.length ? names.join(', ') : 'Select interior features';
+    picker.querySelector('[data-interior-selected]').textContent = names.length ? 'Selected: ' + names.join(', ') : 'No interior features selected.';
+  }
+  entries.forEach(entry => entry.querySelector('input').addEventListener('change', updateSelection));
+  picker.querySelector('#interior-search').addEventListener('input', function () {
+    const query = this.value.trim().toLocaleLowerCase();
+    entries.forEach(entry => {entry.hidden = !entry.textContent.toLocaleLowerCase().includes(query);});
+    picker.querySelector('[data-interior-empty]').hidden = entries.some(entry => !entry.hidden);
+  });
+  picker.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && dropdown.open) {
+      dropdown.open = false;
+      dropdown.querySelector('summary').focus();
+    }
+    if (event.key === 'Enter' && event.target.type === 'search') event.preventDefault();
+  });
+  updateSelection();
+});
+</script>

@@ -1,0 +1,21 @@
+<aside class="card p360-cash"><div class="card-header"><h2>{{ overview.ui.cash_banking }}</h2><a href="{% url 'portal:portal_settings' %}?tab=properties{% if overview.config %}&amp;edit={{ overview.config.pk }}{% endif %}" class="btn btn-sm">{{ overview.ui.configure }}</a></div>
+<div class="p360-body">
+{% if overview.funds %}
+  <dl class="p360-balances">
+    <dt>{{ overview.ui.cash }}</dt><dd>${{ overview.funds.cash|floatformat:2 }}</dd>
+    <dt>{{ overview.ui.deposits }}</dt><dd>${{ overview.funds.deposits|floatformat:2 }}</dd>
+    <dt>{{ overview.ui.advances }}</dt><dd>${{ overview.funds.advances|floatformat:2 }}</dd>
+    <dt>{{ overview.ui.credits }}</dt><dd>${{ overview.funds.credits|floatformat:2 }}</dd>
+    <dt>{{ overview.ui.payable }}</dt><dd>${{ overview.funds.payable|floatformat:2 }}</dd>
+    <dt>{{ overview.ui.reimbursements }}</dt><dd>${{ overview.funds.reimbursements|floatformat:2 }}</dd>
+    <dt>{{ overview.ui.reserve }}</dt><dd>${{ overview.funds.reserve|floatformat:2 }}</dd>
+    <dt><strong>{{ overview.ui.available }}</strong></dt><dd><strong>{% if overview.funds.coverage.complete and overview.funds.reconciled and overview.config.enabled %}${{ overview.funds.available|floatformat:2 }}{% else %}{{ overview.ui.unavailable }}{% endif %}</strong></dd>
+  </dl>
+  {% if not overview.funds.coverage.complete or not overview.funds.reconciled or not overview.config.enabled %}<p class="p360-notice">{{ overview.ui.provisional }}</p>{% endif %}
+  <details class="p360-info"><summary aria-label="{{ overview.ui.cash_help_label }}">ⓘ</summary><p>{{ overview.ui.cash_help }}</p></details>
+  <p class="p360-muted">{{ overview.config.entity }}</p>
+  <hr>
+  {% for row in overview.banking %}<div class="p360-bank"><div class="stat-label">{{ row.label }}</div>{% if row.bank %}<strong>{{ row.bank.name }}</strong>{% if row.bank.account_last_four %} · ••••{{ row.bank.account_last_four }}{% endif %}{% if not row.active %}<span class="p360-notice">{{ overview.ui.inactive }}</span>{% endif %}{% else %}{{ overview.ui.not_configured }}{% endif %}</div>{% endfor %}
+{% else %}<p>{{ overview.ui.not_configured }}</p><p class="p360-muted">{{ overview.ui.setup_help }}</p>{% endif %}
+<a href="{% url 'portal:property_financials' property.pk %}">{{ overview.ui.income_statement }}</a>
+</div></aside>

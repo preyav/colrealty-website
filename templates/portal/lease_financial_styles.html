@@ -1,0 +1,52 @@
+<style>
+.lease-financials-panel{min-width:0;margin-bottom:30px}.financial-subnav{padding:0 0 16px;border-bottom:1px solid #e2e8f0;color:#087c96;font-size:.85rem;font-weight:600}.financial-toolbar{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap;padding:24px 0}.financial-balance{padding:18px 22px;border:1px solid #e2e8f0;border-radius:7px;min-width:180px}.financial-balance span{display:block;font-size:.8rem;color:#64748b}.financial-balance strong{display:block;margin-top:8px;font-size:1.8rem;font-weight:500}.financial-primary{background:#01AACE!important;color:white!important}.financial-table-wrap{overflow-x:auto;border:1px solid #e2e8f0;border-radius:7px}.financial-table-wrap table{width:100%;border-collapse:collapse;font-size:.83rem}.financial-table-wrap th,.financial-table-wrap td{padding:14px 16px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top}.financial-table-wrap th{background:#f5f6fa;color:#64748b;font-size:.72rem}.financial-table-wrap small{display:block;color:#64748b;font-size:.76rem;margin-top:6px;max-width:500px}.financial-table-wrap .financial-money{white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums}.financial-filter{display:flex;align-items:center;gap:12px;padding:16px;font-size:.8rem;color:#64748b}.financial-filter select{padding:9px;border:1px solid #e2e8f0;border-radius:5px;background:white}.financial-help{font-size:.78rem;color:#64748b;line-height:1.5}.financial-entry-page{max-width:1200px;margin:16px auto}.financial-entry-page h1{font-size:1.4rem;font-weight:500;margin:24px 0}.financial-entry-page .fields{max-width:860px}.financial-entry-page .buttons{justify-content:flex-start}.financial-entry-page .allocation-title{margin-top:30px}.financial-entry-page .card{overflow:visible}.financial-entry-page [hidden],.lease-financials-panel [hidden]{display:none!important}.lease-workspace .lease-overview-actions[hidden],.lease-workspace-columns[hidden]{display:none!important}
+
+/* Lease ledger workspace: shared report-like spacing and neutral table chrome. */
+.content.content--centered-detail:has(#lease-financials:not([hidden])){max-width:1680px;margin-inline:auto;padding:24px 30px 36px}
+.lease-workspace:has(#lease-financials:not([hidden])) .lease-workspace-header{margin-bottom:18px}
+.lease-workspace:has(#lease-financials:not([hidden])) .lease-workspace-header h1{font-size:clamp(1.3rem,1.7vw,1.75rem);font-weight:500}
+.lease-workspace:has(#lease-financials:not([hidden])) .lease-section-nav{margin-bottom:0;gap:26px}
+#lease-financials{font-family:inherit;font-size:.875rem}
+#lease-financials .financial-subnav{position:relative;padding:18px 2px 15px;border-bottom:1px solid #e2e8f0;font-size:.8rem;font-weight:500;color:#475569}
+#lease-financials .financial-subnav::after{content:"";position:absolute;bottom:-1px;left:2px;width:64px;height:2px;background:var(--col360-action-blue,#01AACE)}
+#lease-financials .financial-toolbar{align-items:center;gap:16px;padding:18px 0}
+#lease-financials .financial-balance{border:0;border-radius:0;padding:0;min-width:0;display:flex;gap:14px;align-items:baseline}
+#lease-financials .financial-balance span{font-size:.82rem;color:#64748b}
+#lease-financials .financial-balance strong{font-size:1.4rem;font-weight:500;margin:0;font-variant-numeric:tabular-nums}
+#lease-financials .financial-toolbar .btn{border-radius:5px;padding:9px 14px;font-size:.8rem}
+#lease-financials .financial-table-wrap{border:1px solid #dfe3e8;border-radius:5px;background:white}
+#lease-financials .financial-filter{padding:14px 16px;border-bottom:1px solid #dfe3e8;margin:0;color:#475569;font-size:.82rem;min-height:42px}
+#lease-financials .financial-filter select{min-width:190px;padding:10px 12px;border-color:#dfe3e8;font:inherit;color:#334155;border-radius:4px}
+#lease-financials table{font-family:inherit;font-size:.84rem;table-layout:fixed;min-width:800px}
+#lease-financials th{background:#f3f4f5;color:#475569;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.025em;padding:12px 15px;border-right:1px solid #e3e6ea}
+#lease-financials th:last-child{border-right:0}
+#lease-financials td{padding:10px 15px;border-bottom:1px solid #e5e7eb;line-height:1.45;color:#334155;overflow-wrap:anywhere}
+#lease-financials tbody tr:last-child td{border-bottom:0}
+#lease-financials tbody tr:hover{background:#f7fbfc}
+#lease-financials th:nth-child(1){width:11%}
+#lease-financials th:nth-child(2){width:31%}
+#lease-financials th:nth-child(3){width:24%}
+#lease-financials th:nth-child(4),#lease-financials th:nth-child(5){width:11%;text-align:right}
+#lease-financials th:nth-child(6){width:12%}
+#lease-financials th:nth-child(4) button,#lease-financials th:nth-child(5) button{justify-content:flex-end;text-align:right}
+#lease-financials th:nth-child(4) button span,#lease-financials th:nth-child(5) button span{margin-left:6px}
+#lease-financials td strong{font-weight:500}
+#lease-financials td small{font-size:.75rem;margin-top:3px;color:#718096;line-height:1.4}
+#lease-financials td:last-child{white-space:nowrap}
+#lease-financials td a{color:var(--col360-action-blue,#01AACE)}
+#lease-financials .financial-help{margin:12px 0 18px;font-size:.76rem}
+@media(max-width:800px){.content.content--centered-detail:has(#lease-financials:not([hidden])){padding:18px 14px}#lease-financials .financial-toolbar{align-items:flex-start;gap:14px}#lease-financials .financial-balance{flex-wrap:wrap;gap:8px}#lease-financials .financial-filter{flex-wrap:wrap;gap:8px}#lease-financials .financial-filter select{min-width:150px}}
+
+#lease-financials .financial-table-wrap table{min-width:1150px}
+#lease-financials .financial-table-wrap th:nth-child(1){width:10%}
+#lease-financials .financial-table-wrap th:nth-child(2){width:8%}
+#lease-financials .financial-table-wrap th:nth-child(3){width:15%}
+#lease-financials .financial-table-wrap th:nth-child(4){width:24%;text-align:left}
+#lease-financials .financial-table-wrap th:nth-child(5){width:17%;text-align:left}
+#lease-financials .financial-table-wrap th:nth-child(6),#lease-financials .financial-table-wrap th:nth-child(7){width:9%;text-align:right}
+#lease-financials .financial-table-wrap th:nth-child(8){width:8%}
+#lease-financials .financial-table-wrap th:nth-child(4) button,#lease-financials .financial-table-wrap th:nth-child(5) button{text-align:left;justify-content:flex-start}
+#lease-financials .financial-table-wrap th:nth-child(4) button span,#lease-financials .financial-table-wrap th:nth-child(5) button span{margin-left:auto}
+#lease-financials .financial-table-wrap th:nth-child(6) button,#lease-financials .financial-table-wrap th:nth-child(7) button{text-align:right;justify-content:flex-end}
+#lease-financials .financial-table-wrap th:nth-child(6) button span,#lease-financials .financial-table-wrap th:nth-child(7) button span{margin-left:6px}
+</style>

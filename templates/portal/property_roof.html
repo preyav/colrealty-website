@@ -1,0 +1,82 @@
+<fieldset class="roof-picker">
+  <legend>Roof</legend>
+  <p class="roof-help">Maximum {{ profile_form.roof_selection_limit }} selections.</p>
+  <details class="roof-dropdown" {% if profile_form.roof_types.errors %}open{% endif %}>
+    <summary><span data-roof-summary>Select roof types</span></summary>
+    <div class="roof-panel">
+      <label for="roof-search">Search roof types</label>
+      <input type="search" id="roof-search" placeholder="Type to filter options" autocomplete="off">
+      <div class="roof-options">
+        {% for option in profile_form.roof_types %}
+        <div data-roof-option>{{ option }}</div>
+        {% endfor %}
+      </div>
+      <p data-roof-empty hidden>No matching roof types.</p>
+    </div>
+  </details>
+  {{ profile_form.roof_types.errors }}
+  <p class="roof-selection" data-roof-selected aria-live="polite"></p>
+  <p data-roof-none hidden role="status">None cannot be combined with another feature.</p>
+  <div data-roof-details>
+  <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+  {{ field }}{{ field.errors }}
+  <p class="roof-help">{{ field.help_text }}</p>
+  </div>
+</fieldset>
+<style>
+.roof-picker [hidden] {display:none !important;}
+.roof-options [aria-disabled="true"] {opacity:.45;}
+.roof-options [aria-disabled="true"] label {cursor:not-allowed;}
+.roof-picker {border:0;min-width:0;}
+.roof-picker legend {font-size:.9rem;font-weight:600;color:#334155;margin-bottom:7px;}
+.roof-help {color:#64748b;font-size:.85rem;line-height:1.5;margin:6px 0 10px;}
+.roof-dropdown {border:1px solid #cbd5e1;border-radius:7px;background:white;margin-bottom:10px;}
+.roof-dropdown summary {padding:10px 12px;cursor:pointer;overflow-wrap:anywhere;}
+.roof-dropdown summary:focus-visible {outline:2px solid #2563eb;outline-offset:2px;}
+.roof-panel {padding:12px;border-top:1px solid #e2e8f0;}
+.roof-options {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:240px;overflow-y:auto;margin-top:12px;}
+.roof-options label {display:flex;align-items:center;gap:8px;padding:7px;margin:0;font-weight:400;cursor:pointer;}
+.roof-options label:hover {background:#f1f5f9;}
+.roof-options input[type=checkbox] {width:18px;height:18px;flex:none;}
+.roof-selection {font-size:.85rem;color:#334155;margin:8px 0 14px;overflow-wrap:anywhere;}
+@media(max-width:450px){.roof-options{grid-template-columns:1fr}}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const picker = document.querySelector('.roof-picker');
+  const entries = Array.from(picker.querySelectorAll('[data-roof-option]'));
+  const dropdown = picker.querySelector('details');
+  function updateSelection() {
+    const none = entries.find(entry => entry.querySelector('input').value === 'none');
+    const noneSelected = !!none && none.querySelector('input').checked;
+    entries.forEach(entry => {
+      const input = entry.querySelector('input');
+      input.disabled = noneSelected && input.value !== 'none';
+      if (input.disabled) input.checked = false;
+      entry.setAttribute('aria-disabled', String(input.disabled));
+    });
+    picker.querySelector('[data-roof-none]').hidden = !noneSelected;
+    const selected = entries.filter(entry => entry.querySelector('input').checked);
+    picker.querySelector('[data-roof-details]').hidden =
+      !(selected.length === 1 && selected[0].querySelector('input').value === 'other');
+    const names = entries.filter(entry => entry.querySelector('input').checked)
+      .map(entry => entry.textContent.trim());
+    picker.querySelector('[data-roof-summary]').textContent = names.length ? names.join(', ') : 'Select roof types';
+    picker.querySelector('[data-roof-selected]').textContent = names.length ? 'Selected: ' + names.join(', ') : 'No roof types selected.';
+  }
+  entries.forEach(entry => entry.querySelector('input').addEventListener('change', updateSelection));
+  picker.querySelector('#roof-search').addEventListener('input', function () {
+    const query = this.value.trim().toLocaleLowerCase();
+    entries.forEach(entry => {entry.hidden = !entry.textContent.toLocaleLowerCase().includes(query);});
+    picker.querySelector('[data-roof-empty]').hidden = entries.some(entry => !entry.hidden);
+  });
+  picker.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && dropdown.open) {
+      dropdown.open = false;
+      dropdown.querySelector('summary').focus();
+    }
+    if (event.key === 'Enter' && event.target.type === 'search') event.preventDefault();
+  });
+  updateSelection();
+});
+</script>

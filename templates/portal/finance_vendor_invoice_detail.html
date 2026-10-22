@@ -1,0 +1,81 @@
+{% extends "portal/base.html" %}
+{% block title %}Invoice {{ invoice.invoice_number|default:invoice.id }} | Finance{% endblock %}
+{% block page_title %}Vendor Bill{% endblock %}
+{% block content %}
+{% include 'portal/bill_reimbursements.html' %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;gap:16px;">
+  <a href="{% url 'portal:finance_vendor_invoices' %}" style="color:#2563eb;text-decoration:none;">← Back to Vendor Bills</a>
+  <div style="display:flex;gap:9px;flex-wrap:wrap;justify-content:flex-end;">
+    {% if invoice.status == 'submitted' %}
+      <a class="btn btn-sm" style="background:#f1f5f9;" href="{% url 'portal:edit_vendor_invoice' invoice.id %}">Edit Invoice</a>
+      <form method="post" action="{% url 'portal:approve_vendor_invoice' invoice.id %}">{% csrf_token %}<button class="btn btn-primary btn-sm">Approve Invoice</button></form>
+    {% elif invoice.status == 'approved' %}
+      {% if quickbooks_bill %}
+        <form method="post" action="{% url 'portal:finance_vendor_invoice_quickbooks_sync' invoice.id %}">{% csrf_token %}<button class="btn btn-sm" style="background:#e0f2fe;color:#0369a1;">Verify QuickBooks Bill</button></form>
+      {% elif quickbooks_connection %}
+        <a class="btn btn-primary btn-sm" href="{% url 'portal:finance_vendor_invoice_quickbooks_sync' invoice.id %}">Sync to QuickBooks</a>
+      {% endif %}
+      <a class="btn btn-sm" style="background:#f1f5f9;" href="{% url 'portal:record_vendor_payment' invoice.id %}">Record Payment</a>
+    {% elif invoice.status == 'partially_paid' %}
+      <a class="btn btn-primary btn-sm" href="{% url 'portal:record_vendor_payment' invoice.id %}">Record Payment</a>
+    {% endif %}
+  </div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:22px;"><div class="stat-card"><div class="stat-label">Invoice Total</div><div class="stat-value">${{ invoice.amount|floatformat:2 }}</div></div><div class="stat-card"><div class="stat-label">Paid</div><div class="stat-value" style="color:#16a34a;">${{ paid|floatformat:2 }}</div></div><div class="stat-card"><div class="stat-label">Outstanding</div><div class="stat-value">${{ outstanding|floatformat:2 }}</div></div><div class="stat-card"><div class="stat-label">Status</div><div class="stat-value" style="font-size:1.2rem;">{{ invoice.get_status_display }}</div></div></div>
+<div class="card"><div class="card-header"><h2>Invoice {{ invoice.invoice_number|default:invoice.id }}</h2><a class="btn btn-sm" style="background:#f1f5f9;" href="{% url 'portal:work_order_detail' work_order.id %}">View Work Order</a></div><div style="padding:22px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;"><div><div class="stat-label">Vendor</div><strong>{{ invoice.vendor }}</strong></div><div><div class="stat-label">Work Order</div><strong>#{{ work_order.id }} · {{ work_order.title }}</strong></div><div><div class="stat-label">Property / Unit</div><strong>{{ work_order.unit.property.street_address }}{% if work_order.unit.unit_number %} · Unit {{ work_order.unit.unit_number }}{% endif %}</strong></div><div><div class="stat-label">Invoice Date</div>{{ invoice.invoice_date|date:"M d, Y"|default:"—" }}</div><div><div class="stat-label">Due Date</div>{{ invoice.due_date|date:"M d, Y"|default:"—" }}</div><div><div class="stat-label">Approved</div>{% if invoice.approved_at %}{{ invoice.approved_at|date:"M d, Y · g:i A" }} by {{ invoice.approved_by|default:"—" }}{% else %}—{% endif %}</div>{% if invoice.notes %}<div style="grid-column:1/-1;"><div class="stat-label">Notes</div><div style="white-space:pre-wrap;">{{ invoice.notes }}</div></div>{% endif %}</div></div>
+{% if quickbooks_bill or quickbooks_connection and invoice.status == 'approved' %}
+<div class="card" style="margin-top:18px;">
+  <div class="card-header"><h2>QuickBooks</h2>{% if quickbooks_bill %}<span class="badge badge-green">Synchronized</span>{% else %}<span class="badge">Not Synchronized</span>{% endif %}</div>
+  <div style="padding:20px 22px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;">
+    {% if quickbooks_bill %}
+      <div><div class="stat-label">QuickBooks Bill ID</div><strong>{{ quickbooks_bill.quickbooks_bill_id }}</strong></div>
+      <div><div class="stat-label">Document Number</div><strong>{{ quickbooks_bill.document_number }}</strong></div>
+      <div><div class="stat-label">Expense Account</div><strong>{{ quickbooks_bill.expense_account_name }}</strong></div>
+      <div><div class="stat-label">Company</div>{{ quickbooks_bill.connection.company_name|default:quickbooks_bill.connection.realm_id }}</div>
+      <div><div class="stat-label">Last Verified</div>{{ quickbooks_bill.last_synced_at|date:"M d, Y · g:i A" }}</div>
+    {% else %}
+      <div style="grid-column:1/-1;color:#64748b;">This approved invoice is ready to be synchronized as a QuickBooks bill. Select the correct expense account before sending it.</div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+{% if payments %}
+<div class="card" style="margin-top:18px;">
+  <div class="card-header"><h2>Payment History</h2></div>
+  <div style="overflow-x:auto;">
+    <table class="data-table">
+      <thead><tr><th>Date</th><th>Amount</th><th>Method</th><th>Reference</th><th>Paid From</th><th>QuickBooks</th><th>Recorded By</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody>
+      {% for payment in payments %}
+        <tr {% if payment.status == 'void' %}style="color:#94a3b8;background:#f8fafc;"{% endif %}>
+          <td>{{ payment.payment_date|date:"M d, Y" }}</td>
+          <td><strong>${{ payment.amount|floatformat:2 }}</strong></td>
+          <td>{{ payment.get_payment_method_display }}</td>
+          <td>{{ payment.reference_number|default:"—" }}</td>
+          <td>{{ payment.paid_from_display }}</td>
+          <td>
+            {% with qb=payment.quickbooks_payment_mapping %}
+              {% if qb.status == 'synced' %}<span class="badge badge-green">Synchronized</span><div style="margin-top:4px;font-size:0.78rem;">{{ qb.payment_account_name }}</div>
+              {% elif qb.status == 'deleted' %}<span class="badge">Removed</span>
+              {% elif qb %}<span class="badge" style="background:#fee2e2;color:#b91c1c;">Needs Attention</span><div style="margin-top:4px;font-size:0.78rem;">{{ qb.last_error }}</div>
+              {% else %}<span style="color:#94a3b8;">—</span>{% endif %}
+            {% endwith %}
+          </td>
+          <td>{{ payment.recorded_by|default:"—" }}</td>
+          <td>{{ payment.get_status_display }}</td>
+          <td>
+            {% if payment.status == 'recorded' %}
+              {% with qb=payment.quickbooks_payment_mapping %}
+                {% if qb %}<form method="post" action="{% url 'portal:finance_vendor_payment_quickbooks_sync' payment.id %}" style="display:inline-block;margin-right:6px;">{% csrf_token %}<button class="btn btn-sm" style="background:#e0f2fe;color:#0369a1;">{% if qb.status == 'synced' %}Verify QB{% else %}Retry QB Sync{% endif %}</button></form>{% endif %}
+              {% endwith %}
+              <details style="display:inline-block;vertical-align:top;"><summary class="btn btn-sm" style="display:inline-block;background:#fee2e2;color:#b91c1c;cursor:pointer;">Void</summary><form method="post" action="{% url 'portal:void_vendor_payment' payment.id %}" style="margin-top:8px;min-width:230px;">{% csrf_token %}<textarea name="reason" rows="2" required class="form-control" placeholder="Reason for voiding"></textarea><button class="btn btn-sm" style="margin-top:6px;background:#dc2626;color:#fff;">Confirm Void</button></form></details>
+            {% else %}<span title="{{ payment.void_reason }}">Voided</span>{% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

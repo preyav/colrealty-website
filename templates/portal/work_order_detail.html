@@ -1,8 +1,19 @@
 {% extends "portal/base.html" %}
+{% load work_completion tenant_work %}
+
 {% block title %}Work Order 360 | Col Realty Portal{% endblock %}
 {% block page_title %}Work Order 360{% endblock %}
 
 {% block content %}
+{% tenant_work_labels as tenant_ui %}
+<style>
+#activity-content {overflow-x:auto;}
+#activity-content .work-order-activity-table {table-layout:fixed;min-width:1080px;width:100%;}
+#activity-content .work-order-activity-table th,#activity-content .work-order-activity-table td {padding:16px 18px;vertical-align:top;word-break:normal;overflow-wrap:break-word;font-size:.9rem;line-height:1.6;}
+#activity-content .work-order-activity-table th {white-space:nowrap;font-size:.8rem;}
+#activity-content .work-order-activity-table td:nth-child(1),#activity-content .work-order-activity-table td:nth-child(2),#activity-content .work-order-activity-table td:nth-child(3) {white-space:nowrap;}
+#activity-content .work-order-activity-table .activity-notes {white-space:pre-line;line-height:1.7;}
+</style>
 
 <div style="margin-bottom:18px;display:flex;gap:16px;">
 
@@ -42,10 +53,10 @@
 
   <div class="stat-card">
 
-    <div class="stat-label">Estimated Cost</div>
+    <div class="stat-label">{% if work_order.is_self_performed %}{{ tenant_ui.agreed_cost }}{% else %}Estimated Cost{% endif %}</div>
 
     <div class="stat-value" style="font-size:1.4rem;">
-      {% if work_order.estimated_cost %}
+      {% if work_order.estimated_cost != None %}
         ${{ work_order.estimated_cost|floatformat:2 }}
       {% else %}
         —
@@ -60,7 +71,7 @@
     <div class="stat-label">Actual Cost</div>
 
     <div class="stat-value" style="font-size:1.4rem;">
-      {% if work_order.actual_cost %}
+      {% if work_order.actual_cost != None %}
         ${{ work_order.actual_cost|floatformat:2 }}
       {% else %}
         —
@@ -160,17 +171,11 @@
         </form>
       {% endif %}
 
-      {% if work_order.status == "in_progress" %}
+      {% completion_actions work_order %}
+      {% if work_order.status == "in_progress" and not work_order.is_self_performed %}
         <a href="{% url 'portal:complete_work_order' work_order.id %}"
            class="btn btn-primary btn-sm">
           Complete Work Order
-        </a>
-      {% endif %}
-
-      {% if work_order.status == "completed" and financial.enabled and financial.capabilities.can_add_invoice and not has_invoices %}
-        <a href="{% url 'portal:add_vendor_invoice' work_order.id %}"
-           class="btn btn-primary btn-sm">
-          Add Vendor Invoice
         </a>
       {% endif %}
 
@@ -241,7 +246,9 @@
 
       <div>
         <div class="stat-label">Scheduled</div>
-        {{ work_order.scheduled_for|date:"M d, Y g:i A"|default:"—" }}
+        {% if work_order.scheduled_for %}
+          {{ work_order.scheduled_for|date:"M d, Y · g:i A" }}{% if work_order.scheduled_until %}–{{ work_order.scheduled_until|date:"g:i A" }}{% endif %}
+        {% else %}—{% endif %}
       </div>
 
       <div>
@@ -251,18 +258,18 @@
 
       <div>
         <div class="stat-label">Approved By</div>
-        {{ work_order.approved_by|default:"—" }}
+        {{ work_order.approval_actor|default:"—" }}
       </div>
 
       <div>
         <div class="stat-label">Approved At</div>
-        {{ work_order.approved_at|date:"M d, Y g:i A"|default:"—" }}
+        {{ work_order.approval_time|date:"M d, Y g:i A"|default:"—" }}
       </div>
 
       <div>
-        <div class="stat-label">Estimated Cost</div>
+        <div class="stat-label">{% if work_order.is_self_performed %}{{ tenant_ui.agreed_cost }}{% else %}Estimated Cost{% endif %}</div>
 
-        {% if work_order.estimated_cost %}
+        {% if work_order.estimated_cost != None %}
           ${{ work_order.estimated_cost|floatformat:2 }}
         {% else %}
           —
@@ -272,7 +279,7 @@
       <div>
         <div class="stat-label">Actual Cost</div>
 
-        {% if work_order.actual_cost %}
+        {% if work_order.actual_cost != None %}
           <strong>${{ work_order.actual_cost|floatformat:2 }}</strong>
         {% else %}
           —
@@ -286,6 +293,8 @@
 </div>
 
 
+{% tenant_work_panel work_order %}
+{% if not work_order.is_self_performed %}
 <!-- VENDOR PROCESS -->
 <div class="card">
   <div class="card-header" style="align-items:center;">
@@ -417,10 +426,11 @@
           {% endif %}
         </td>
         <td>
-          {% if row.is_active_award and row.assignment and row.assignment.scheduled_for %}{{ row.assignment.scheduled_for|date:"M d, Y · g:i A" }}{% else %}—{% endif %}
+          {% if row.is_active_award and row.assignment and row.assignment.scheduled_for %}{{ row.assignment.scheduled_for|date:"M d, Y · g:i A" }}{% if row.assignment.scheduled_until %}–{{ row.assignment.scheduled_until|date:"g:i A" }}{% endif %}{% else %}—{% endif %}
         </td>
         <td>
           <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            {% if work_order.status != "completed" and work_order.status != "cancelled" %}
             {% if row.is_active_award %}
               {% if active_award.status == "pending_confirmation" %}
                 <form method="post" action="{% url 'portal:confirm_vendor' work_order.id active_award.id %}" style="display:inline;">{% csrf_token %}<button type="submit" class="btn btn-primary btn-sm">Confirm Vendor</button></form>
@@ -434,13 +444,14 @@
               {% endif %}
             {% elif row.assignment and row.assignment.status == "assigned" or row.assignment and row.assignment.status == "accepted" or row.assignment and row.assignment.status == "scheduled" %}
               <a href="{% url 'portal:schedule_vendor' work_order.id row.assignment.id %}" class="btn btn-primary btn-sm">{% if row.assignment.status == "scheduled" %}Reschedule{% else %}Schedule{% endif %}</a>
-            {% elif active_award and row.estimate and work_order.status != "completed" and work_order.status != "cancelled" %}
+            {% elif active_award and row.estimate %}
               <span style="color:#94a3b8;font-size:.78rem;">Available through Change Vendor</span>
-            {% elif row.estimate and work_order.status != "completed" and work_order.status != "cancelled" %}
+            {% elif row.estimate %}
               <a href="{% url 'portal:assign_vendor' work_order.id %}?estimate_id={{ row.estimate.id }}" class="btn btn-primary btn-sm">Select Quote</a>
-            {% elif row.quote_request and row.quote_request.status != "quote_received" and work_order.status != "completed" and work_order.status != "cancelled" %}
+            {% elif row.quote_request and row.quote_request.status != "quote_received" %}
               <a href="{% url 'portal:add_vendor_estimate' work_order.id %}?request_id={{ row.quote_request.id }}" class="btn btn-primary btn-sm">Record Received Quote</a>
             {% else %}—{% endif %}
+            {% endif %}
             {% if row.estimate or row.is_active_award %}
               <button type="button"
                       class="estimate-toggle btn btn-sm"
@@ -523,6 +534,7 @@
   {% endif %}
 </div>
 
+{% endif %}
 {% if financial.enabled and has_invoices %}
 <!-- INVOICES -->
 
@@ -532,12 +544,7 @@
 
     <h2>Vendor Invoices</h2>
 
-    {% if work_order.status == "completed" and financial.capabilities.can_add_invoice %}
-      <a href="{% url 'portal:add_vendor_invoice' work_order.id %}"
-         class="btn btn-primary btn-sm">
-        Add Invoice
-      </a>
-    {% endif %}
+    <a href="{% url 'portal:finance_vendor_invoices' %}" class="btn btn-sm" style="background:#f1f5f9;">Open Finance</a>
 
   </div>
 
@@ -584,6 +591,12 @@
               Paid
             </span>
 
+          {% elif invoice.status == "partially_paid" %}
+
+            <span class="badge" style="background:#fef3c7;color:#92400e;">
+              Partially Paid
+            </span>
+
           {% elif invoice.status == "disputed" %}
 
             <span class="badge badge-red">
@@ -609,52 +622,15 @@
         </td>
 
         <td>
-          {{ invoice.paid_at|date:"M d, Y"|default:"—" }}
+          ${{ invoice.paid_amount|floatformat:2 }}
+          {% if invoice.paid_at %}
+            <div style="color:#64748b;font-size:12px;">{{ invoice.paid_at|date:"M d, Y" }}</div>
+          {% endif %}
         </td>
 
         <td>
 
-          {% if invoice.status == "submitted" %}
-
-            <form method="post"
-                  action="{% url 'portal:approve_vendor_invoice' invoice.id %}"
-                  style="margin:0;">
-
-              {% csrf_token %}
-
-              <button type="submit"
-                      class="btn btn-primary btn-sm">
-                Approve
-              </button>
-
-            </form>
-
-          {% elif invoice.status == "approved" %}
-
-            <form method="post"
-                  action="{% url 'portal:mark_vendor_invoice_paid' invoice.id %}"
-                  style="margin:0;">
-
-              {% csrf_token %}
-
-              <button type="submit"
-                      class="btn btn-primary btn-sm">
-                Mark Paid
-              </button>
-
-            </form>
-
-          {% elif invoice.status == "paid" %}
-
-            <span class="badge badge-green">
-              Paid
-            </span>
-
-          {% else %}
-
-            —
-
-          {% endif %}
+          <a href="{% url 'portal:finance_vendor_invoice_detail' invoice.id %}" class="btn btn-primary btn-sm">View in Finance</a>
 
         </td>
 
@@ -677,6 +653,53 @@
 
   </table>
 
+  {% if current_invoice.payments.all and show_finance_operations_here %}
+  <div style="padding:20px 22px;border-top:1px solid #e2e8f0;">
+    <h3 style="margin:0 0 14px;">Payment History</h3>
+    <table class="data-table" style="border:1px solid #e2e8f0;">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Amount</th>
+          <th>Method</th>
+          <th>Reference</th>
+          <th>Account</th>
+          <th>Recorded By</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for payment in current_invoice.payments.all %}
+        <tr {% if payment.status == "void" %}style="color:#94a3b8;background:#f8fafc;"{% endif %}>
+          <td>{{ payment.payment_date|date:"M d, Y" }}</td>
+          <td><strong>${{ payment.amount|floatformat:2 }}</strong></td>
+          <td>{{ payment.get_payment_method_display }}</td>
+          <td>{{ payment.reference_number|default:"—" }}</td>
+          <td>{{ payment.payment_account|default:"—" }}</td>
+          <td>{{ payment.recorded_by|default:"—" }}</td>
+          <td>{{ payment.get_status_display }}</td>
+          <td>
+            {% if payment.status == "recorded" %}
+            <details>
+              <summary class="btn btn-sm" style="display:inline-block;background:#fee2e2;color:#b91c1c;cursor:pointer;">Void</summary>
+              <form method="post" action="{% url 'portal:void_vendor_payment' payment.id %}" style="margin-top:8px;min-width:230px;">
+                {% csrf_token %}
+                <textarea name="reason" rows="2" required class="form-control" placeholder="Reason for voiding"></textarea>
+                <button type="submit" class="btn btn-sm" style="margin-top:6px;background:#dc2626;color:#fff;">Confirm Void</button>
+              </form>
+            </details>
+            {% else %}
+              <span title="{{ payment.void_reason }}">Voided</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
 </div>
 
 
@@ -693,7 +716,8 @@
   </div>
 
   <div id="activity-content" style="display:none;">
-  <table class="data-table">
+  <table class="data-table work-order-activity-table">
+    <colgroup><col style="width:210px"><col style="width:115px"><col style="width:125px"><col style="width:175px"><col></colgroup>
 
     <thead>
       <tr>
@@ -727,7 +751,7 @@
           {{ history.changed_by|default:"—" }}
         </td>
 
-        <td>
+        <td class="activity-notes">
           {{ history.notes|default:"—" }}
         </td>
 

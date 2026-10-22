@@ -1,0 +1,18 @@
+<style>
+/* Shared Portal action color. Included last to replace older page/inline colors. */
+:root{--col360-action-blue:#01AACE}
+.main :is(button,.btn,input[type="submit"],input[type="button"],input[type="reset"]):not(.col-table-sort):not([data-ledger-sort]):not([role="combobox"]):not([role="listbox"]):not(:is(.financial-expand,.financial-expand-all)){background:var(--col360-action-blue)!important;background-image:none!important;border-color:var(--col360-action-blue)!important;color:#fff!important}
+.main :is(button,.btn,input[type="submit"],input[type="button"],input[type="reset"]):not(.col-table-sort):not([data-ledger-sort]):not([role="combobox"]):not([role="listbox"]):not(:is(.financial-expand,.financial-expand-all)):hover:not(:disabled):not([aria-disabled="true"]){filter:brightness(.94)}
+.main :is(button,.btn,input[type="submit"],input[type="button"],input[type="reset"]):focus-visible{outline:2px solid var(--col360-action-blue);outline-offset:3px}
+.main :is(button,.btn,input[type="submit"],input[type="button"],input[type="reset"]):is(:disabled,[aria-disabled="true"]){opacity:.5;cursor:not-allowed;filter:none}
+/* Report expand/collapse controls retain a text-link appearance. */
+.main :is(.financial-expand,.financial-expand-all){background:transparent!important;border-color:transparent!important;color:var(--col360-action-blue)!important;filter:none!important}
+/* Sorting is a heading interaction, not a filled action button. */
+.main [data-ledger-sort]{background:transparent!important;background-image:none!important;border-color:transparent!important;color:inherit!important;filter:none!important}
+/* Disclosure controls retain link styling in both their More and Less states. */
+.main [data-portal-disclosure]{background:transparent!important;background-image:none!important;border-color:transparent!important;color:var(--col360-action-blue)!important}
+.main [data-portal-disclosure]:hover{filter:none!important;text-decoration:underline}
+.main input[type="file"]::file-selector-button{background:var(--col360-action-blue)!important;border:1px solid var(--col360-action-blue)!important;color:white!important;border-radius:5px;padding:6px 10px;cursor:pointer;font:inherit}
+.main table th,.main table th :is(a,button,span){text-transform:uppercase!important}
+.financial-expand-all [data-expand-icon]{display:inline-block;font-size:1.2rem;line-height:1;color:#89929c;vertical-align:middle;margin-right:5px}
+</style>

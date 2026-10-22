@@ -1,0 +1,72 @@
+{% extends "portal/base.html" %}
+{% block title %}QuickBooks | COL360 Finance{% endblock %}
+{% block page_title %}QuickBooks Connection{% endblock %}
+{% block content %}
+<div class="card" style="max-width:900px;">
+  <div style="padding:26px;">
+    <div style="display:flex;justify-content:space-between;gap:20px;align-items:flex-start;">
+      <div>
+        <h2 style="margin:0 0 8px;">QuickBooks Online</h2>
+        <p style="margin:0;color:#64748b;line-height:1.6;">Monitor the QuickBooks connection and synchronize COL360 vendors individually. Bills and payments remain unchanged in this step.</p>
+      </div>
+      {% if connection %}<span class="badge badge-green">Connected</span>{% else %}<span class="badge">Not Connected</span>{% endif %}
+    </div>
+
+    {% if connection %}
+      <div style="margin-top:24px;padding:18px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;">
+        <div><div class="stat-label">Company</div><strong>{{ connection.company_name|default:"QuickBooks Company" }}</strong></div>
+        <div><div class="stat-label">Environment</div><strong>{{ connection.get_environment_display }}</strong></div>
+        <div><div class="stat-label">Company ID</div><strong>{{ connection.realm_id }}</strong></div>
+        <div><div class="stat-label">Connected</div><strong>{{ connection.connected_at|date:"M d, Y g:i A" }}</strong></div>
+        <div><div class="stat-label">Last Health Check / Sync</div><strong>{% if connection.last_synced_at %}{{ connection.last_synced_at|date:"M d, Y g:i A" }}{% else %}Not checked yet{% endif %}</strong></div>
+        <div><div class="stat-label">Connection Health</div><strong>{% if connection.last_error %}<span style="color:#b91c1c;">Attention needed</span>{% elif connection.last_synced_at %}<span style="color:#15803d;">Healthy</span>{% else %}<span style="color:#64748b;">Not tested</span>{% endif %}</strong></div>
+      </div>
+      {% if connection.last_error %}<div style="margin-top:14px;padding:12px 14px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;color:#991b1b;">{{ connection.last_error }}</div>{% endif %}
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:22px;">
+        <form method="post" action="{% url 'portal:finance_quickbooks_test' %}">{% csrf_token %}<button class="btn btn-primary">Test Connection</button></form>
+        <form method="post" action="{% url 'portal:finance_quickbooks_disconnect' %}" onsubmit="return confirm('Disconnect this QuickBooks company from COL360?');">
+          {% csrf_token %}<button class="btn" style="background:#fee2e2;color:#b91c1c;">Disconnect QuickBooks</button>
+        </form>
+      </div>
+    {% elif configured %}
+      <form method="post" action="{% url 'portal:finance_quickbooks_connect' %}" style="margin-top:24px;">
+        {% csrf_token %}<button class="btn btn-primary">Connect to QuickBooks</button>
+      </form>
+    {% else %}
+      <div style="margin-top:22px;padding:14px 16px;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;color:#9a3412;">{{ configuration_error }}</div>
+    {% endif %}
+  </div>
+</div>
+
+{% if connection %}
+<div class="card" style="max-width:900px;margin-top:22px;">
+  <div style="padding:26px 26px 18px;">
+    <h2 style="margin:0 0 8px;">Vendor Synchronization</h2>
+    <p style="margin:0;color:#64748b;line-height:1.6;">Send one active vendor at a time. COL360 checks for an existing QuickBooks vendor with the same display name before creating a new one.</p>
+  </div>
+  {% if vendors %}
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;">
+        <thead><tr style="background:#f8fafc;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;text-align:left;">
+          <th style="padding:12px 26px;">Vendor</th><th style="padding:12px;">Status</th><th style="padding:12px;">QuickBooks ID</th><th style="padding:12px 26px;text-align:right;">Action</th>
+        </tr></thead>
+        <tbody>
+        {% for vendor in vendors %}
+          <tr style="border-bottom:1px solid #eef2f7;">
+            <td style="padding:14px 26px;"><strong>{{ vendor }}</strong>{% if vendor.email %}<div style="color:#64748b;font-size:13px;margin-top:3px;">{{ vendor.email }}</div>{% endif %}</td>
+            <td style="padding:14px 12px;">{% if vendor.quickbooks_mapping %}<span class="badge badge-green">Synchronized</span>{% else %}<span class="badge">Not Synchronized</span>{% endif %}</td>
+            <td style="padding:14px 12px;">{% if vendor.quickbooks_mapping %}{{ vendor.quickbooks_mapping.quickbooks_vendor_id }}{% else %}—{% endif %}</td>
+            <td style="padding:14px 26px;text-align:right;">
+              <form method="post" action="{% url 'portal:finance_quickbooks_vendor_sync' vendor.id %}">{% csrf_token %}<button class="btn btn-primary">{% if vendor.quickbooks_mapping %}Verify Sync{% else %}Sync Vendor{% endif %}</button></form>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div style="padding:18px 26px 26px;color:#64748b;">No active vendors are available to synchronize.</div>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "portal/base.html" %}
+{% block title %}Vendor Bills | Col Realty Portal{% endblock %}
+{% block page_title %}Vendor Bills{% endblock %}
+{% block content %}
+<div style="margin-bottom:20px;"><h2 style="margin:0 0 6px;">Vendor Bills</h2><p style="margin:0;color:#64748b;">Record and approve vendor invoices, then synchronize approved bills with QuickBooks.</p></div>
+{% if selected_queue %}
+<div style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:14px;padding:12px 16px;border:1px solid #bfdbfe;border-radius:10px;background:#eff6ff;">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span style="color:#475569;font-size:13px;font-weight:600;">Active queue</span>
+    <span style="display:inline-flex;align-items:center;padding:5px 10px;border-radius:999px;background:#dbeafe;color:#1d4ed8;font-size:13px;font-weight:700;">
+      {% if selected_queue == 'overdue' %}Overdue bills
+      {% elif selected_queue == 'outstanding' %}Outstanding balances
+      {% elif selected_queue == 'attention' %}Bills requiring attention
+      {% else %}Filtered bills{% endif %}
+    </span>
+  </div>
+  <a href="{% url 'portal:finance_vendor_invoices' %}" style="font-size:13px;font-weight:600;">Clear filter &amp; view all bills</a>
+</div>
+{% endif %}
+<div class="card">
+  <div style="padding:14px 20px;border-bottom:1px solid #e2e8f0;"><form method="get" style="display:flex;gap:10px;flex-wrap:wrap;">{% if selected_queue %}<input type="hidden" name="queue" value="{{ selected_queue }}">{% endif %}<input class="form-control" name="q" value="{{ query }}" placeholder="Invoice, vendor, work order or property" style="max-width:330px;"><select class="form-control" name="status" style="max-width:190px;"><option value="">All statuses</option>{% for value,label in status_choices %}<option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select><button class="btn btn-primary">Filter</button></form></div>
+  <table class="data-table"><thead><tr><th>Invoice</th><th>Vendor</th><th>Work Order</th><th>Property</th><th>Amount</th><th>Paid</th><th>Outstanding</th><th>Status</th><th>QuickBooks</th><th>Action</th></tr></thead><tbody>
+  {% for invoice in invoices %}<tr><td>{{ invoice.invoice_number|default:"—" }}</td><td><strong>{{ invoice.vendor }}</strong></td><td>#{{ invoice.work_order_id }}</td><td>{{ invoice.work_order.unit.property.street_address }}</td><td>${{ invoice.amount|floatformat:2 }}</td><td>${{ invoice.paid_amount|floatformat:2 }}</td><td><strong>${{ invoice.outstanding_amount|floatformat:2 }}</strong></td><td>{{ invoice.get_status_display }}</td><td>{% if invoice.quickbooks_bill_mapping %}<span class="badge badge-green">Synchronized</span>{% elif invoice.status == 'approved' %}<span class="badge">Ready</span>{% else %}—{% endif %}</td><td><a class="btn btn-primary btn-sm" href="{% url 'portal:finance_vendor_invoice_detail' invoice.id %}">View</a></td></tr>{% empty %}<tr><td colspan="10" style="text-align:center;color:#94a3b8;padding:24px;">No vendor bills match the filters.</td></tr>{% endfor %}
+  </tbody></table>
+</div>
+{% if ready_to_bill and not selected_queue %}<div class="card"><div class="card-header"><h2>Ready for Invoice Intake</h2></div><table class="data-table"><thead><tr><th>Work Order</th><th>Property / Unit</th><th>Actual Cost</th><th>Action</th></tr></thead><tbody>{% for wo in ready_to_bill %}<tr><td>#{{ wo.id }} · {{ wo.title }}</td><td>{{ wo.unit.property.street_address }}{% if wo.unit.unit_number %} · Unit {{ wo.unit.unit_number }}{% endif %}</td><td>{% if wo.actual_cost %}${{ wo.actual_cost|floatformat:2 }}{% else %}—{% endif %}</td><td><a class="btn btn-primary btn-sm" href="{% url 'portal:add_vendor_invoice' wo.id %}">Record Invoice</a></td></tr>{% endfor %}</tbody></table></div>{% endif %}
+{% endblock %}

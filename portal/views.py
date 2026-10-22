@@ -1,3 +1,6 @@
+from .tenant_work import vendor_work_only
+from accounting.reimbursement_models import OnBehalfSettlement
+from .reimbursement_views import wording as reimbursement_wording
 """
 portal/views.py
 ───────────────
@@ -11,12 +14,13 @@ Sections:properties_list
   - Rentals    → rental listings management
 """
 import requests
+from django.urls import reverse
 from django.conf import settings
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.views.decorators.http import require_http_methods, require_POST
-from django.db.models import Count, Prefetch, Q, Sum
+from django.db.models import Count, Max, Prefetch, Q, Sum
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -41,6 +45,8 @@ from maintenance.models import (
     VendorAssignment,
     VendorAward,
     VendorEstimate,
+    VendorInvoice,
+    VendorPayment,
     VendorQuoteRequest,
     WorkOrder,
     WorkOrderStatusHistory,
@@ -61,6 +67,7 @@ from .forms import (
     WorkOrderCompleteForm,
     WorkOrderCreateForm,
     WorkOrderCancelForm,
+    VoidVendorPaymentForm,
     PropertyForm,
     PropertyUnitForm,
     OwnerProfileForm,
@@ -75,6 +82,33 @@ from .forms import (
 from vendors.models import Vendor, VendorTrade
 from financial.services import get_financial_provider, get_work_order_financials
 from financial.providers.base import FinancialProviderError, FinancialProviderDisabled
+from accounting.forms import ChartAccountForm, FinancialAccountForm
+from accounting.models import (
+    ChartAccount,
+    FinancialAccount,
+    QuickBooksBillMapping,
+    QuickBooksConnection,
+    QuickBooksPaymentMapping,
+    QuickBooksVendorMapping,
+)
+from accounting.quickbooks import (
+    QuickBooksAPIError,
+    QuickBooksConfigurationError,
+    authorization_url,
+    company_info,
+    decrypt_token,
+    encrypt_token,
+    exchange_authorization_code,
+    delete_bill_payment,
+    list_expense_accounts,
+    list_payment_accounts,
+    revoke_token,
+    sync_bill,
+    sync_bill_payment,
+    sync_vendor,
+    test_connection,
+    token_expiries,
+)
 
 
 
@@ -391,170 +425,9 @@ def _prepare_audit_events(events):
 
 @staff_member_required(login_url="/admin/login/")
 def dashboard(request):
-    now   = timezone.now()
-    today = now.date()
-    week_ago  = now - timedelta(days=7)
-    month_ago = now - timedelta(days=30)
-
-    # ── Listing stats ──────────────────────────────────────────────────────
-    listing_stats = {
-        "total_active":  Listing.objects.filter(status="active").count(),
-        "total_pending": Listing.objects.filter(status="pending").count(),
-        "total_sold":    Listing.objects.filter(status="sold").count(),
-        "featured":      Listing.objects.filter(is_featured=True).count(),
-    }
-
-    # ── Rental stats ───────────────────────────────────────────────────────
-    rental_stats = {
-        "total_active": Rental.objects.filter(status="active").count(),
-        "total_leased": Rental.objects.filter(status="leased").count(),
-    }
-
-        # ── Property Management stats ────────────────────────────────────────
-    property_stats = {
-        "total": Property.objects.count(),
-        "active": Property.objects.filter(
-            management_status="active"
-        ).count(),
-        "onboarding": Property.objects.filter(
-            management_status="onboarding"
-        ).count(),
-    }
-
-    unit_stats = {
-        "total": PropertyUnit.objects.count(),
-        "occupied": PropertyUnit.objects.filter(
-            status="occupied"
-        ).count(),
-        "vacant": PropertyUnit.objects.filter(
-            status="vacant"
-        ).count(),
-    }
-
-    if unit_stats["total"]:
-        unit_stats["occupancy_rate"] = round(
-            (unit_stats["occupied"] / unit_stats["total"]) * 100,
-            1,
-        )
-    else:
-        unit_stats["occupancy_rate"] = 0
-
-    lease_stats = {
-        "active": Lease.objects.filter(
-            status="active"
-        ).count(),
-        "notice": Lease.objects.filter(
-            status="notice"
-        ).count(),
-        "expiring_90_days": Lease.objects.filter(
-            status="active",
-            end_date__gte=today,
-            end_date__lte=today + timedelta(days=90),
-        ).count(),
-    }
-
-    maintenance_stats = {
-        "open": MaintenanceRequest.objects.exclude(
-            status__in=["completed", "cancelled"]
-        ).count(),
-
-        "new": MaintenanceRequest.objects.filter(
-            status="new"
-        ).count(),
-
-        "high_priority": MaintenanceRequest.objects.filter(
-            priority="high"
-        ).exclude(
-            status__in=["completed", "cancelled"]
-        ).count(),
-
-        "emergency": MaintenanceRequest.objects.filter(
-            priority="emergency"
-        ).exclude(
-            status__in=["completed", "cancelled"]
-        ).count(),
-    }
-
-    work_order_stats = {
-        "open": WorkOrder.objects.exclude(
-            status__in=["completed", "cancelled"]
-        ).count(),
-
-        "scheduled": WorkOrder.objects.filter(
-            status="scheduled"
-        ).count(),
-
-        "in_progress": WorkOrder.objects.filter(
-            status="in_progress"
-        ).count(),
-    }
-
-    people_stats = {
-        "owners": OwnerProfile.objects.filter(
-            is_active=True
-        ).count(),
-
-        "tenants": TenantProfile.objects.filter(
-            is_active=True
-        ).count(),
-
-        "vendors": Vendor.objects.filter(
-            status="active"
-        ).count(),
-    }
-
-    active_monthly_rent = (
-        Lease.objects.filter(status="active")
-        .aggregate(total=Sum("monthly_rent"))
-        .get("total")
-        or 0
-    )
-
-    recent_maintenance = (
-        MaintenanceRequest.objects
-        .select_related(
-            "unit__property",
-            "reported_by_tenant",
-        )
-        .order_by("-submitted_at")[:8]
-    )
-
-    # ── Lead stats ─────────────────────────────────────────────────────────
-    lead_stats = {
-        "total":           Lead.objects.count(),
-        "today":           Lead.objects.filter(created_at__date=today).count(),
-        "this_week":       Lead.objects.filter(created_at__gte=week_ago).count(),
-        "this_month":      Lead.objects.filter(created_at__gte=month_ago).count(),
-        "hubspot_synced":  Lead.objects.filter(hubspot_sent=True).count(),
-        "hubspot_pending": Lead.objects.filter(hubspot_sent=False).count(),
-        "has_errors":      Lead.objects.exclude(error="").count(),
-    }
-
-    # ── Recent leads ───────────────────────────────────────────────────────
-    recent_leads = Lead.objects.order_by("-created_at")[:10]
-
-    # ── Failed leads (need attention) ─────────────────────────────────────
-    failed_leads = Lead.objects.filter(
-        hubspot_sent=False
-    ).exclude(error="").order_by("-created_at")[:5]
-
+    from portal.dashboard_data import build_dashboard
     return render(request, "portal/dashboard.html", {
-        "listing_stats": listing_stats,
-        "rental_stats":  rental_stats,
-        "lead_stats":    lead_stats,
-        "recent_leads":  recent_leads,
-        "failed_leads":  failed_leads,
-
-        "property_stats": property_stats,
-        "unit_stats": unit_stats,
-        "lease_stats": lease_stats,
-        "maintenance_stats": maintenance_stats,
-        "work_order_stats": work_order_stats,
-        "people_stats": people_stats,
-        "active_monthly_rent": active_monthly_rent,
-        "recent_maintenance": recent_maintenance,
-
-        "section": "dashboard",
+        "dashboard": build_dashboard(request), "section": "dashboard",
     })
 
 
@@ -800,7 +673,8 @@ def properties_list(request):
 @staff_member_required(login_url="/admin/login/")
 def property_detail(request, property_id):
     property_obj = get_object_or_404(
-        Property.objects.prefetch_related(
+        Property.objects.select_related("profile", "marketing_defaults", "marketing_defaults__assigned_manager", "marketing_defaults__listing_agent", "marketing_defaults__co_listing_agent").prefetch_related(
+            "document_links", "energy_certifications",
             "units__leases__lease_tenants__tenant",
             "ownerships__owner",
             "units__maintenance_requests__reported_by_tenant",
@@ -822,14 +696,16 @@ def property_detail(request, property_id):
         Lease.objects
         .filter(
             unit__property=property_obj,
-            status="active",
+            status__in=["active", "notice"],
             start_date__lte=today,
-            end_date__gte=today,
         )
         .select_related("unit")
-        .prefetch_related("lease_tenants__tenant")
+        .prefetch_related("lease_tenants__tenant", "agreements")
         .order_by("start_date")
     )
+
+    from portal.dashboard_data import covers_today
+    current_leases = [lease for lease in current_leases if covers_today(lease, today)]
 
     # Future Draft/Pending leases are planning records, not current
     # occupancy. Keep them visually separate on Property 360.
@@ -845,20 +721,17 @@ def property_detail(request, property_id):
         .order_by("start_date")
     )
 
-    # Property 360 exposes real rentable units only for properties that
-    # staff has explicitly marked as Multi-Unit. Occupancy is derived from
-    # leases rather than PropertyUnit.status so Lease remains the source of truth.
+    # Show saved units for every property. Derive occupancy from leases.
     current_by_unit = {lease.unit_id: lease for lease in current_leases}
     upcoming_by_unit = {lease.unit_id: lease for lease in upcoming_leases}
 
     unit_rows = []
-    if property_obj.is_multi_unit:
-        for unit in units:
-            unit_rows.append({
-                "unit": unit,
-                "current_lease": current_by_unit.get(unit.id),
-                "upcoming_lease": upcoming_by_unit.get(unit.id),
-            })
+    for unit in units:
+        unit_rows.append({
+            "unit": unit,
+            "current_lease": current_by_unit.get(unit.id),
+            "upcoming_lease": upcoming_by_unit.get(unit.id),
+        })
 
     maintenance_requests = (
         MaintenanceRequest.objects
@@ -900,16 +773,26 @@ def property_detail(request, property_id):
             property_id=property_obj.id,
             entity_type__in=[
                 "Property", "PropertyUnit", "PropertyOwnership",
+                "PropertyProfile", "PropertyMarketingDefaults",
+                "PropertyDocumentLink", "PropertyEnergyCertification",
                 "MaintenanceRequest", "WorkOrder", "VendorAssignment",
             ],
         ).select_related("actor")[:25]
     )
+
+    from .property_overview import build_overview
+    overview = build_overview(property_obj, unit_rows, current_leases, maintenance_requests[:20], work_orders[:20])
+    open_requests=set(maintenance_requests.exclude(status__in=['completed','cancelled','declined','converted']).values_list('pk',flat=True))
+    open_work=work_orders.exclude(status__in=['completed','cancelled'])
+    open_requests.update(open_work.exclude(maintenance_request_id=None).values_list('maintenance_request_id',flat=True))
+    open_maintenance_count=len(open_requests)+open_work.filter(maintenance_request_id=None).count()
 
     return render(
         request,
         "portal/property_detail.html",
         {
             "property": property_obj,
+            "overview": overview,
             "units": units,
             "unit_rows": unit_rows,
             "current_leases": current_leases,
@@ -977,7 +860,7 @@ def leases_list(request):
     qs = Lease.objects.select_related(
         "unit__property"
     ).prefetch_related(
-        "lease_tenants__tenant"
+        "lease_tenants__tenant", "agreements"
     ).order_by("-start_date")
 
     status_filter = request.GET.get("status", "")
@@ -994,11 +877,32 @@ def leases_list(request):
             Q(lease_tenants__tenant__last_name__icontains=search)
         ).distinct()
 
+    from portal.dashboard_data import current_terms, covers_today
+    today = timezone.localdate()
+    expiring = request.GET.get("dashboard_expiring", "")
+    upcoming = request.GET.get("dashboard_upcoming") == "1"
+    if expiring or upcoming or request.GET.get("managed") == "1":
+        qs = qs.filter(unit__property__management_status="active")
+    rows = list(qs)
+    for lease in rows:
+        lease.current_terms = current_terms(lease, today)
+    if expiring.isdigit() and 1 <= int(expiring) <= 366:
+        cutoff = today + timedelta(days=int(expiring))
+        rows = [lease for lease in rows if lease.status in ("active", "notice")
+                and not (lease.move_out_date and lease.move_out_date <= today)
+                and today <= lease.current_terms["expiration_date"] <= cutoff]
+        rows.sort(key=lambda lease: (lease.current_terms["expiration_date"], lease.pk))
+    if upcoming:
+        from portal.dashboard_data import configured_ui
+        ui, _settings = configured_ui()
+        cutoff = today + timedelta(days=int(ui["window_long"]))
+        rows = [lease for lease in rows if lease.status in ("pending", "active") and today < lease.start_date <= cutoff]
+
     return render(request, "portal/leases.html", {
-        "leases": qs[:100],
+        "leases": rows[:100],
         "status_filter": status_filter,
         "search": search,
-        "total": qs.count(),
+        "total": len(rows),
         "section": "leases",
     })
 
@@ -1010,9 +914,17 @@ def maintenance_list(request):
         "reported_by_tenant",
     ).order_by("-submitted_at")
 
+    if request.GET.get("managed") == "1":
+        qs = qs.filter(unit__property__management_status="active")
     status_filter = request.GET.get("status", "")
     priority_filter = request.GET.get("priority", "")
     search = request.GET.get("q", "").strip()
+
+    queue = request.GET.get("queue", "")
+    if queue in ("open", "urgent"):
+        qs = qs.exclude(status__in=["completed", "cancelled", "declined", "converted"])
+    if queue == "urgent":
+        qs = qs.filter(priority__in=["emergency", "high"])
 
     if status_filter:
         qs = qs.filter(status=status_filter)
@@ -1053,6 +965,8 @@ def work_orders_list(request):
         ),
     ).order_by("-created_at", "-id")
 
+    if request.GET.get("managed") == "1":
+        qs = qs.filter(unit__property__management_status="active")
     status_filter = request.GET.get("status", "")
     property_filter = request.GET.get("property", "")
     queue_filter = request.GET.get("queue", "")
@@ -1071,6 +985,8 @@ def work_orders_list(request):
 
     if queue_filter == "open":
         qs = qs.exclude(status__in=["completed", "cancelled"])
+    elif queue_filter == "overdue":
+        qs = qs.filter(status__in=["assigned", "scheduled"], scheduled_for__lt=timezone.now())
     elif queue_filter == "unassigned":
         qs = qs.exclude(status__in=["completed", "cancelled"]).exclude(
             vendor_assignments__status__in=[
@@ -1774,6 +1690,8 @@ def edit_work_order(request, work_order_id):
     before = snapshot(work_order, tracked_fields)
     form = WorkOrderCreateForm(request.POST or None, instance=work_order)
     form.fields.pop("scheduled_for", None)
+    if work_order.is_self_performed:
+        form.fields["estimated_cost"].disabled = True
 
     if request.method == "POST" and form.is_valid():
         candidate = form.save(commit=False)
@@ -1987,6 +1905,7 @@ def work_order_detail(request, work_order_id):
 
     status_history = list(work_order.status_history.all())
     has_invoices = bool(financial["invoices"])
+    current_invoice = financial["invoices"][0] if has_invoices else None
 
     return render(
         request,
@@ -2018,6 +1937,7 @@ def work_order_detail(request, work_order_id):
             "vendor_rows": vendor_rows,
             "status_history": status_history,
             "has_invoices": has_invoices,
+            "current_invoice": current_invoice,
 
             "section": "maintenance",
         },
@@ -2025,6 +1945,7 @@ def work_order_detail(request, work_order_id):
 
 @staff_member_required(login_url="/admin/login/")
 @require_http_methods(["GET", "POST"])
+@vendor_work_only
 def assign_vendor(request, work_order_id):
     work_order = get_object_or_404(
         WorkOrder.objects.select_related(
@@ -2210,8 +2131,18 @@ def assign_vendor(request, work_order_id):
 
 @staff_member_required(login_url="/admin/login/")
 @require_POST
+@vendor_work_only
 def confirm_vendor(request, work_order_id, award_id):
     work_order = get_object_or_404(WorkOrder, pk=work_order_id)
+    if work_order.status in ["completed", "cancelled"]:
+        messages.error(
+            request,
+            "A completed or cancelled work order cannot confirm a vendor.",
+        )
+        return redirect(
+            "portal:work_order_detail",
+            work_order_id=work_order.id,
+        )
     with transaction.atomic():
         award = get_object_or_404(
             VendorAward.objects.select_for_update(),
@@ -2239,6 +2170,7 @@ def confirm_vendor(request, work_order_id, award_id):
 
 @staff_member_required(login_url="/admin/login/")
 @require_POST
+@vendor_work_only
 def assign_awarded_vendor(request, work_order_id, award_id):
     work_order = get_object_or_404(WorkOrder.objects.select_related("unit__property"), pk=work_order_id)
     if work_order.status in ["completed", "cancelled"]:
@@ -2264,12 +2196,14 @@ def assign_awarded_vendor(request, work_order_id, award_id):
         )
         assignment.status = "assigned"
         assignment.scheduled_for = None
+        assignment.scheduled_until = None
         assignment.completed_at = None
-        assignment.save(update_fields=["status", "scheduled_for", "completed_at", "updated_at"])
+        assignment.save(update_fields=["status", "scheduled_for", "scheduled_until", "completed_at", "updated_at"])
         previous_status = work_order.status
         work_order.status = "assigned"
         work_order.scheduled_for = None
-        work_order.save(update_fields=["status", "scheduled_for", "updated_at"])
+        work_order.scheduled_until = None
+        work_order.save(update_fields=["status", "scheduled_for", "scheduled_until", "updated_at"])
         WorkOrderStatusHistory.objects.create(
             work_order=work_order,
             from_status=previous_status,
@@ -2322,10 +2256,12 @@ def cancel_vendor_assignment(request, work_order_id, assignment_id):
         with transaction.atomic():
             assignment.status = "cancelled"
             assignment.scheduled_for = None
-            assignment.save(update_fields=["status", "scheduled_for", "updated_at"])
+            assignment.scheduled_until = None
+            assignment.save(update_fields=["status", "scheduled_for", "scheduled_until", "updated_at"])
             work_order.status = "new"
             work_order.scheduled_for = None
-            work_order.save(update_fields=["status", "scheduled_for", "updated_at"])
+            work_order.scheduled_until = None
+            work_order.save(update_fields=["status", "scheduled_for", "scheduled_until", "updated_at"])
             WorkOrderStatusHistory.objects.create(
                 work_order=work_order,
                 from_status=previous_status,
@@ -2358,6 +2294,7 @@ def cancel_vendor_assignment(request, work_order_id, assignment_id):
 
 @staff_member_required(login_url="/admin/login/")
 @require_http_methods(["GET", "POST"])
+@vendor_work_only
 def change_vendor(request, work_order_id):
     work_order = get_object_or_404(
         WorkOrder.objects.select_related("unit__property"), pk=work_order_id
@@ -2411,6 +2348,7 @@ def change_vendor(request, work_order_id):
 
             previous_status = work_order.status
             work_order.scheduled_for = None
+            work_order.scheduled_until = None
             if replacement:
                 new_award = VendorAward.objects.create(
                     work_order=work_order,
@@ -2431,7 +2369,7 @@ def change_vendor(request, work_order_id):
                 work_order.estimated_cost = None
                 note = "Active vendor removed; work order returned to vendor sourcing."
             work_order.save(update_fields=[
-                "status", "scheduled_for", "estimated_cost", "updated_at"
+                "status", "scheduled_for", "scheduled_until", "estimated_cost", "updated_at"
             ])
             WorkOrderStatusHistory.objects.create(
                 work_order=work_order,
@@ -2475,12 +2413,53 @@ def change_vendor(request, work_order_id):
         "section": "maintenance",
     })
 
+def _tenant_schedule_recipients(work_order):
+    """Return unique active-tenant email addresses for schedule notices."""
+    request_record = work_order.maintenance_request
+    if not request_record:
+        return []
+
+    recipients = {}
+
+    reporter = request_record.reported_by_tenant
+    if reporter and reporter.is_active and reporter.email:
+        recipients[reporter.email.casefold()] = reporter.email
+
+    lease = request_record.lease
+    if lease is None:
+        today = timezone.localdate()
+        lease = (
+            Lease.objects.filter(
+                unit=work_order.unit,
+                status__in=["active", "notice"],
+                start_date__lte=today,
+                end_date__gte=today,
+            )
+            .order_by("-start_date")
+            .first()
+        )
+
+    if lease:
+        lease_emails = (
+            LeaseTenant.objects.filter(lease=lease, tenant__is_active=True)
+            .exclude(tenant__email="")
+            .values_list("tenant__email", flat=True)
+        )
+        for email in lease_emails:
+            recipients[email.casefold()] = email
+
+    return list(recipients.values())
+
+
 @staff_member_required(login_url="/admin/login/")
 @require_http_methods(["GET", "POST"])
+@vendor_work_only
 def schedule_vendor(request, work_order_id, assignment_id):
     work_order = get_object_or_404(
         WorkOrder.objects.select_related(
-            "unit__property"
+            "unit__property",
+            "maintenance_request__reported_by_tenant",
+            "maintenance_request__lease",
         ),
         pk=work_order_id,
     )
@@ -2517,16 +2496,21 @@ def schedule_vendor(request, work_order_id, assignment_id):
         )
 
     if request.method == "POST":
-        form = VendorScheduleForm(request.POST)
+        form = VendorScheduleForm(request.POST, assignment=assignment)
 
         if form.is_valid():
             with transaction.atomic():
                 scheduled_for = form.cleaned_data["scheduled_for"]
+                scheduled_until = form.cleaned_data["scheduled_until"]
                 vendor_notes = form.cleaned_data["vendor_notes"]
+                reschedule_reason = form.cleaned_data.get("reschedule_reason", "").strip()
 
                 previous_status = work_order.status
+                previous_start = assignment.scheduled_for
+                previous_end = assignment.scheduled_until
 
                 assignment.scheduled_for = scheduled_for
+                assignment.scheduled_until = scheduled_until
                 assignment.status = "scheduled"
 
                 if vendor_notes:
@@ -2535,6 +2519,7 @@ def schedule_vendor(request, work_order_id, assignment_id):
                 assignment.save(
                     update_fields=[
                         "scheduled_for",
+                        "scheduled_until",
                         "status",
                         "vendor_notes",
                         "updated_at",
@@ -2545,11 +2530,13 @@ def schedule_vendor(request, work_order_id, assignment_id):
                 # in-progress work order backward to "scheduled".
                 if work_order.status != "in_progress":
                     work_order.scheduled_for = scheduled_for
+                    work_order.scheduled_until = scheduled_until
                     work_order.status = "scheduled"
 
                     work_order.save(
                         update_fields=[
                             "scheduled_for",
+                            "scheduled_until",
                             "status",
                             "updated_at",
                         ]
@@ -2562,7 +2549,9 @@ def schedule_vendor(request, work_order_id, assignment_id):
                     changed_by=request.user,
                     notes=(
                         f"{assignment.vendor} scheduled for "
-                        f"{scheduled_for:%b %d, %Y %I:%M %p}"
+                        f"{timezone.localtime(scheduled_for):%b %d, %Y %I:%M %p}–"
+                        f"{timezone.localtime(scheduled_until):%I:%M %p}"
+                        + (f". Reschedule reason: {reschedule_reason}" if reschedule_reason else "")
                     ),
                 )
                 record_event(
@@ -2574,15 +2563,81 @@ def schedule_vendor(request, work_order_id, assignment_id):
                     new_values={
                         "vendor": str(assignment.vendor),
                         "scheduled_for": scheduled_for,
+                        "scheduled_until": scheduled_until,
+                        "previous_scheduled_for": previous_start,
+                        "previous_scheduled_until": previous_end,
                         "status": assignment.status,
                     },
                     reason="Vendor visit scheduled in COL360.",
                     property_id=work_order.unit.property_id,
                 )
 
+            window_label = (
+                f"{timezone.localtime(scheduled_for):%b %d, %Y %I:%M %p}–"
+                f"{timezone.localtime(scheduled_until):%I:%M %p}"
+            )
+            notifications = []
+            if assignment.vendor.email:
+                notifications.append((
+                    "vendor",
+                    assignment.vendor.email,
+                    f"Arrival window confirmed for Work Order #{work_order.id}",
+                    (
+                        f"Hello {assignment.vendor},\n\n"
+                        f"Your arrival window for Work Order #{work_order.id} — "
+                        f"{work_order.title} — is {window_label}.\n\n"
+                        f"Instructions: {vendor_notes or 'No additional instructions.'}"
+                    ),
+                ))
+            for tenant_email in _tenant_schedule_recipients(work_order):
+                notifications.append((
+                    "tenant",
+                    tenant_email,
+                    f"Maintenance visit scheduled for Work Order #{work_order.id}",
+                    (
+                        "Hello,\n\n"
+                        f"The vendor arrival window for {work_order.title} is "
+                        f"{window_label}."
+                    ),
+                ))
+
+            sent_to = []
+            failed_for = []
+            for recipient_type, email, subject, body in notifications:
+                try:
+                    send_mail(
+                        subject=subject,
+                        message=body,
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[email],
+                        fail_silently=False,
+                    )
+                    sent_to.append({"type": recipient_type, "email": email})
+                except Exception:
+                    failed_for.append({"type": recipient_type, "email": email})
+
+            record_event(
+                action="SCHEDULE_CONFIRMATION_NOTIFICATIONS",
+                instance=assignment,
+                actor=request.user,
+                request=request,
+                old_values={},
+                new_values={"sent_to": sent_to, "failed_for": failed_for},
+                reason="Schedule confirmation notification results.",
+                property_id=work_order.unit.property_id,
+            )
+            if failed_for:
+                failed_labels = ", ".join(
+                    f"{item['type']} ({item['email']})" for item in failed_for
+                )
+                messages.warning(
+                    request,
+                    f"The schedule was saved, but confirmation email failed for: {failed_labels}.",
+                )
+
             messages.success(
                 request,
-                f"{assignment.vendor} was scheduled successfully."
+                f"{assignment.vendor} was scheduled successfully for an arrival window."
             )
 
             return redirect(
@@ -2591,12 +2646,7 @@ def schedule_vendor(request, work_order_id, assignment_id):
             )
 
     else:
-        form = VendorScheduleForm(
-            initial={
-                "scheduled_for": assignment.scheduled_for,
-                "vendor_notes": assignment.vendor_notes,
-            }
-        )
+        form = VendorScheduleForm(assignment=assignment)
 
     return render(
         request,
@@ -2649,11 +2699,14 @@ def start_work_order(request, work_order_id):
 
     with transaction.atomic():
         previous_status = work_order.status
+        started_at = timezone.now()
 
         work_order.status = "in_progress"
+        work_order.started_at = started_at
         work_order.save(
             update_fields=[
                 "status",
+                "started_at",
                 "updated_at",
             ]
         )
@@ -2671,7 +2724,7 @@ def start_work_order(request, work_order_id):
             actor=request.user,
             request=request,
             old_values={"status": previous_status},
-            new_values={"status": "in_progress"},
+            new_values={"status": "in_progress", "started_at": started_at},
             reason="Work order started in COL360.",
             property_id=work_order.unit.property_id,
         )
@@ -2688,6 +2741,7 @@ def start_work_order(request, work_order_id):
 
 @staff_member_required(login_url="/admin/login/")
 @require_http_methods(["GET", "POST"])
+@vendor_work_only
 def complete_work_order(request, work_order_id):
     work_order = get_object_or_404(
         WorkOrder.objects.select_related(
@@ -2730,7 +2784,10 @@ def complete_work_order(request, work_order_id):
         )
 
     if request.method == "POST":
-        form = WorkOrderCompleteForm(request.POST)
+        form = WorkOrderCompleteForm(
+            request.POST,
+            started_at=work_order.started_at,
+        )
 
         if form.is_valid():
             completed_at = (
@@ -2767,20 +2824,23 @@ def complete_work_order(request, work_order_id):
                     ]
                 )
 
-                for assignment in work_order.vendor_assignments.all():
-                    if assignment.status not in [
-                        "cancelled",
-                        "declined",
-                    ]:
-                        assignment.status = "completed"
-                        assignment.completed_at = completed_at
-                        assignment.save(
-                            update_fields=[
-                                "status",
-                                "completed_at",
-                                "updated_at",
-                            ]
-                        )
+                active_award = work_order.vendor_awards.filter(
+                    status="active"
+                ).first()
+                active_assignments = work_order.vendor_assignments.filter(
+                    status__in=["assigned", "accepted", "scheduled"]
+                )
+                if active_award:
+                    active_assignments = active_assignments.filter(
+                        vendor_id=active_award.vendor_id
+                    )
+                active_assignment = active_assignments.first()
+                if active_assignment:
+                    active_assignment.status = "completed"
+                    active_assignment.completed_at = completed_at
+                    active_assignment.save(
+                        update_fields=["status", "completed_at", "updated_at"]
+                    )
 
                 maintenance_request = work_order.maintenance_request
 
@@ -2829,7 +2889,8 @@ def complete_work_order(request, work_order_id):
         form = WorkOrderCompleteForm(
             initial={
                 "actual_cost": work_order.actual_cost,
-            }
+            },
+            started_at=work_order.started_at,
         )
 
     return render(
@@ -3088,6 +3149,9 @@ def create_work_order(request, request_id):
                     locked_request.unit
                 )
 
+                work_order.approved_by_id = locked_request.reviewed_by_id
+                work_order.approved_at = locked_request.reviewed_at
+
                 # Explicit starting state.
                 work_order.status = "new"
 
@@ -3151,26 +3215,624 @@ def create_work_order(request, request_id):
         },
     )
 
+def _current_vendor_invoices():
+    return VendorInvoice.objects.exclude(status="void").select_related(
+        "vendor", "work_order__unit__property", "quickbooks_bill_mapping"
+    ).prefetch_related("payments", "payments__recorded_by")
+
+
+@staff_member_required(login_url="/admin/login/")
+def finance_dashboard(request):
+    today = timezone.localdate()
+    selected_period = request.GET.get("period", "all").strip().lower()
+    period_starts = {
+        "month": today.replace(day=1),
+        "quarter": today.replace(month=((today.month - 1) // 3) * 3 + 1, day=1),
+        "year": today.replace(month=1, day=1),
+    }
+    if selected_period not in {"all", *period_starts}:
+        selected_period = "all"
+
+    invoices = _current_vendor_invoices()
+    period_start = period_starts.get(selected_period)
+    if period_start:
+        invoices = invoices.filter(
+            Q(invoice_date__gte=period_start)
+            | Q(invoice_date__isnull=True, created_at__date__gte=period_start)
+        )
+
+    recorded_total = VendorPayment.objects.filter(
+        status="recorded", invoice__in=invoices
+    ).aggregate(
+        total=Sum("amount")
+    )["total"] or 0
+    billed_total = invoices.aggregate(total=Sum("amount"))["total"] or 0
+    outstanding_total = billed_total - recorded_total
+    overdue_invoices = invoices.filter(
+        status__in=["approved", "partially_paid"], due_date__lt=today
+    ).distinct()
+    overdue_total = sum(
+        (invoice.outstanding_amount for invoice in overdue_invoices),
+        0,
+    )
+
+    sync_error_filter = (
+        Q(quickbooks_bill_mapping__last_error__gt="")
+        | Q(payments__quickbooks_payment_mapping__last_error__gt="")
+    )
+    attention_queryset = invoices.filter(
+        Q(status__in=["submitted", "disputed"])
+        | Q(status__in=["approved", "partially_paid"], due_date__lt=today)
+        | sync_error_filter
+    ).distinct()
+    attention_count = attention_queryset.count()
+    attention_invoices = list(
+        attention_queryset.order_by("due_date", "-created_at")[:12]
+    )
+    for invoice in attention_invoices:
+        if invoice.status == "submitted":
+            invoice.attention_reason = "Awaiting approval"
+        elif invoice.status == "disputed":
+            invoice.attention_reason = "Disputed"
+        elif invoice.due_date and invoice.due_date < today:
+            invoice.attention_reason = "Overdue"
+        else:
+            invoice.attention_reason = "QuickBooks sync issue"
+    sync_error_count = invoices.filter(sync_error_filter).distinct().count()
+
+    ready_to_bill = WorkOrder.objects.filter(status="completed").exclude(
+        vendor_invoices__status__in=[
+            "submitted", "approved", "partially_paid", "paid", "disputed"
+        ]
+    ).select_related("unit__property").prefetch_related(
+        Prefetch(
+            "vendor_assignments",
+            queryset=VendorAssignment.objects.exclude(status="cancelled").select_related(
+                "vendor"
+            ).order_by("-assigned_at"),
+            to_attr="current_vendor_assignments",
+        )
+    ).distinct().order_by("-completed_at")[:8]
+    for work_order in ready_to_bill:
+        work_order.invoice_vendor = (
+            work_order.current_vendor_assignments[0].vendor
+            if work_order.current_vendor_assignments else None
+        )
+        work_order.days_awaiting_invoice = (
+            (today - timezone.localtime(work_order.completed_at).date()).days
+            if work_order.completed_at else None
+        )
+
+    quickbooks_connection = QuickBooksConnection.objects.filter(is_active=True).first()
+    last_quickbooks_sync = None
+    quickbooks_error_count = 0
+    if quickbooks_connection:
+        sync_candidates = [quickbooks_connection.last_synced_at]
+        bill_sync = QuickBooksBillMapping.objects.filter(
+            connection=quickbooks_connection
+        ).aggregate(latest=Max("last_synced_at"))["latest"]
+        payment_sync = QuickBooksPaymentMapping.objects.filter(
+            connection=quickbooks_connection
+        ).aggregate(latest=Max("last_synced_at"))["latest"]
+        sync_candidates.extend([bill_sync, payment_sync])
+        last_quickbooks_sync = max(
+            (value for value in sync_candidates if value),
+            default=None,
+        )
+        quickbooks_error_count = (
+            QuickBooksBillMapping.objects.filter(
+                connection=quickbooks_connection, last_error__gt=""
+            ).count()
+            + QuickBooksPaymentMapping.objects.filter(
+                connection=quickbooks_connection, last_error__gt=""
+            ).count()
+        )
+
+    return render(request, "portal/finance_dashboard.html", {
+        "section": "finance",
+        "finance_subsection": "dashboard",
+        "billed_total": billed_total,
+        "paid_total": recorded_total,
+        "outstanding_total": outstanding_total,
+        "submitted_count": invoices.filter(status="submitted").count(),
+        "overdue_count": overdue_invoices.count(),
+        "overdue_total": overdue_total,
+        "attention_invoices": attention_invoices,
+        "attention_count": attention_count,
+        "recent_invoices": invoices.order_by("-created_at")[:5],
+        "ready_to_bill": ready_to_bill,
+        "selected_period": selected_period,
+        "period_start": period_start,
+        "quickbooks_connection": quickbooks_connection,
+        "last_quickbooks_sync": last_quickbooks_sync,
+        "quickbooks_error_count": quickbooks_error_count,
+        "sync_error_count": sync_error_count,
+    })
+
+
+@staff_member_required(login_url="/admin/login/")
+def finance_accounts(request):
+    return render(request, "portal/finance_accounts.html", {
+        "section": "finance",
+        "finance_subsection": "accounts",
+        "chart_accounts": ChartAccount.objects.all(),
+        "financial_accounts": FinancialAccount.objects.select_related(
+            "ledger_account"
+        ).all(),
+    })
+
+
+@staff_member_required(login_url="/admin/login/")
+def finance_quickbooks(request):
+    connection = QuickBooksConnection.objects.filter(is_active=True).first()
+    vendors = list(Vendor.objects.filter(status="active").order_by("company_name", "name"))
+    mappings = {}
+    if connection:
+        mappings = {
+            mapping.vendor_id: mapping
+            for mapping in QuickBooksVendorMapping.objects.filter(
+                connection=connection, vendor_id__in=[vendor.pk for vendor in vendors]
+            )
+        }
+    for vendor in vendors:
+        vendor.quickbooks_mapping = mappings.get(vendor.pk)
+    try:
+        from accounting.quickbooks import configuration
+        configuration()
+        configured = True
+        configuration_error = ""
+    except QuickBooksConfigurationError as exc:
+        configured = False
+        configuration_error = str(exc)
+    return render(request, "portal/finance_quickbooks.html", {
+        "section": "finance",
+        "finance_subsection": "quickbooks",
+        "connection": connection,
+        "configured": configured,
+        "configuration_error": configuration_error,
+        "vendors": vendors,
+    })
+
+
+@staff_member_required(login_url="/admin/login/")
+@require_POST
+def finance_quickbooks_connect(request):
+    import secrets
+    state = secrets.token_urlsafe(32)
+    request.session["quickbooks_oauth_state"] = state
+    try:
+        target = authorization_url(state)
+    except QuickBooksConfigurationError as exc:
+        messages.error(request, str(exc))
+        return redirect("portal:finance_quickbooks")
+    return redirect(target)
+
+
+@staff_member_required(login_url="/admin/login/")
+def finance_quickbooks_callback(request):
+    import secrets
+    expected_state = request.session.pop("quickbooks_oauth_state", "")
+    returned_state = request.GET.get("state", "")
+    if not expected_state or not secrets.compare_digest(expected_state, returned_state):
+        messages.error(request, "QuickBooks connection was rejected because the security state was invalid.")
+        return redirect("portal:finance_quickbooks")
+    if request.GET.get("error"):
+        messages.error(request, "QuickBooks authorization was cancelled or denied.")
+        return redirect("portal:finance_quickbooks")
+    code = request.GET.get("code", "")
+    realm_id = request.GET.get("realmId", "")
+    if not code or not realm_id:
+        messages.error(request, "QuickBooks did not return the required authorization details.")
+        return redirect("portal:finance_quickbooks")
+    try:
+        payload = exchange_authorization_code(code)
+        access_token = payload["access_token"]
+        refresh_token = payload["refresh_token"]
+        config_environment = getattr(settings, "QUICKBOOKS_ENVIRONMENT", "sandbox")
+        info = company_info(realm_id, access_token, config_environment)
+        access_expiry, refresh_expiry = token_expiries(payload)
+    except (KeyError, QuickBooksAPIError, QuickBooksConfigurationError) as exc:
+        messages.error(request, str(exc))
+        return redirect("portal:finance_quickbooks")
+    QuickBooksConnection.objects.exclude(realm_id=realm_id).update(is_active=False)
+    connection, _ = QuickBooksConnection.objects.update_or_create(
+        realm_id=realm_id,
+        defaults={
+            "company_name": info.get("CompanyName", ""),
+            "environment": config_environment,
+            "access_token_encrypted": encrypt_token(access_token),
+            "refresh_token_encrypted": encrypt_token(refresh_token),
+            "access_token_expires_at": access_expiry,
+            "refresh_token_expires_at": refresh_expiry,
+            "connected_by": request.user,
+            "last_error": "",
+            "is_active": True,
+        },
+    )
+    record_event(
+        action="QUICKBOOKS_CONNECTED", instance=connection, actor=request.user,
+        request=request, old_values={},
+        new_values={"realm_id": realm_id, "company_name": connection.company_name, "environment": connection.environment},
+        reason="QuickBooks company connected to COL360.",
+    )
+    messages.success(request, f"QuickBooks company {connection.company_name or realm_id} is connected.")
+    return redirect("portal:finance_quickbooks")
+
+
+@staff_member_required(login_url="/admin/login/")
+@require_POST
+def finance_quickbooks_disconnect(request):
+    connection = get_object_or_404(QuickBooksConnection, is_active=True)
+    try:
+        revoke_token(decrypt_token(connection.refresh_token_encrypted))
+    except (QuickBooksAPIError, QuickBooksConfigurationError) as exc:
+        messages.error(request, str(exc))
+        return redirect("portal:finance_quickbooks")
+    connection.is_active = False
+    connection.access_token_encrypted = ""
+    connection.refresh_token_encrypted = ""
+    connection.save(update_fields=["is_active", "access_token_encrypted", "refresh_token_encrypted", "updated_at"])
+    record_event(
+        action="QUICKBOOKS_DISCONNECTED", instance=connection, actor=request.user,
+        request=request, old_values={"is_active": True}, new_values={"is_active": False},
+        reason="QuickBooks company disconnected from COL360.",
+    )
+    messages.success(request, "QuickBooks was disconnected.")
+    return redirect("portal:finance_quickbooks")
+
+
+@staff_member_required(login_url="/admin/login/")
+@require_POST
+def finance_quickbooks_test(request):
+    connection = get_object_or_404(QuickBooksConnection, is_active=True)
+    try:
+        info = test_connection(connection)
+    except (QuickBooksAPIError, QuickBooksConfigurationError) as exc:
+        connection.last_error = str(exc)
+        connection.save(update_fields=["last_error", "updated_at"])
+        messages.error(request, str(exc))
+    else:
+        messages.success(
+            request,
+            f"QuickBooks connection to {info.get('CompanyName') or connection.company_name or connection.realm_id} is healthy.",
+        )
+    return redirect("portal:finance_quickbooks")
+
+
+@staff_member_required(login_url="/admin/login/")
+@require_POST
+def finance_quickbooks_vendor_sync(request, vendor_id):
+    connection = get_object_or_404(QuickBooksConnection, is_active=True)
+    vendor = get_object_or_404(Vendor, pk=vendor_id, status="active")
+    try:
+        mapping = sync_vendor(connection, vendor)
+    except (QuickBooksAPIError, QuickBooksConfigurationError) as exc:
+        connection.last_error = str(exc)
+        connection.save(update_fields=["last_error", "updated_at"])
+        messages.error(request, f"{vendor}: {exc}")
+        return redirect("portal:finance_quickbooks")
+    record_event(
+        action="QUICKBOOKS_VENDOR_SYNCED",
+        instance=vendor,
+        actor=request.user,
+        request=request,
+        old_values={},
+        new_values={"quickbooks_vendor_id": mapping.quickbooks_vendor_id},
+        reason="Vendor synchronized with QuickBooks Online.",
+    )
+    messages.success(request, f"{vendor} is synchronized with QuickBooks.")
+    return redirect("portal:finance_quickbooks")
+
+
 @staff_member_required(login_url="/admin/login/")
 @require_http_methods(["GET", "POST"])
+def finance_chart_account_form(request, account_id=None):
+    account = get_object_or_404(ChartAccount, pk=account_id) if account_id else None
+    tracked_fields = [
+        "code",
+        "name",
+        "account_type",
+        "description",
+        "cash_asset",
+        "parent",
+        "fund_type",
+        "is_active",
+    ]
+    old_values = snapshot(account, tracked_fields) if account else {}
+    form = ChartAccountForm(request.POST or None, instance=account)
+    if request.method == "POST" and form.is_valid():
+        account = form.save()
+        record_event(
+            action="CHART_ACCOUNT_UPDATED" if old_values else "CHART_ACCOUNT_CREATED",
+            instance=account,
+            actor=request.user,
+            request=request,
+            old_values=old_values,
+            new_values=snapshot(account, tracked_fields),
+            reason="Chart account configuration saved.",
+        )
+        messages.success(request, f"Chart account {account.code} · {account.name} was saved.")
+        return redirect("portal:finance_accounts")
+    return render(request, "portal/finance_account_form.html", {
+        "section": "finance",
+        "finance_subsection": "accounts",
+        "form": form,
+        "form_title": "Edit Chart Account" if account else "Add Chart Account",
+        "account_kind": "chart",
+    })
+
+
+@staff_member_required(login_url="/admin/login/")
+@require_http_methods(["GET", "POST"])
+def finance_financial_account_form(request, account_id=None):
+    account = get_object_or_404(FinancialAccount, pk=account_id) if account_id else None
+    tracked_fields = [
+        "name",
+        "kind",
+        "ledger_account",
+        "institution_name",
+        "account_last_four",
+        "opening_balance",
+        "opening_balance_date",
+        "notes",
+        "is_active",
+    ]
+    old_values = snapshot(account, tracked_fields) if account else {}
+    form = FinancialAccountForm(request.POST or None, instance=account)
+    if request.method == "POST" and form.is_valid():
+        account = form.save()
+        record_event(
+            action="FINANCIAL_ACCOUNT_UPDATED" if old_values else "FINANCIAL_ACCOUNT_CREATED",
+            instance=account,
+            actor=request.user,
+            request=request,
+            old_values=old_values,
+            new_values=snapshot(account, tracked_fields),
+            reason="Financial account configuration saved.",
+        )
+        messages.success(request, f"Financial account {account.name} was saved.")
+        return redirect(reverse("portal:finance_accounts") + "?view=banking")
+    return render(request, "portal/finance_account_form.html", {
+        "section": "finance",
+        "finance_subsection": "accounts",
+        "form": form,
+        "form_title": "Edit Financial Account" if account else "Add Financial Account",
+        "account_kind": "financial",
+    })
+
+
+@staff_member_required(login_url="/admin/login/")
+def finance_vendor_invoices(request):
+    invoices = _current_vendor_invoices().order_by("-created_at")
+    if request.GET.get("managed") == "1":
+        invoices = invoices.filter(work_order__unit__property__management_status="active")
+    query = request.GET.get("q", "").strip()
+    status = request.GET.get("status", "").strip()
+    queue = request.GET.get("queue", "").strip()
+    if query:
+        invoices = invoices.filter(
+            Q(invoice_number__icontains=query)
+            | Q(vendor__company_name__icontains=query)
+            | Q(vendor__name__icontains=query)
+            | Q(work_order__title__icontains=query)
+            | Q(work_order__unit__property__street_address__icontains=query)
+        )
+    if status:
+        invoices = invoices.filter(status=status)
+    if queue == "outstanding":
+        invoices = invoices.filter(status__in=["approved", "partially_paid"])
+    elif queue == "overdue":
+        invoices = invoices.filter(
+            status__in=["approved", "partially_paid"],
+            due_date__lt=timezone.localdate(),
+        )
+    elif queue == "attention":
+        invoices = invoices.filter(
+            Q(status__in=["submitted", "disputed"])
+            | Q(
+                status__in=["approved", "partially_paid"],
+                due_date__lt=timezone.localdate(),
+            )
+            | Q(quickbooks_bill_mapping__last_error__gt="")
+            | Q(payments__quickbooks_payment_mapping__last_error__gt="")
+        ).distinct()
+    ready_to_bill = WorkOrder.objects.filter(status="completed").exclude(
+        vendor_invoices__status__in=[
+            "submitted", "approved", "partially_paid", "paid", "disputed"
+        ]
+    ).select_related("unit__property").distinct().order_by("-completed_at")
+    return render(request, "portal/finance_vendor_invoices.html", {
+        "section": "finance",
+        "finance_subsection": "vendor_invoices",
+        "invoices": invoices,
+        "ready_to_bill": ready_to_bill,
+        "query": query,
+        "selected_status": status,
+        "selected_queue": queue,
+        "status_choices": VendorInvoice.STATUS_CHOICES,
+    })
+
+
+@staff_member_required(login_url="/admin/login/")
+def finance_vendor_invoice_detail(request, invoice_id):
+    invoice = get_object_or_404(_current_vendor_invoices(), pk=invoice_id)
+    quickbooks_connection = QuickBooksConnection.objects.filter(is_active=True).first()
+    quickbooks_bill = QuickBooksBillMapping.objects.filter(invoice=invoice).select_related(
+        "connection"
+    ).first()
+    payments = invoice.payments.select_related(
+        "recorded_by", "voided_by", "financial_account",
+        "quickbooks_payment_mapping",
+    ).order_by(
+        "-payment_date", "-recorded_at"
+    )
+    return render(request, "portal/finance_vendor_invoice_detail.html", {
+        "section": "finance",
+        "finance_subsection": "vendor_invoices",
+        "invoice": invoice,
+        "work_order": invoice.work_order,
+        "payments": payments,
+        "reimbursement_rows": OnBehalfSettlement.objects.filter(payment__invoice=invoice).select_related('payment','payer').prefetch_related('reimbursements__bank'),
+        "reimbursement_ui": reimbursement_wording(),
+        "paid": invoice.paid_amount,
+        "outstanding": invoice.outstanding_amount,
+        "quickbooks_connection": quickbooks_connection,
+        "quickbooks_bill": quickbooks_bill,
+    })
+
+
+@staff_member_required(login_url="/admin/login/")
+@require_http_methods(["GET", "POST"])
+def finance_vendor_invoice_quickbooks_sync(request, invoice_id):
+    invoice = get_object_or_404(_current_vendor_invoices(), pk=invoice_id)
+    connection = QuickBooksConnection.objects.filter(is_active=True).first()
+    if not connection:
+        messages.error(request, "Connect a QuickBooks company before synchronizing this bill.")
+        return redirect("portal:finance_quickbooks")
+    if invoice.status != "approved":
+        messages.error(
+            request,
+            "Only an approved, unpaid invoice can be synchronized as a QuickBooks bill.",
+        )
+        return redirect("portal:finance_vendor_invoice_detail", invoice_id=invoice.pk)
+
+    existing_mapping = QuickBooksBillMapping.objects.filter(invoice=invoice).first()
+    if existing_mapping and request.method == "GET":
+        return redirect("portal:finance_vendor_invoice_detail", invoice_id=invoice.pk)
+
+    accounts = []
+    if request.method == "GET":
+        try:
+            accounts = list_expense_accounts(connection)
+        except (QuickBooksAPIError, QuickBooksConfigurationError) as exc:
+            connection.last_error = str(exc)
+            connection.save(update_fields=["last_error", "updated_at"])
+            messages.error(request, str(exc))
+            return redirect("portal:finance_vendor_invoice_detail", invoice_id=invoice.pk)
+
+    if request.method == "POST":
+        account_id = request.POST.get("expense_account_id", "").strip()
+        if not existing_mapping and not account_id:
+            messages.error(request, "Select a QuickBooks expense account.")
+        else:
+            was_synchronized = existing_mapping is not None
+            try:
+                mapping = sync_bill(
+                    connection,
+                    invoice,
+                    account_id or existing_mapping.expense_account_id,
+                )
+            except (QuickBooksAPIError, QuickBooksConfigurationError) as exc:
+                connection.last_error = str(exc)
+                connection.save(update_fields=["last_error", "updated_at"])
+                messages.error(request, str(exc))
+            else:
+                record_event(
+                    action="QUICKBOOKS_BILL_VERIFIED" if was_synchronized else "QUICKBOOKS_BILL_SYNCED",
+                    instance=invoice,
+                    actor=request.user,
+                    request=request,
+                    old_values={},
+                    new_values={
+                        "quickbooks_bill_id": mapping.quickbooks_bill_id,
+                        "document_number": mapping.document_number,
+                        "expense_account": mapping.expense_account_name,
+                    },
+                    reason="QuickBooks bill verified." if was_synchronized else "Approved vendor invoice synchronized to QuickBooks.",
+                    property_id=invoice.work_order.unit.property_id,
+                )
+                messages.success(
+                    request,
+                    "QuickBooks bill was verified without creating a duplicate."
+                    if was_synchronized
+                    else f"Invoice {invoice.invoice_number or invoice.id} was synchronized to QuickBooks.",
+                )
+                return redirect("portal:finance_vendor_invoice_detail", invoice_id=invoice.pk)
+
+        if not existing_mapping:
+            try:
+                accounts = list_expense_accounts(connection)
+            except (QuickBooksAPIError, QuickBooksConfigurationError):
+                accounts = []
+
+    return render(request, "portal/finance_vendor_invoice_quickbooks_sync.html", {
+        "section": "finance",
+        "finance_subsection": "vendor_invoices",
+        "invoice": invoice,
+        "work_order": invoice.work_order,
+        "connection": connection,
+        "accounts": accounts,
+        "selected_account_id": request.POST.get("expense_account_id", ""),
+    })
+
+
+@staff_member_required(login_url="/admin/login/")
+@require_http_methods(["GET", "POST"])
+@vendor_work_only
 def add_vendor_invoice(request, work_order_id):
     work_order = get_object_or_404(
-        WorkOrder.objects.prefetch_related("vendor_assignments__vendor"),
+        WorkOrder.objects.prefetch_related(
+            "vendor_assignments__vendor",
+            "vendor_awards__vendor",
+        ),
         pk=work_order_id,
     )
     provider = get_financial_provider()
 
     if not provider.capabilities()["can_add_invoice"]:
         messages.info(request, f"Invoice entry is unavailable with {provider.label}.")
-        return redirect("portal:work_order_detail", work_order_id=work_order.id)
+        return redirect("portal:finance_vendor_invoices")
 
-    assigned_vendor_ids = work_order.vendor_assignments.values_list("vendor_id", flat=True)
-    vendor_queryset = Vendor.objects.filter(id__in=assigned_vendor_ids).order_by(
-        "company_name", "name"
+    if work_order.status != "completed":
+        messages.error(
+            request,
+            "A vendor invoice can only be recorded after the work order is completed.",
+        )
+        return redirect("portal:finance_vendor_invoices")
+
+    existing_invoice = work_order.vendor_invoices.exclude(status="void").first()
+    if existing_invoice:
+        if existing_invoice.status == "submitted":
+            messages.info(
+                request,
+                "This work order already has an invoice. Edit the existing invoice instead.",
+            )
+            return redirect("portal:edit_vendor_invoice", invoice_id=existing_invoice.id)
+        messages.info(
+            request,
+            "This work order already has a current invoice and cannot accept another one.",
+        )
+        return redirect("portal:finance_vendor_invoice_detail", invoice_id=existing_invoice.id)
+
+    current_award = work_order.vendor_awards.filter(status="active").first()
+    completed_assignment = work_order.vendor_assignments.filter(
+        status="completed"
+    ).select_related("vendor").first()
+    default_vendor = (
+        current_award.vendor
+        if current_award
+        else completed_assignment.vendor if completed_assignment else None
     )
+
+    from .invoice_payees import invoice_payees
+    vendor_queryset = invoice_payees(default_vendor.pk if default_vendor else None)
+
+    invoice_date = (
+        timezone.localtime(work_order.completed_at).date()
+        if work_order.completed_at
+        else timezone.localdate()
+    )
+    initial = {
+        "vendor": default_vendor,
+        "amount": work_order.actual_cost,
+        "invoice_date": invoice_date,
+        "due_date": invoice_date + timedelta(days=30),
+        "notes": f"Thank you for completing the work for Work Order #{work_order.id}.",
+    }
     form = provider.get_invoice_form(
         request.POST or None,
         vendor_queryset=vendor_queryset,
+        initial=initial,
     )
 
     if request.method == "POST" and form.is_valid():
@@ -3183,12 +3845,70 @@ def add_vendor_invoice(request, work_order_id):
                 request,
                 f"Invoice {invoice.invoice_number or invoice.id} was added.",
             )
-            return redirect("portal:work_order_detail", work_order_id=work_order.id)
+            return redirect("portal:finance_vendor_invoice_detail", invoice_id=invoice.id)
 
     return render(
         request,
         "portal/add_vendor_invoice.html",
-        {"form": form, "work_order": work_order, "section": "maintenance"},
+        {
+            "form": form,
+            "work_order": work_order,
+            "is_editing": False,
+            "section": "finance",
+            "finance_subsection": "vendor_invoices",
+        },
+    )
+
+
+@staff_member_required(login_url="/admin/login/")
+@require_http_methods(["GET", "POST"])
+def edit_vendor_invoice(request, invoice_id):
+    provider = get_financial_provider()
+    try:
+        invoice = provider.get_invoice(invoice_id)
+    except (FinancialProviderError, FinancialProviderDisabled) as exc:
+        messages.error(request, str(exc))
+        return redirect("portal:finance_vendor_invoices")
+
+    work_order = invoice.work_order
+    if invoice.status != "submitted":
+        messages.error(
+            request,
+            "Only a submitted invoice can be edited. Approved and paid invoices are locked.",
+        )
+        return redirect("portal:finance_vendor_invoice_detail", invoice_id=invoice.id)
+
+    from .invoice_payees import invoice_payees
+    vendor_queryset = invoice_payees(invoice.vendor_id)
+    form = provider.get_invoice_form(
+        request.POST or None,
+        vendor_queryset=vendor_queryset,
+        instance=invoice,
+    )
+
+    if request.method == "POST" and form.is_valid():
+        try:
+            invoice = provider.update_invoice(form, invoice=invoice)
+        except FinancialProviderError as exc:
+            messages.error(request, str(exc))
+        else:
+            messages.success(
+                request,
+                f"Invoice {invoice.invoice_number or invoice.id} was updated.",
+            )
+            return redirect("portal:finance_vendor_invoice_detail", invoice_id=invoice.id)
+
+    return render(
+        request,
+        "portal/add_vendor_invoice.html",
+        {
+            "form": form,
+            "work_order": work_order,
+            "invoice": invoice,
+            "is_editing": True,
+            "section": "finance",
+            "finance_subsection": "vendor_invoices",
+        },
     )
 
 @staff_member_required(login_url="/admin/login/")
@@ -3250,26 +3970,255 @@ def approve_vendor_invoice(request, invoice_id):
         work_order_id = invoice.work_order_id
     except (FinancialProviderError, FinancialProviderDisabled) as exc:
         messages.error(request, str(exc))
-        return redirect("portal:maintenance")
-    return redirect("portal:work_order_detail", work_order_id=work_order_id)
+        return redirect("portal:finance_vendor_invoices")
+    return redirect("portal:finance_vendor_invoice_detail", invoice_id=invoice.id)
+
+
+@staff_member_required(login_url="/admin/login/")
+@require_http_methods(["GET", "POST"])
+def record_vendor_payment(request, invoice_id):
+    provider = get_financial_provider()
+    if provider.key == 'col360' and request.GET.get('funding') == 'on_behalf':
+        from .reimbursement_views import on_behalf_payment
+        return on_behalf_payment(request, invoice_id)
+    try:
+        invoice = provider.get_invoice(invoice_id)
+    except (FinancialProviderError, FinancialProviderDisabled) as exc:
+        messages.error(request, str(exc))
+        return redirect("portal:finance_vendor_invoices")
+
+    if invoice.status not in {"approved", "partially_paid"}:
+        messages.error(request, "This invoice is not available for payment.")
+        return redirect("portal:finance_vendor_invoice_detail", invoice_id=invoice.id)
+
+    quickbooks_connection = QuickBooksConnection.objects.filter(is_active=True).first() if provider.key == 'quickbooks' else None
+    quickbooks_bill = QuickBooksBillMapping.objects.filter(invoice=invoice).first()
+    if quickbooks_connection and not quickbooks_bill:
+        messages.error(
+            request,
+            "Synchronize this approved invoice to QuickBooks before recording its payment.",
+        )
+        return redirect("portal:finance_vendor_invoice_detail", invoice_id=invoice.id)
+
+    quickbooks_accounts = []
+    quickbooks_error = ""
+    selected_quickbooks_account_id = request.POST.get(
+        "quickbooks_account_id", ""
+    ).strip()
+    if quickbooks_connection:
+        try:
+            quickbooks_accounts = list_payment_accounts(quickbooks_connection)
+        except (QuickBooksAPIError, QuickBooksConfigurationError) as exc:
+            messages.error(request, str(exc))
+            return redirect("portal:finance_vendor_invoice_detail", invoice_id=invoice.id)
+
+    paid = invoice.payments.filter(status="recorded").aggregate(
+        total=Sum("amount")
+    )["total"] or 0
+    outstanding = invoice.amount - paid
+    form = provider.get_payment_form(
+        request.POST or None,
+        invoice=invoice,
+        initial={"payment_date": timezone.localdate()},
+    )
+    if request.method == "POST" and quickbooks_connection:
+        selected_account = next(
+            (
+                account for account in quickbooks_accounts
+                if str(account.get("Id", "")) == selected_quickbooks_account_id
+            ),
+            None,
+        )
+        expected_type = (
+            "Credit Card" if request.POST.get("payment_method") == "card" else "Bank"
+        )
+        if not selected_account:
+            quickbooks_error = "Select a QuickBooks payment account."
+        elif selected_account.get("AccountType") != expected_type:
+            quickbooks_error = (
+                f"Select a QuickBooks {expected_type.lower()} account for this payment method."
+            )
+
+    if request.method == "POST" and form.is_valid() and not quickbooks_error:
+        try:
+            with transaction.atomic():
+                payment, updated_invoice = provider.record_payment(
+                    form, invoice=invoice, actor=request.user
+                )
+                record_event(
+                    action="VENDOR_PAYMENT_RECORDED",
+                    instance=payment,
+                    actor=request.user,
+                    request=request,
+                    old_values={},
+                    new_values={
+                        "invoice": invoice.invoice_number or invoice.pk,
+                        "amount": str(payment.amount),
+                        "payment_date": payment.payment_date.isoformat(),
+                        "payment_method": payment.payment_method,
+                        "reference_number": payment.reference_number,
+                        "financial_account": payment.financial_account.name,
+                    },
+                    reason="Vendor payment recorded.",
+                    property_id=invoice.work_order.unit.property_id,
+                )
+        except (FinancialProviderError, FinancialProviderDisabled) as exc:
+            messages.error(request, str(exc))
+        else:
+            quickbooks_mapping = None
+            if quickbooks_connection:
+                try:
+                    quickbooks_mapping = sync_bill_payment(
+                        quickbooks_connection,
+                        payment,
+                        selected_quickbooks_account_id,
+                    )
+                except (QuickBooksAPIError, QuickBooksConfigurationError) as exc:
+                    messages.warning(
+                        request,
+                        "The payment was recorded in COL360, but QuickBooks synchronization "
+                        f"needs attention: {exc}",
+                    )
+                else:
+                    record_event(
+                        action="QUICKBOOKS_PAYMENT_SYNCED",
+                        instance=payment,
+                        actor=request.user,
+                        request=request,
+                        old_values={},
+                        new_values={
+                            "quickbooks_payment_id": quickbooks_mapping.quickbooks_payment_id,
+                            "payment_account": quickbooks_mapping.payment_account_name,
+                        },
+                        reason="Vendor payment synchronized to QuickBooks.",
+                        property_id=invoice.work_order.unit.property_id,
+                    )
+            messages.success(
+                request,
+                f"Payment of ${payment.amount:.2f} was recorded"
+                + (" and synchronized to QuickBooks" if quickbooks_mapping else "")
+                + f" for invoice {invoice.invoice_number or invoice.id}.",
+            )
+            return redirect("portal:finance_vendor_invoice_detail", invoice_id=updated_invoice.id)
+
+    return render(
+        request,
+        "portal/record_vendor_payment.html",
+        {
+            "form": form,
+            "native_provider": provider.key == "col360",
+            "reimbursement_ui": reimbursement_wording(),
+            "invoice": invoice,
+            "work_order": invoice.work_order,
+            "paid": paid,
+            "outstanding": outstanding,
+            "quickbooks_connection": quickbooks_connection,
+            "quickbooks_accounts": quickbooks_accounts,
+            "quickbooks_error": quickbooks_error,
+            "selected_quickbooks_account_id": selected_quickbooks_account_id,
+            "section": "finance",
+            "finance_subsection": "vendor_invoices",
+        },
+    )
 
 
 @staff_member_required(login_url="/admin/login/")
 @require_http_methods(["POST"])
-def mark_vendor_invoice_paid(request, invoice_id):
-    provider = get_financial_provider()
+def finance_vendor_payment_quickbooks_sync(request, payment_id):
+    payment = get_object_or_404(
+        VendorPayment.objects.select_related("invoice__work_order__unit__property"),
+        pk=payment_id,
+    )
+    mapping = QuickBooksPaymentMapping.objects.filter(payment=payment).first()
+    connection = QuickBooksConnection.objects.filter(is_active=True).first()
+    if not connection or not mapping:
+        messages.error(request, "This payment is not ready for QuickBooks verification.")
+        return redirect(
+            "portal:finance_vendor_invoice_detail", invoice_id=payment.invoice_id
+        )
+    was_synced = mapping.status == "synced"
     try:
-        invoice = provider.get_invoice(invoice_id)
-        invoice, result = provider.mark_invoice_paid(invoice, actor=request.user)
-        if result == "already_paid":
-            messages.info(request, f"Invoice {invoice.invoice_number or invoice.id} is already marked paid.")
-        else:
-            messages.success(request, f"Invoice {invoice.invoice_number or invoice.id} was marked paid.")
-        work_order_id = invoice.work_order_id
-    except (FinancialProviderError, FinancialProviderDisabled) as exc:
+        mapping = sync_bill_payment(
+            connection, payment, mapping.payment_account_id
+        )
+    except (QuickBooksAPIError, QuickBooksConfigurationError) as exc:
         messages.error(request, str(exc))
-        return redirect("portal:maintenance")
-    return redirect("portal:work_order_detail", work_order_id=work_order_id)
+    else:
+        record_event(
+            action="QUICKBOOKS_PAYMENT_VERIFIED" if was_synced else "QUICKBOOKS_PAYMENT_SYNCED",
+            instance=payment,
+            actor=request.user,
+            request=request,
+            old_values={},
+            new_values={
+                "quickbooks_payment_id": mapping.quickbooks_payment_id,
+                "payment_account": mapping.payment_account_name,
+            },
+            reason=(
+                "QuickBooks payment verified."
+                if was_synced else "Vendor payment synchronized to QuickBooks."
+            ),
+            property_id=payment.invoice.work_order.unit.property_id,
+        )
+        messages.success(
+            request,
+            "QuickBooks payment was verified without creating a duplicate."
+            if was_synced else "Payment was synchronized to QuickBooks.",
+        )
+    return redirect(
+        "portal:finance_vendor_invoice_detail", invoice_id=payment.invoice_id
+    )
+
+
+@staff_member_required(login_url="/admin/login/")
+@require_http_methods(["POST"])
+def void_vendor_payment(request, payment_id):
+    provider = get_financial_provider()
+    form = VoidVendorPaymentForm(request.POST)
+    if not form.is_valid():
+        messages.error(request, "Enter a reason before voiding the payment.")
+        return redirect(request.META.get("HTTP_REFERER") or "portal:finance_vendor_invoices")
+    try:
+        payment = provider.get_payment(payment_id)
+        old_values = {
+            "status": payment.status,
+            "amount": str(payment.amount),
+        }
+        quickbooks_mapping = QuickBooksPaymentMapping.objects.filter(
+            payment=payment,
+        ).exclude(
+            quickbooks_payment_id="",
+        ).exclude(
+            status="deleted",
+        ).select_related("connection").first()
+        if quickbooks_mapping:
+            delete_bill_payment(quickbooks_mapping.connection, payment)
+        with transaction.atomic():
+            payment, invoice = provider.void_payment(
+                payment,
+                actor=request.user,
+                reason=form.cleaned_data["reason"],
+            )
+            record_event(
+                action="VENDOR_PAYMENT_VOIDED",
+                instance=payment,
+                actor=request.user,
+                request=request,
+                old_values=old_values,
+                new_values={"status": "void"},
+                reason=form.cleaned_data["reason"],
+                property_id=invoice.work_order.unit.property_id,
+            )
+    except (
+        FinancialProviderError,
+        FinancialProviderDisabled,
+        QuickBooksAPIError,
+        QuickBooksConfigurationError,
+    ) as exc:
+        messages.error(request, str(exc))
+        return redirect("portal:finance_vendor_invoices")
+    messages.success(request, f"Payment of ${payment.amount:.2f} was voided.")
+    return redirect("portal:finance_vendor_invoice_detail", invoice_id=invoice.id)
 
 @staff_member_required(login_url="/admin/login/")
 @require_http_methods(["POST"])
@@ -3388,6 +4337,7 @@ def reject_vendor_estimate(request, estimate_id):
 
 @staff_member_required(login_url="/admin/login/")
 @require_http_methods(["GET", "POST"])
+@vendor_work_only
 def request_vendor_quotes(request, work_order_id):
     work_order = get_object_or_404(
         WorkOrder.objects.select_related("unit__property"),
@@ -3487,6 +4437,7 @@ def request_vendor_quotes(request, work_order_id):
 
 @staff_member_required(login_url="/admin/login/")
 @require_http_methods(["GET", "POST"])
+@vendor_work_only
 def add_vendor_estimate(request, work_order_id):
     work_order = get_object_or_404(
         WorkOrder.objects.select_related("unit__property").prefetch_related("vendor_estimates"),
@@ -3844,151 +4795,23 @@ def edit_vendor(request, vendor_id):
 @staff_member_required(login_url="/admin/login/")
 @require_http_methods(["GET", "POST"])
 def create_property(request):
-    form = PropertyForm(request.POST or None)
-
-    if form.is_valid():
-        with transaction.atomic():
-            property_obj = form.save(commit=False)
-            property_obj.created_by = request.user
-            property_obj.save()
-
-            PropertyUnit.objects.create(
-                property=property_obj,
-                unit_number=property_obj.unit_number,
-                beds=property_obj.bedrooms,
-                baths=(
-                    (property_obj.bathrooms_full or 0)
-                    + ((property_obj.bathrooms_half or 0) * 0.5)
-                ),
-                sqft=property_obj.sqft,
-            )
-
-            tracked_fields = [
-                "street_address", "unit_number", "city", "state", "zip_code",
-                "county", "subdivision", "property_type", "property_type_other",
-                "year_built", "bedrooms", "bathrooms_full", "bathrooms_half",
-                "sqft", "lot_size_sqft", "management_status", "is_multi_unit",
-                "notes",
-            ]
-            record_event(
-                action="PROPERTY_CREATED",
-                instance=property_obj,
-                actor=request.user,
-                request=request,
-                old_values={},
-                new_values=snapshot(property_obj, tracked_fields),
-                reason="Property created in COL360.",
-                property_id=property_obj.id,
-            )
-
-        messages.success(
-            request,
-            f"{property_obj.full_address} was created successfully."
-        )
-        return redirect("portal:property_detail", property_id=property_obj.id)
-
-    return render(
-        request,
-        "portal/property_form.html",
-        {
-            "form": form,
-            "page_heading": "Add Property",
-            "submit_label": "Create Property",
-            "section": "properties",
-        },
-    )
+    from properties.editor import property_editor
+    return property_editor(request)
 
 
 @staff_member_required(login_url="/admin/login/")
 @require_http_methods(["GET", "POST"])
 def edit_property(request, property_id):
-    property_obj = get_object_or_404(Property, pk=property_id)
-
-    tracked_fields = [
-        "street_address", "unit_number", "city", "state", "zip_code",
-        "county", "subdivision", "property_type", "property_type_other",
-        "year_built", "bedrooms", "bathrooms_full", "bathrooms_half",
-        "sqft", "lot_size_sqft", "management_status", "is_multi_unit",
-        "notes",
-    ]
-    before = snapshot(property_obj, tracked_fields)
-
-    form = PropertyForm(request.POST or None, instance=property_obj)
-
-    if form.is_valid():
-        candidate = form.save(commit=False)
-        after = snapshot(candidate, tracked_fields)
-        old_values, new_values = changed_values(before, after)
-
-        if not old_values:
-            messages.info(request, "No property information changed.")
-            return redirect("portal:property_detail", property_id=property_obj.id)
-
-        with transaction.atomic():
-            property_obj = form.save()
-
-            primary_unit = PropertyUnit.objects.filter(
-                property=property_obj
-            ).order_by("id").first()
-
-            if primary_unit:
-                primary_unit.unit_number = property_obj.unit_number
-                primary_unit.beds = property_obj.bedrooms
-                primary_unit.baths = (
-                    (property_obj.bathrooms_full or 0)
-                    + ((property_obj.bathrooms_half or 0) * 0.5)
-                )
-                primary_unit.sqft = property_obj.sqft
-                primary_unit.save(
-                    update_fields=[
-                        "unit_number", "beds", "baths", "sqft", "updated_at",
-                    ]
-                )
-
-            record_event(
-                action="PROPERTY_UPDATED",
-                instance=property_obj,
-                actor=request.user,
-                request=request,
-                old_values=old_values,
-                new_values=new_values,
-                reason="Property information updated in COL360.",
-                property_id=property_obj.id,
-            )
-
-        messages.success(
-            request,
-            f"{property_obj.full_address} was updated successfully."
-        )
-        return redirect("portal:property_detail", property_id=property_obj.id)
-
-    return render(
-        request,
-        "portal/property_form.html",
-        {
-            "form": form,
-            "property_obj": property_obj,
-            "page_heading": "Edit Property",
-            "submit_label": "Save Changes",
-            "section": "properties",
-        },
-    )
+    from properties.editor import property_editor
+    with transaction.atomic():
+        property_obj = get_object_or_404(Property.objects.select_for_update(), pk=property_id)
+        return property_editor(request, property_obj)
 
 
 @staff_member_required(login_url="/admin/login/")
 @require_http_methods(["GET", "POST"])
 def create_property_unit(request, property_id):
     property_obj = get_object_or_404(Property, pk=property_id)
-
-    if (
-        property_obj.property_type == "single_family_residential"
-        or not property_obj.is_multi_unit
-    ):
-        messages.error(
-            request,
-            "Units can only be added to an eligible property marked as Multi-Unit."
-        )
-        return redirect("portal:property_detail", property_id=property_obj.id)
 
     form = PropertyUnitForm(request.POST or None, property_obj=property_obj)
 
@@ -4036,16 +4859,6 @@ def create_property_unit(request, property_id):
 @require_http_methods(["GET", "POST"])
 def edit_property_unit(request, property_id, unit_id):
     property_obj = get_object_or_404(Property, pk=property_id)
-
-    if (
-        property_obj.property_type == "single_family_residential"
-        or not property_obj.is_multi_unit
-    ):
-        messages.error(
-            request,
-            "Unit management is only available for an eligible property marked as Multi-Unit."
-        )
-        return redirect("portal:property_detail", property_id=property_obj.id)
 
     unit = get_object_or_404(
         PropertyUnit,
@@ -4121,6 +4934,9 @@ def create_owner(request):
             f"{owner} was created successfully."
         )
 
+        if request.POST.get("save_add_another") == "1":
+            return redirect("portal:create_owner")
+
         return redirect(
             "portal:owner_detail",
             owner_id=owner.id,
@@ -4128,7 +4944,7 @@ def create_owner(request):
 
     return render(
         request,
-        "portal/owner_form.html",
+        "portal/owner_profile_form.html",
         {
             "form": form,
             "page_heading": "Add Owner",
@@ -4178,6 +4994,9 @@ def edit_owner(request, owner_id):
             f"{owner} was updated successfully."
         )
 
+        if request.POST.get("save_add_another") == "1":
+            return redirect("portal:create_owner")
+
         return redirect(
             "portal:owner_detail",
             owner_id=owner.id,
@@ -4185,7 +5004,7 @@ def edit_owner(request, owner_id):
 
     return render(
         request,
-        "portal/owner_form.html",
+        "portal/owner_profile_form.html",
         {
             "form": form,
             "owner": owner,
@@ -4221,6 +5040,8 @@ def create_property_ownership(request, property_id):
                 "is_primary_contact",
                 "start_date",
                 "end_date",
+                "statement_recipient_name", "statement_recipient_email",
+                "maintenance_approval_limit", "distribution_instructions", "notes",
             ]
             record_event(
                 action="PROPERTY_OWNERSHIP_ADDED",
@@ -4238,6 +5059,9 @@ def create_property_ownership(request, property_id):
             f"{ownership.owner} was added to this property."
         )
 
+        if request.POST.get("save_add_another") == "1":
+            return redirect("portal:create_property_ownership", property_id=property_obj.id)
+
         return redirect(
             "portal:property_detail",
             property_id=property_obj.id,
@@ -4245,7 +5069,7 @@ def create_property_ownership(request, property_id):
 
     return render(
         request,
-        "portal/property_ownership_form.html",
+        "portal/owner_ownership_form.html",
         {
             "form": form,
             "property_obj": property_obj,
@@ -4280,6 +5104,8 @@ def edit_property_ownership(
         "is_primary_contact",
         "start_date",
         "end_date",
+                "statement_recipient_name", "statement_recipient_email",
+                "maintenance_approval_limit", "distribution_instructions", "notes",
     ]
     before = snapshot(ownership, tracked_fields)
 
@@ -4296,6 +5122,9 @@ def edit_property_ownership(
 
         if not old_values:
             messages.info(request, "No ownership information changed.")
+            if request.POST.get("save_add_another") == "1":
+                return redirect("portal:create_property_ownership", property_id=property_obj.id)
+
             return redirect(
                 "portal:property_detail",
                 property_id=property_obj.id,
@@ -4319,6 +5148,9 @@ def edit_property_ownership(
             "Ownership record was updated successfully."
         )
 
+        if request.POST.get("save_add_another") == "1":
+            return redirect("portal:create_property_ownership", property_id=property_obj.id)
+
         return redirect(
             "portal:property_detail",
             property_id=property_obj.id,
@@ -4326,7 +5158,7 @@ def edit_property_ownership(
 
     return render(
         request,
-        "portal/property_ownership_form.html",
+        "portal/owner_ownership_form.html",
         {
             "form": form,
             "property_obj": property_obj,

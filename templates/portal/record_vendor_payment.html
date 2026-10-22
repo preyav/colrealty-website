@@ -1,0 +1,94 @@
+{% extends "portal/base.html" %}
+
+{% block title %}Record Vendor Payment | Col Realty Portal{% endblock %}
+{% block page_title %}Record Vendor Payment{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:18px;">
+  <a href="{% url 'portal:finance_vendor_invoice_detail' invoice.id %}" style="color:#2563eb;text-decoration:none;font-size:0.85rem;">
+    ← Back to Invoice {{ invoice.invoice_number|default:invoice.id }}
+  </a>
+</div>
+
+<div class="card" style="max-width:1040px;margin:0 auto 20px;">
+  <div class="card-header"><h2>Approved Invoice {{ invoice.invoice_number|default:invoice.id }}</h2></div>
+  <div style="padding:22px 24px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:center;">
+    <div>
+      <strong style="display:block;font-size:1rem;">{{ invoice.vendor }}</strong>
+      <div style="margin-top:7px;color:#64748b;">Work Order #{{ work_order.id }} · {{ work_order.title }}</div>
+    </div>
+    <div style="display:flex;gap:30px;flex-wrap:wrap;">
+      <div><div class="stat-label">Invoice Total</div><strong>${{ invoice.amount|floatformat:2 }}</strong></div>
+      <div><div class="stat-label">Previously Paid</div><strong>${{ paid|floatformat:2 }}</strong></div>
+      <div><div class="stat-label">Balance Due</div><strong style="color:#dc2626;">${{ outstanding|floatformat:2 }}</strong></div>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="max-width:1040px;margin:0 auto;">
+  <div class="card-header"><h2>Payment Details</h2></div>
+  <div style="padding:24px;">
+    {% if native_provider %}<p><a class="btn btn-primary" href="?funding=on_behalf">{{ reimbursement_ui.source_action }}</a></p>{% endif %}
+    <form method="post">
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+      <div style="margin-bottom:18px;padding:12px 14px;border:1px solid #fecaca;background:#fef2f2;color:#b91c1c;border-radius:8px;">{{ form.non_field_errors }}</div>
+      {% endif %}
+
+      {% if not form.financial_account.field.queryset.exists %}
+      <div style="margin-bottom:18px;padding:12px 14px;background:#fef3c7;border:1px solid #fde68a;border-radius:8px;color:#92400e;">
+        Configure an active financial account before recording this payment.
+        <a href="{% url 'portal:finance_accounts' %}" style="font-weight:600;color:#92400e;">Open Accounts</a>
+      </div>
+      {% endif %}
+
+      {% if quickbooks_connection %}
+      <div style="margin-bottom:20px;padding:16px;border:1px solid #bfdbfe;background:#eff6ff;border-radius:10px;">
+        <label for="id_quickbooks_account_id" style="display:block;font-weight:600;margin-bottom:7px;">
+          QuickBooks Payment Account <span style="color:#dc2626;">*</span>
+        </label>
+        <select name="quickbooks_account_id" id="id_quickbooks_account_id" class="form-control" required>
+          <option value="">Select the bank or credit-card account used</option>
+          {% for account in quickbooks_accounts %}
+            <option value="{{ account.Id }}" data-account-type="{{ account.AccountType }}" {% if selected_quickbooks_account_id == account.Id|stringformat:'s' %}selected{% endif %}>
+              {{ account.FullyQualifiedName|default:account.Name }} · {{ account.AccountType }}
+            </option>
+          {% endfor %}
+        </select>
+        {% if quickbooks_error %}<div style="margin-top:7px;color:#b91c1c;">{{ quickbooks_error }}</div>{% endif %}
+        <div style="margin-top:7px;color:#475569;font-size:0.82rem;">
+          Bank accounts are used for ACH, check, cash and transfers; card payments require a QuickBooks credit-card account.
+        </div>
+      </div>
+      {% endif %}
+
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 24px;">
+        {% for field in form %}
+          {% if field.name != "notes" %}
+          <div>
+            <label for="{{ field.id_for_label }}" style="display:block;font-weight:600;margin-bottom:7px;">{{ field.label }}{% if field.field.required %} <span style="color:#dc2626;">*</span>{% endif %}</label>
+            {{ field }}
+            {{ field.errors }}
+          </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+
+      <div style="margin-top:20px;">
+        <label for="{{ form.notes.id_for_label }}" style="display:block;font-weight:600;margin-bottom:7px;">Notes</label>
+        {{ form.notes }}
+        {{ form.notes.errors }}
+      </div>
+
+      <div style="margin-top:16px;padding:12px 14px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;color:#1e3a8a;">
+        This records a financial transaction. Corrections must be made by voiding the payment with a reason; recorded payments are not edited or deleted.
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:24px;padding-top:20px;border-top:1px solid #e2e8f0;">
+        <a href="{% url 'portal:finance_vendor_invoice_detail' invoice.id %}" class="btn" style="background:#f1f5f9;">Cancel</a>
+        <button type="submit" class="btn btn-primary" {% if not form.financial_account.field.queryset.exists or quickbooks_connection and not quickbooks_accounts %}disabled{% endif %}>Record Payment</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

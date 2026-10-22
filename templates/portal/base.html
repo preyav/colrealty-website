@@ -1,3 +1,6 @@
+{% load lease_sections rent_ledger accounting_workspace portal_settings portal_navigation %}
+{% accounting_ui as accounting_labels %}
+{% portal_nav_labels as portal_menu_labels %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -38,7 +41,7 @@
 
     .sidebar-logo span { color: #3b82f6; }
 
-    .sidebar-nav { flex: 1; padding: 16px 0; }
+    .sidebar-nav { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 0; }
 
     .nav-item {
       display: flex;
@@ -107,6 +110,14 @@
     .topbar-user a { color: #3b82f6; text-decoration: none; font-size: 0.8rem; }
 
     .content { padding: 28px; flex: 1; }
+
+    .content--centered-detail {
+      box-sizing: border-box;
+      width: 100%;
+      max-width: 1206px;
+      margin-inline: auto;
+      min-width: 0;
+    }
 
     /* ── Stat cards ── */
     .stat-grid {
@@ -236,6 +247,109 @@
     .alert-success { background: #dcfce7; color: #15803d; }
     .alert-error   { background: #fee2e2; color: #b91c1c; }
     .alert-info    { background: #dbeafe; color: #1d4ed8; }
+
+    /* Match the property editor on the maintenance edit form. */
+    .maintenance-form-match .card { border:1px solid #e2e8f0; border-radius:12px; }
+    .maintenance-form-match .card-header { padding:16px 22px; }
+    .maintenance-form-match form .stat-label { text-transform:none; letter-spacing:normal; font-size:.9rem; font-weight:600; color:#334155; margin-bottom:7px; }
+    .maintenance-form-match form label { display:block; margin-bottom:7px; font-size:.9rem; font-weight:600; color:#334155; }
+    .maintenance-form-match form input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=submit]):not([type=button]),
+    .maintenance-form-match form select,
+    .maintenance-form-match form textarea { box-sizing:border-box; width:100%; padding:10px 12px; min-height:42px; border:1px solid #cbd5e1; border-radius:7px; background:#fff; color:#0f172a; font:inherit; }
+    .maintenance-form-match form textarea { min-height:180px; line-height:1.5; resize:vertical; }
+    .maintenance-form-match form div:has(> textarea) { grid-column:1/-1; }
+    .maintenance-form-match form input:required:not(:disabled),
+    .maintenance-form-match form select:required:not(:disabled),
+    .maintenance-form-match form textarea:required:not(:disabled) { background:#F4E8DC; border-color:#C69A6B; }
+    .maintenance-form-match form :disabled { background:#f8fafc; color:#64748b; opacity:1; }
+    .maintenance-form-match form input[type=checkbox],.maintenance-form-match form input[type=radio] { accent-color:#01AACE; width:18px; height:18px; }
+    .maintenance-form-match form input:focus-visible,.maintenance-form-match form select:focus-visible,.maintenance-form-match form textarea:focus-visible { outline:2px solid #01AACE; outline-offset:2px; }
+    .maintenance-form-match form button[type=submit] { background:#01AACE; border:1px solid #01AACE; color:#fff; border-radius:7px; padding:10px 16px; font:inherit; }
+    .maintenance-form-match form > div[style*="grid"] { gap:18px 24px !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+    .maintenance-form-match form > div:has(> button[type=submit]) { display:flex; justify-content:flex-end; align-items:center; gap:8px; margin-top:20px; }
+    @media(max-width:700px) { .maintenance-form-match form > div[style*="grid"] { grid-template-columns:minmax(0,1fr) !important; } }
+
+    .work-order-standard .card { background:#fff; border:1px solid #e2e8f0; border-radius:12px; }
+    .work-order-standard .card-header { padding:16px 22px; }
+    .work-order-standard .card-header h2 { font-size:1rem; color:#334155; }
+    .work-order-standard .btn-primary { background:#01AACE; border-color:#01AACE; color:#fff; }
+    .work-order-standard .card { overflow-wrap:anywhere; }
+    @media(max-width:700px) { .work-order-standard div[style*="grid-template-columns"] { grid-template-columns:minmax(0,1fr) !important; } }
+    /* Keep checkbox choices aligned with their labels on standard forms. */
+    .maintenance-form-match form label:has(input[type="checkbox"]),
+    .maintenance-form-match form label:has(input[type="radio"]) {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 400;
+    }
+    .maintenance-form-match form label input[type="checkbox"],
+    .maintenance-form-match form label input[type="radio"] {
+      flex: 0 0 auto;
+      margin: 0;
+    }
+    /* Vendor 360 follows the shared detail-page presentation. */
+    .work-order-standard table { width:100%; border-collapse:collapse; }
+    .work-order-standard table th { background:#f8fafc; color:#475569; }
+    .work-order-standard table th,
+    .work-order-standard table td { padding:12px 16px; border-bottom:1px solid #e2e8f0; text-align:left; }
+    .work-order-standard .card-header .btn-primary { border-radius:7px; padding:8px 14px; }
+    /* Standard list and form presentation for the remaining workflow pages. */
+    .standard-list-page .card { background:#fff; border:1px solid #e2e8f0; border-radius:12px; overflow-x:auto; }
+    .standard-list-page .card-header { padding:16px 22px; }
+    .standard-list-page .btn-primary { background:#01AACE; border-color:#01AACE; color:#fff; border-radius:7px; }
+    .standard-list-page table { width:100%; border-collapse:collapse; }
+    .standard-list-page th { background:#f8fafc; color:#475569; }
+    .standard-list-page th, .standard-list-page td { padding:12px 16px; border-bottom:1px solid #e2e8f0; text-align:left; }
+    .standard-list-page form { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+    .standard-list-page form input, .standard-list-page form select { box-sizing:border-box; min-height:42px; padding:10px 12px; border:1px solid #cbd5e1; border-radius:7px; background:#fff; color:#0f172a; font:inherit; max-width:100%; }
+    .standard-list-page form input { flex:1 1 220px; }
+    .standard-list-page form button { background:#01AACE; border-color:#01AACE; color:#fff; border-radius:7px; padding:10px 16px; }
+    .maintenance-form-match form p:has(> input),
+    .maintenance-form-match form p:has(> select),
+    .maintenance-form-match form p:has(> textarea) { margin:0 0 18px; }
+    .maintenance-form-match form input[type="file"]::file-selector-button { padding:6px 10px; margin-right:12px; border:1px solid #cbd5e1; border-radius:5px; background:#f8fafc; color:#334155; font:inherit; cursor:pointer; }
+    .maintenance-form-match #lease-form .lease-section { padding:22px; }
+    .maintenance-form-match #lease-form .lease-field-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px 24px; }
+    .maintenance-form-match #lease-form .lease-field-grid > div { grid-column:auto; min-width:0; }
+    .maintenance-form-match #lease-form .lease-label-line { display:flex; align-items:center; gap:6px; margin-bottom:7px; }
+    .maintenance-form-match #lease-form .lease-label-line label { margin:0; }
+    .maintenance-form-match #lease-form textarea { min-height:90px; }
+    .maintenance-form-match #lease-form h2 { font-size:1rem; color:#334155; margin:0 0 18px; }
+    @media(max-width:700px) {
+      .maintenance-form-match #lease-form .lease-field-grid { grid-template-columns:minmax(0,1fr); }
+      .standard-list-page form input, .standard-list-page form select { width:100%; flex-basis:100%; }
+    }
+    /* Cancellation uses standard spacing with a distinct destructive action. */
+    .work-order-cancel-standard .card { padding:22px; overflow-wrap:anywhere; line-height:1.6; }
+    .work-order-cancel-standard > h1,
+    .work-order-cancel-standard > h2 { font-size:1.25rem; color:#0f172a; margin-bottom:8px; }
+    .work-order-cancel-standard form { margin-top:20px; }
+    .work-order-cancel-standard form textarea { margin-bottom:16px; }
+    .work-order-cancel-standard form button[type="submit"] { background:#b91c1c; border-color:#b91c1c; color:#fff; }
+    .work-order-cancel-standard form button[type="submit"]:hover { background:#991b1b; border-color:#991b1b; }
+    .work-order-cancel-standard form a.btn { border:1px solid #cbd5e1; border-radius:7px; padding:10px 16px; background:#f8fafc; color:#334155; }
+    /* Consistent directory and finance presentation. */
+    .standard-list-page .card-header { gap:12px; flex-wrap:wrap; }
+    .standard-list-page .card-header h2 { font-size:1rem; color:#334155; }
+    .standard-list-page .btn-primary:hover,
+    .standard-list-page form button:hover { background:#018eac; border-color:#018eac; }
+    .standard-list-page td { overflow-wrap:anywhere; }
+    .standard-list-page td:last-child { white-space:nowrap; }
+    .finance-standard .card { background:#fff; border:1px solid #e2e8f0; border-radius:12px; min-width:0; overflow-wrap:anywhere; }
+    .finance-standard .card-header { padding:16px 22px; }
+    .finance-standard .btn-primary { background:#01AACE; border-color:#01AACE; color:#fff; border-radius:7px; }
+    .finance-standard .btn-primary:hover { background:#018eac; border-color:#018eac; }
+    .finance-standard table { width:100%; border-collapse:collapse; }
+    .finance-standard table th { background:#f8fafc; color:#475569; }
+    .finance-standard table th, .finance-standard table td { padding:12px 16px; border-bottom:1px solid #e2e8f0; text-align:left; }
+    .finance-standard .stat-grid { grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px; }
+    .quickbooks-standard > div[style*="max-width"],
+    .quickbooks-standard > .card { box-sizing:border-box; width:100%; max-width:none !important; margin-inline:auto; }
+    @media(max-width:800px) {
+      .finance-standard div[style*="grid-template-columns"] { grid-template-columns:minmax(0,1fr) !important; }
+      .finance-standard .card:has(table) { overflow-x:auto; }
+    }
   </style>
 </head>
 <body>
@@ -259,7 +373,7 @@
       </a>
       <a href="{% url 'portal:rentals' %}"
          class="nav-item {% if section == 'rentals' %}active{% endif %}">
-        <span class="nav-icon">🔑</span> Rentals
+        <span class="nav-icon">🔑</span> {{ portal_menu_labels.leasing }}
       </a>
       <div style="padding:14px 20px 6px;
             font-size:0.68rem;
@@ -269,50 +383,16 @@
         Property Management
       </div>
 
-      <a href="{% url 'portal:properties' %}"
-        class="nav-item {% if section == 'properties' %}active{% endif %}">
-        <span class="nav-icon">🏠</span> Properties
-      </a>
+      {% portal_group 'rentals' %}
+      {% portal_group 'maintenance' %}
 
-      <a href="{% url 'portal:owners' %}"
-        class="nav-item {% if section == 'owners' %}active{% endif %}">
-        <span class="nav-icon">👤</span> Owners
-      </a>
-
-      <a href="{% url 'portal:tenants' %}"
-        class="nav-item {% if section == 'tenants' %}active{% endif %}">
-        <span class="nav-icon">👥</span> Tenants
-      </a>
-
-      <a href="{% url 'portal:leases' %}"
-        class="nav-item {% if section == 'leases' %}active{% endif %}">
-        <span class="nav-icon">📄</span> Leases
-      </a>
-
-      <a href="{% url 'portal:maintenance' %}"
-        class="nav-item {% if section == 'maintenance' %}active{% endif %}">
-        <span class="nav-icon">🛠</span> Maintenance
-      </a>
-
-      {% if section == 'maintenance' %}
-        <a href="{% url 'portal:maintenance' %}"
-          class="nav-subitem {% if maintenance_subsection != 'work_orders' %}active{% endif %}">
-          Maintenance Requests
-        </a>
-        <a href="{% url 'portal:work_orders' %}"
-          class="nav-subitem {% if maintenance_subsection == 'work_orders' %}active{% endif %}">
-          Work Orders
-        </a>
-      {% endif %}
-
-      <a href="{% url 'portal:vendors' %}"
-        class="nav-item {% if section == 'vendors' %}active{% endif %}">
-        <span class="nav-icon">🔧</span> Vendors
-      </a>
+      <div style="padding:14px 20px 6px;font-size:0.68rem;text-transform:uppercase;letter-spacing:1px;color:#475569;">Financial Management</div>
+      <details class="accounting-popout" id="accounting-popout"><summary class="nav-item {% if section == 'finance' %}active{% endif %}"><span class="nav-icon">💰</span> {{ accounting_labels.accounting }} <span aria-hidden="true" style="margin-left:auto">›</span></summary>
+      {% accounting_navigation %}</details>
     </div>
 
     <div class="sidebar-footer">
-      <a href="/admin/">Django Admin ↗</a><br>
+      {% settings_navigation %}<br>
       <a href="https://app-na2.hubspot.com" target="_blank" style="margin-top:4px;display:block;">HubSpot CRM ↗</a>
     </div>
   </nav>
@@ -323,11 +403,11 @@
       <h1>{% block page_title %}Dashboard{% endblock %}</h1>
       <div class="topbar-user">
         Hello, {{ request.user.first_name|default:request.user.username }}
-        <a href="/admin/logout/">Log out</a>
+        <a href="/accounts/logout/">Log out</a>
       </div>
     </div>
 
-    <div class="content">
+    <div class="content{% if request.resolver_match.url_name == 'lease_detail' or request.resolver_match.url_name == 'property_detail' or request.resolver_match.url_name == 'create_maintenance_request' or request.resolver_match.url_name == 'maintenance_detail' or request.resolver_match.url_name == 'edit_maintenance_request' or request.resolver_match.url_name == 'create_work_order' or request.resolver_match.url_name == 'work_order_detail' or request.resolver_match.url_name == 'assign_vendor' or request.resolver_match.url_name == 'create_vendor' or request.resolver_match.url_name == 'vendor_detail' or request.resolver_match.url_name == 'edit_vendor' or request.resolver_match.url_name == 'maintenance' or request.resolver_match.url_name == 'create_property_ownership' or request.resolver_match.url_name == 'create_unit_lease' or request.resolver_match.url_name == 'create_lease' or request.resolver_match.url_name == 'add_maintenance_photo' or request.resolver_match.url_name == 'edit_work_order' or request.resolver_match.url_name == 'request_vendor_quotes' or request.resolver_match.url_name == 'add_vendor_estimate' or request.resolver_match.url_name == 'cancel_work_order' or request.resolver_match.url_name == 'vendors' or request.resolver_match.url_name == 'leases' or request.resolver_match.url_name == 'tenants' or request.resolver_match.url_name == 'owners' or request.resolver_match.url_name == 'properties' or request.resolver_match.url_name == 'finance_vendor_invoices' or request.resolver_match.url_name == 'finance_accounts' or request.resolver_match.url_name == 'finance_dashboard' or request.resolver_match.url_name == 'finance_quickbooks' or request.resolver_match.url_name == 'work_orders' or request.resolver_match.url_name == 'create_owner' or request.resolver_match.url_name == 'edit_owner' or request.resolver_match.url_name == 'edit_property_ownership' %} content--centered-detail{% endif %}{% if request.resolver_match.url_name == 'edit_maintenance_request' or request.resolver_match.url_name == 'create_work_order' or request.resolver_match.url_name == 'assign_vendor' or request.resolver_match.url_name == 'create_vendor' or request.resolver_match.url_name == 'edit_vendor' or request.resolver_match.url_name == 'create_property_ownership' or request.resolver_match.url_name == 'create_unit_lease' or request.resolver_match.url_name == 'create_lease' or request.resolver_match.url_name == 'add_maintenance_photo' or request.resolver_match.url_name == 'edit_work_order' or request.resolver_match.url_name == 'request_vendor_quotes' or request.resolver_match.url_name == 'add_vendor_estimate' or request.resolver_match.url_name == 'cancel_work_order' or request.resolver_match.url_name == 'create_owner' or request.resolver_match.url_name == 'edit_owner' or request.resolver_match.url_name == 'edit_property_ownership' %} maintenance-form-match{% endif %}{% if request.resolver_match.url_name == 'work_order_detail' or request.resolver_match.url_name == 'vendor_detail' %} work-order-standard{% endif %}{% if request.resolver_match.url_name == 'maintenance' or request.resolver_match.url_name == 'vendors' or request.resolver_match.url_name == 'leases' or request.resolver_match.url_name == 'tenants' or request.resolver_match.url_name == 'owners' or request.resolver_match.url_name == 'properties' or request.resolver_match.url_name == 'finance_vendor_invoices' or request.resolver_match.url_name == 'finance_accounts' or request.resolver_match.url_name == 'work_orders' %} standard-list-page{% endif %}{% if request.resolver_match.url_name == 'cancel_work_order' %} work-order-cancel-standard{% endif %}{% if request.resolver_match.url_name == 'finance_dashboard' or request.resolver_match.url_name == 'finance_quickbooks' %} finance-standard{% endif %}{% if request.resolver_match.url_name == 'finance_quickbooks' %} quickbooks-standard{% endif %}">
       {% if messages %}
         <div class="messages">
           {% for message in messages %}
@@ -340,5 +420,29 @@
     </div>
   </div>
 
+{% if request.resolver_match.url_name == 'create_vendor' or request.resolver_match.url_name == 'edit_vendor' %}
+<script>
+(() => {
+  const phone = document.querySelector('input[name="phone"]');
+  if (!phone) return;
+  const format = () => {
+    const value = phone.value.trim();
+    if (!/^(?:\+?1[ .-]?)?[0-9() .-]+$/.test(value)) return;
+    let digits = value.replace(/\D/g, '');
+    if (digits.length === 11 && digits.startsWith('1')) digits = digits.slice(1);
+    if (digits.length === 10) phone.value = `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
+  };
+  phone.addEventListener('blur', format);
+  phone.form?.addEventListener('submit', format);
+  format();
+})();
+</script>
+{% endif %}
+{% if request.resolver_match.url_name == 'property_detail' %}
+{% include 'portal/property_detail_navigation.html' %}
+{% endif %}
+{% include 'portal/group_navigation_script.html' %}
+{% include 'portal/table_sorting.html' %}
+{% include 'portal/action_colors.html' %}
 </body>
 </html>

@@ -1,0 +1,9 @@
+from django.core.management.base import BaseCommand
+from common.models import FormFieldSetting
+DEFAULTS={'title':'Record completed work','action':'Record completed work','invoice':'Record / view invoice','help':'Record work already performed using its actual completion date. Scheduling and start dates are preserved. This does not create a bill or record a payment.','date':'Actual completion date & time','date_help':'Required. Enter the actual local date and time; it may precede record creation, but cannot be in the future or before a recorded start.','cost':'Actual cost ($)','cost_help':'Optional until confirmed. Use the actual cost; an estimate is not a bill.','notes':'Completion details / reason','notes_help':'Describe the completed repair and explain why completion is being recorded retrospectively.','cancel':'Cancel','save':'Save completion','saved':'Completion recorded. You can now record the vendor invoice.','stale':'The record changed or the form expired. Reload and review.','invalid_status':'Only assigned, scheduled or in-progress work can be completed here.','invalid_date':'Enter an actual completion date no later than now and no earlier than the recorded start.','notes_required':'Enter completion details and a reason.','invalid_cost':'Enter a valid nonnegative actual cost.','vendor_required':'Exactly one active vendor assignment is required. Review the vendor award and assignments.'}
+class Command(BaseCommand):
+    def handle(self,*args,**options):
+        row,created=FormFieldSetting.objects.get_or_create(form_key='work_completion',field_key='ui',defaults={'label':'Work completion','option_labels':DEFAULTS})
+        if not created:
+            row.option_labels={**DEFAULTS,**row.option_labels};row.save(update_fields=['option_labels'])
+        self.stdout.write('Work completion settings ready. No work orders changed.')

@@ -7,12 +7,16 @@ from django.utils import timezone
 
 from common.audit.models import AuditEvent
 from maintenance.models import MaintenanceRequest, WorkOrder
+from leasing.models import Lease, LeaseTenant
 from portal.forms import (
     MaintenanceRequestCreateForm,
     MaintenanceRequestReviewForm,
+    VendorScheduleForm,
     WorkOrderCreateForm,
 )
 from properties.models import Property, PropertyUnit
+from tenants.models import TenantProfile
+from portal.views import _tenant_schedule_recipients
 
 
 class MaintenanceRequestCreateFormTests(TestCase):
@@ -531,3 +535,90 @@ class WorkOrderValidationAndReplacementTests(TestCase):
         self.assertEqual(original.status, "cancelled")
         self.maintenance_request.refresh_from_db()
         self.assertEqual(self.maintenance_request.status, "converted")
+
+
+class VendorScheduleWindowFormTests(TestCase):
+    def schedule_data(self, **overrides):
+        future = timezone.localdate() + timedelta(days=1)
+        data = {
+            "scheduled_date": future.isoformat(),
+            "arrival_start_time": "09:00",
+            "arrival_end_time": "12:00",
+            "vendor_notes": "Call before arriving.",
+            "reschedule_reason": "",
+        }
+        data.update(overrides)
+        return data
+
+    def test_accepts_future_arrival_window(self):
+        form = VendorScheduleForm(data=self.schedule_data())
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertLess(form.cleaned_data["scheduled_for"], form.cleaned_data["scheduled_until"])
+
+    def test_rejects_end_before_start(self):
+        form = VendorScheduleForm(data=self.schedule_data(arrival_end_time="08:45"))
+        self.assertFalse(form.is_valid())
+        self.assertIn("arrival_end_time", form.errors)
+
+    def test_rejects_non_quarter_hour(self):
+        form = VendorScheduleForm(data=self.schedule_data(arrival_start_time="09:07"))
+        self.assertFalse(form.is_valid())
+        self.assertTrue(form.non_field_errors())
+
+    def test_date_and_time_widgets_enforce_browser_basics(self):
+        form = VendorScheduleForm()
+        self.assertIn("min", form.fields["scheduled_date"].widget.attrs)
+        self.assertEqual(form.fields["arrival_start_time"].widget.attrs["step"], "900")
+        self.assertEqual(form.fields["arrival_end_time"].widget.attrs["step"], "900")
+
+
+class ScheduleNotificationRecipientTests(TestCase):
+    def test_includes_all_active_lease_tenants_and_deduplicates_reporter(self):
+        property_obj = Property.objects.create(
+            street_address="700 Schedule Test Way",
+            city="Austin",
+            state="TX",
+            zip_code="78701",
+            county="Travis",
+            subdivision="Test",
+            property_type="single_family_residential",
+            management_status="active",
+            is_multi_unit=False,
+        )
+        unit = PropertyUnit.objects.create(property=property_obj, unit_number="")
+        tenant_one = TenantProfile.objects.create(
+            first_name="One", last_name="Tenant", email="one@example.com"
+        )
+        tenant_two = TenantProfile.objects.create(
+            first_name="Two", last_name="Tenant", email="two@example.com"
+        )
+        inactive = TenantProfile.objects.create(
+            first_name="Old", last_name="Tenant", email="old@example.com", is_active=False
+        )
+        lease = Lease.objects.create(
+            unit=unit,
+            start_date=timezone.localdate() - timedelta(days=30),
+            end_date=timezone.localdate() + timedelta(days=30),
+            monthly_rent="2000.00",
+            status="active",
+        )
+        for tenant in (tenant_one, tenant_two, inactive):
+            LeaseTenant.objects.create(lease=lease, tenant=tenant)
+        request_record = MaintenanceRequest.objects.create(
+            unit=unit,
+            lease=lease,
+            reported_by_tenant=tenant_one,
+            title="Schedule test",
+            description="Test all tenant notifications.",
+        )
+        work_order = WorkOrder.objects.create(
+            maintenance_request=request_record,
+            unit=unit,
+            title="Schedule test",
+            description="Test all tenant notifications.",
+        )
+
+        self.assertCountEqual(
+            _tenant_schedule_recipients(work_order),
+            ["one@example.com", "two@example.com"],
+        )

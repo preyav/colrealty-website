@@ -1,0 +1,81 @@
+<fieldset class="exterior-picker">
+  <legend>Exterior Features</legend>
+  <details class="exterior-dropdown" {% if profile_form.exterior_feature_types.errors %}open{% endif %}>
+    <summary><span data-exterior-summary>Select exterior features</span></summary>
+    <div class="exterior-panel">
+      <label for="exterior-search">Search exterior features</label>
+      <input type="search" id="exterior-search" placeholder="Type to filter options" autocomplete="off">
+      <div class="exterior-options">
+        {% for option in profile_form.exterior_feature_types %}
+        <div data-exterior-option>{{ option }}</div>
+        {% endfor %}
+      </div>
+      <p data-exterior-empty hidden>No matching exterior features.</p>
+    </div>
+  </details>
+  {{ profile_form.exterior_feature_types.errors }}
+  <p class="exterior-selection" data-exterior-selected aria-live="polite"></p>
+  <p data-exterior-none hidden role="status">None cannot be combined with another feature.</p>
+  <div data-exterior-details>
+  <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+  {{ field }}{{ field.errors }}
+  <p class="exterior-help">{{ field.help_text }}</p>
+  </div>
+</fieldset>
+<style>
+.exterior-picker [hidden] {display:none !important;}
+.exterior-options [aria-disabled="true"] {opacity:.45;}
+.exterior-options [aria-disabled="true"] label {cursor:not-allowed;}
+.exterior-picker {border:0;min-width:0;}
+.exterior-picker legend {font-size:.9rem;font-weight:600;color:#334155;margin-bottom:7px;}
+.exterior-help {color:#64748b;font-size:.85rem;line-height:1.5;margin:6px 0 10px;}
+.exterior-dropdown {border:1px solid #cbd5e1;border-radius:7px;background:white;margin-bottom:10px;}
+.exterior-dropdown summary {padding:10px 12px;cursor:pointer;overflow-wrap:anywhere;}
+.exterior-dropdown summary:focus-visible {outline:2px solid #2563eb;outline-offset:2px;}
+.exterior-panel {padding:12px;border-top:1px solid #e2e8f0;}
+.exterior-options {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:240px;overflow-y:auto;margin-top:12px;}
+.exterior-options label {display:flex;align-items:center;gap:8px;padding:7px;margin:0;font-weight:400;cursor:pointer;}
+.exterior-options label:hover {background:#f1f5f9;}
+.exterior-options input[type=checkbox] {width:18px;height:18px;flex:none;}
+.exterior-selection {font-size:.85rem;color:#334155;margin:8px 0 14px;overflow-wrap:anywhere;}
+@media(max-width:450px){.exterior-options{grid-template-columns:1fr}}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const picker = document.querySelector('.exterior-picker');
+  const entries = Array.from(picker.querySelectorAll('[data-exterior-option]'));
+  const dropdown = picker.querySelector('details');
+  function updateSelection() {
+    const none = entries.find(entry => entry.querySelector('input').value === 'none');
+    const noneSelected = !!none && none.querySelector('input').checked;
+    entries.forEach(entry => {
+      const input = entry.querySelector('input');
+      input.disabled = noneSelected && input.value !== 'none';
+      if (input.disabled) input.checked = false;
+      entry.setAttribute('aria-disabled', String(input.disabled));
+    });
+    picker.querySelector('[data-exterior-none]').hidden = !noneSelected;
+    const selected = entries.filter(entry => entry.querySelector('input').checked);
+    picker.querySelector('[data-exterior-details]').hidden =
+      !(selected.length === 1 && selected[0].querySelector('input').value === 'other');
+    const names = entries.filter(entry => entry.querySelector('input').checked)
+      .map(entry => entry.textContent.trim());
+    picker.querySelector('[data-exterior-summary]').textContent = names.length ? names.join(', ') : 'Select exterior features';
+    picker.querySelector('[data-exterior-selected]').textContent = names.length ? 'Selected: ' + names.join(', ') : 'No exterior features selected.';
+  }
+  entries.forEach(entry => entry.querySelector('input').addEventListener('change', updateSelection));
+  picker.querySelector('#exterior-search').addEventListener('input', function () {
+    const query = this.value.trim().toLocaleLowerCase();
+    entries.forEach(entry => {entry.hidden = !entry.textContent.toLocaleLowerCase().includes(query);});
+    picker.querySelector('[data-exterior-empty]').hidden = entries.some(entry => !entry.hidden);
+  });
+  picker.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && dropdown.open) {
+      dropdown.open = false;
+      dropdown.querySelector('summary').focus();
+    }
+    if (event.key === 'Enter' && event.target.type === 'search') event.preventDefault();
+  });
+  updateSelection();
+});
+</script>

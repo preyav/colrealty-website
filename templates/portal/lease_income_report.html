@@ -1,0 +1,37 @@
+{% if report %}
+<p class="financial-note">{{ report.count }} {{ financial_ui.matches }} · {{ report.start|date:"m/d/Y" }} – {{ report.end|date:"m/d/Y" }}</p>
+<div class="accounting-table financial-results"><table><thead><tr><th>{{ financial_ui.account }}</th>{% for month in report.months %}<th class="financial-money">{{ month|date:"F Y" }}{% if forloop.last %} · {{ financial_ui.to_date }}{% endif %}</th>{% endfor %}<th class="financial-money">{{ financial_ui.total }}</th></tr></thead><tbody>
+{% for item in report.properties %}
+<tr id="financial-property-{{ item.property.pk }}"{% if report.count != 1 %} hidden{% endif %}><td colspan="{{ report.months|length|add:2 }}" class="financial-detail-cell">
+<div style="--financial-columns:{{ report.months|length|add:1 }}">
+{% for section in item.sections %}
+<div class="financial-section"><div class="financial-section-heading"><strong>{{ section.title }}</strong><button type="button" class="financial-expand-all" aria-expanded="false" data-expand="{{ financial_ui.expand }}" data-collapse="{{ financial_ui.collapse }}"><span data-expand-icon aria-hidden="true">＋</span> <span data-expand-label>{{ financial_ui.expand }}</span></button></div>
+<div class="financial-section-accounts">
+{% for row in section.accounts %}
+<details class="financial-account"><summary class="financial-values"><span>{{ row.account.name }}</span>{% include "portal/financial_cells.html" with cells=row.cells %}</summary>
+{% include "portal/financial_unit_rows.html" with units=row.units %}
+</details>
+{% endfor %}
+</div>
+<details class="financial-account financial-subtotal"><summary class="financial-values"><strong>{% if section.key == 'income' %}{{ financial_ui.income_total }}{% else %}{{ financial_ui.expense_total }}{% endif %}</strong>{% include "portal/financial_cells.html" with cells=section.cells %}</summary>{% include "portal/financial_unit_rows.html" with units=section.units %}</details></div>
+{% endfor %}
+{% if item.operating_ready %}<details class="financial-account financial-net"><summary class="financial-values"><strong>{{ financial_ui.operating_net }}</strong>{% include "portal/financial_cells.html" with cells=item.operating_cells %}</summary>{% include "portal/financial_unit_rows.html" with units=item.operating_units %}</details>
+{% else %}<div class="financial-values financial-net"><strong>{{ financial_ui.operating_net }} <details class="financial-info"><summary>i</summary><p>{{ financial_ui.classification_help }}</p><p>{{ item.unclassified|join:", " }}</p></details></strong>{% for month in report.months %}<span class="financial-money">{{ financial_ui.unclassified }}</span>{% endfor %}<span class="financial-money">{{ financial_ui.unclassified }}</span></div>{% endif %}
+<details class="financial-account financial-net"><summary class="financial-values"><strong>{{ financial_ui.net }}</strong>{% include "portal/financial_cells.html" with cells=item.net_cells %}</summary>{% include "portal/financial_unit_rows.html" with units=item.net_units %}</details>
+{% if not item.has_activity %}<p class="financial-note">{{ financial_ui.no_activity }}</p>{% endif %}
+</div></td></tr>
+{% empty %}<tr><td colspan="{{ report.months|length|add:2 }}">{{ financial_ui.empty }}</td></tr>{% endfor %}
+</tbody></table></div><p class="financial-note">{{ financial_ui.totals_help }}</p>
+{% endif %}
+<style>
+.financial-zero-control{grid-column:1/-1;display:flex;gap:8px;align-items:center}.financial-zero-control label{margin:0!important}.financial-zero-control input{width:auto}.financial-basis{display:flex;gap:20px;align-items:center;margin-top:16px;font-size:.9rem}.financial-info{display:inline-block;position:relative;font-weight:400}.financial-info summary{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#01AACE;color:white;cursor:pointer;list-style:none;font:600 12px Arial}.financial-info p{min-width:240px;max-width:450px;padding:12px;line-height:1.5;background:white;box-shadow:0 3px 16px #0002;color:#475569;position:relative;z-index:2}.financial-unit{border-top:1px solid #eef2f6;background:#fff}.financial-unit>span:first-child{padding-left:34px}.financial-money a{color:#087c96;text-decoration:none}.financial-money a:hover{text-decoration:underline}.financial-net>summary,.financial-subtotal>summary{font-weight:600}.financial-filter-grid{display:grid;grid-template-columns:1fr 1fr 1.5fr auto;gap:20px;align-items:end}.financial-filter-grid label{display:block;font-size:.9rem;font-weight:600;margin-bottom:8px;color:#334155}.financial-filter-grid select{width:100%;box-sizing:border-box;min-height:42px;padding:10px 12px;border:1px solid #cbd5e1;border-radius:6px;font:inherit;background:#fff}.financial-note{font-size:.85rem;line-height:1.5;color:#64748b;margin:18px 0}.financial-results table{table-layout:fixed;min-width:800px}.financial-results th:first-child,.financial-results td:first-child{width:38%}.financial-results .financial-money{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}.financial-property{background:#f5f6f8;font-weight:600}.financial-expand,.financial-expand-all{font:inherit;background:none;border:0;color:#087c96;cursor:pointer;text-align:left}.financial-expand span{margin-right:6px}.financial-results .financial-detail-cell{padding:0;width:auto}.financial-section-heading{display:flex;justify-content:space-between;padding:14px 16px;background:#f5f6f8;font-size:.85rem}.financial-values{display:grid;grid-template-columns:38% repeat(var(--financial-columns),minmax(0,1fr));align-items:start;font-size:.85rem}.financial-values>span,.financial-values>strong{padding:14px 16px;overflow-wrap:anywhere}.financial-account{border-bottom:1px solid #e2e8f0}.financial-account>summary{cursor:pointer;list-style:none;color:#087c96}.financial-account>summary::-webkit-details-marker{display:none}.financial-account>summary>:first-child::before{content:'＋';margin-right:8px}.financial-account[open]>summary>:first-child::before{content:'−'}.financial-transactions{padding:0 18px 18px;background:#f8fafc}.financial-net{background:#f5f6f8}.financial-subtotal{border-bottom:1px solid #e2e8f0}.financial-results [hidden]{display:none!important}@media(max-width:850px){.financial-filter-grid>button{grid-column:auto!important;grid-row:auto!important}.financial-filter-grid{grid-template-columns:1fr 1fr}}@media(max-width:550px){.financial-filter-grid{grid-template-columns:1fr}}
+</style>
+<script>
+document.querySelectorAll('.financial-expand').forEach(button=>button.addEventListener('click',()=>{const row=document.getElementById(button.getAttribute('aria-controls'));row.hidden=!row.hidden;button.setAttribute('aria-expanded',String(!row.hidden));button.querySelector('span').textContent=row.hidden?'＋':'−';}));
+document.querySelectorAll('.financial-expand-all').forEach(button=>{
+ const accounts=[...button.closest('.financial-section').querySelectorAll('.financial-account')];
+ const sync=()=>{const open=accounts.length>0&&accounts.every(item=>item.open);button.setAttribute('aria-expanded',String(open));button.querySelector('[data-expand-icon]').textContent=open?'−':'＋';button.querySelector('[data-expand-label]').textContent=open?button.dataset.collapse:button.dataset.expand;};
+ button.addEventListener('click',()=>{const open=accounts.some(item=>!item.open);accounts.forEach(item=>item.open=open);sync();});
+ accounts.forEach(item=>item.addEventListener('toggle',sync));sync();
+});
+</script>

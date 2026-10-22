@@ -1,0 +1,32 @@
+{% extends "portal/base.html" %}
+{% block title %}{{ ui.title }}{% endblock %}{% block page_title %}{{ ui.title }}{% endblock %}
+{% block content %}{% include "portal/accounting_styles.html" %}{% include "portal/journal_styles.html" %}
+<div class="accounting-page general-ledger-page"><header class="accounting-heading"><h1>{{ ui.title }}</h1><a class="btn btn-primary" href="{% url 'portal:journal_create' %}">{{ ui.new }}</a></header>
+<p class="journal-coverage">{{ ui.coverage }}</p>
+<section class="accounting-form-card"><form method="get">{{ form.non_field_errors }}<div class="ledger-filter-grid">{% for field in form %}<div><label for="{{ field.id_for_label }}">{{ field.label }}</label>{% if field.name == 'unit' %}{% include "portal/ledger_unit_picker.html" %}{% elif field.name == 'accounts' %}{% include "portal/ledger_account_picker.html" %}{% else %}{{ field }}{% endif %}{{ field.errors }}</div>{% endfor %}</div><div class="accounting-buttons"><button class="btn btn-primary">{{ ui.search }}</button><button class="btn" name="export" value="csv">{{ ui.export }}</button><a class="btn" href="{% url 'portal:general_ledger' %}">{{ ui.reset }}</a><span class="journal-basis">{{ ui.basis }}</span></div></form></section>
+{% if report %}
+<p class="financial-help">{{ ui.report_help }}</p>
+<p class="ledger-match-count">{{ report.count }} {{ ui.matches }}</p>
+{% for group in report.groups %}
+<details class="ledger-report-account" open>
+  <summary>{{ group.account.code }} · {{ group.account.name }}</summary>
+  <div class="ledger-report-scroll"><table class="ledger-report-table">
+    <thead><tr><th>{{ ui.date }}</th><th>{{ ui.property }}</th><th>{{ ui.unit }}</th><th>{{ ui.posted_by }}</th><th>{{ ui.description }}</th><th>{{ ui.fund_type }}</th><th class="ledger-money">{{ ui.amount }}</th><th class="ledger-money">{{ ui.balance }}</th></tr></thead>
+    <tbody>
+      <tr class="ledger-prior"><td colspan="7">{{ ui.prior_balance }}</td><td class="ledger-money">{% if group.opening < 0 %}(${{ group.opening|floatformat:"2g"|cut:"-" }}){% else %}${{ group.opening|floatformat:"2g" }}{% endif %}</td></tr>
+      {% for row in group.rows %}{% with line=row.line %}
+      <tr><td><a href="{% url 'portal:journal_detail' line.journal_id %}">{{ line.journal.date|date:"m/d/Y" }}</a></td><td>{{ line.journal.property|default:ui.company }}</td><td>{{ line.journal.unit|default:ui.property_level }}</td><td>{{ line.journal.created_by }}</td><td><a href="{% url 'portal:journal_detail' line.journal_id %}">#{{ line.journal_id }}</a> · {{ line.journal.memo|linebreaksbr }}</td><td>{{ line.journal.display_fund_type }}</td><td class="ledger-money">{% if row.change < 0 %}(${{ row.change|floatformat:"2g"|cut:"-" }}){% else %}${{ row.change|floatformat:"2g" }}{% endif %}</td><td class="ledger-money">{% if row.balance < 0 %}(${{ row.balance|floatformat:"2g"|cut:"-" }}){% else %}${{ row.balance|floatformat:"2g" }}{% endif %}</td></tr>
+      {% endwith %}{% endfor %}
+      <tr class="journal-total"><td colspan="6">{{ ui.account_total }} {{ group.account.name }}</td><td class="ledger-money">{% if group.change < 0 %}(${{ group.change|floatformat:"2g"|cut:"-" }}){% else %}${{ group.change|floatformat:"2g" }}{% endif %}</td><td class="ledger-money">{% if group.closing < 0 %}(${{ group.closing|floatformat:"2g"|cut:"-" }}){% else %}${{ group.closing|floatformat:"2g" }}{% endif %}</td></tr>
+    </tbody>
+  </table></div>
+</details>
+{% empty %}<p class="journal-empty">{{ ui.empty }}</p>{% endfor %}
+<div class="journal-totals"><strong>{{ ui.total }}</strong><span>{{ ui.debit }} ${{ report.debit|floatformat:"2g" }}</span><span>{{ ui.credit }} ${{ report.credit|floatformat:"2g" }}</span></div>
+{% endif %}
+<style>
+.ledger-match-count{font-size:.85rem;color:#64748b;margin:20px 0 10px}.ledger-report-account{border:1px solid #e2e8f0;border-radius:7px;overflow:hidden;margin-bottom:14px;background:#fff}.ledger-report-account>summary{cursor:pointer;background:#f5f6f8;color:#087c96;padding:14px 16px;font-size:.9rem;font-weight:600}.ledger-report-scroll{overflow-x:auto}.ledger-report-table{border-collapse:collapse;width:100%;font-size:.85rem}.ledger-report-table th,.ledger-report-table td{padding:14px 16px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top}.ledger-report-table th{background:#f8fafc;color:#475569;font-size:.75rem;font-weight:600}.ledger-report-table .ledger-money{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}.ledger-report-table td:nth-child(5){min-width:180px;overflow-wrap:anywhere}.ledger-prior{font-weight:600}.ledger-report-table tr:last-child td{border-bottom:0}
+</style>
+</div>{% include "portal/journal_scope_script.html" %}
+<script>(()=>{const range=document.querySelector('[name="date_range"]'),start=document.querySelector('[name="start"]'),end=document.querySelector('[name="end"]');if(!range)return;function update(){const custom=range.value==='custom';start.readOnly=!custom;end.readOnly=!custom;if(!custom){const today='{{ today|date:"Y-m-d" }}';end.value=today;const date=new Date(today+'T12:00:00');if(range.value==='month')date.setDate(1);else if(range.value==='year'){date.setMonth(0,1);}else date.setDate(date.getDate()-29);start.value=date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');}}range.addEventListener('change',update);update();})();</script>
+{% endblock %}

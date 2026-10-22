@@ -1,0 +1,1 @@
+{% for cell in cells %}<span class="financial-money">{% if cell.amount %}<a href="{{ cell.url }}" title="{{ financial_ui.view_entries }}">{% endif %}{% if cell.amount < 0 %}(${{ cell.amount|floatformat:"2g"|cut:"-" }}){% else %}${{ cell.amount|floatformat:"2g" }}{% endif %}{% if cell.amount %}</a>{% endif %}</span>{% endfor %}

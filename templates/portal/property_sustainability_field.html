@@ -1,0 +1,5 @@
+<div class="property-field" data-field="sustainability_features">
+<label for="{{ field.id_for_label }}">{{ field.label }}{% include 'portal/property_feature_information.html' %}{% if field.field.required %} <span aria-label="required" style="color:#b91c1c">*</span>{% endif %}</label>
+{% include 'portal/property_feature_information_dialog.html' %}
+{{ field }}{{ field.errors }}
+</div>

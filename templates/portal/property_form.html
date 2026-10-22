@@ -1,380 +1,844 @@
 {% extends "portal/base.html" %}
-
-{% block title %}{{ page_heading }} | Col Realty Portal{% endblock %}
-{% block page_title %}{{ page_heading }}{% endblock %}
-
-{% block content %}
-
-<div style="margin-bottom:18px;">
-  {% if property_obj %}
-    <a href="{% url 'portal:property_detail' property_obj.id %}"
-       style="color:#2563eb;text-decoration:none;font-size:0.85rem;">
-      ← Back to Property 360
-    </a>
-  {% else %}
-    <a href="{% url 'portal:properties' %}"
-       style="color:#2563eb;text-decoration:none;font-size:0.85rem;">
-      ← Back to Properties
-    </a>
-  {% endif %}
-</div>
-
-<div class="card">
-
-  <div style="padding:20px;">
-
-    <form method="post" id="property-form">
-
-      {% csrf_token %}
-
-      {% if form.non_field_errors %}
-        <div class="alert alert-error">
-          {{ form.non_field_errors }}
-        </div>
-      {% endif %}
-
-      <div style="
-          display:grid;
-          grid-template-columns:1fr 1fr;
-          gap:20px;">
-
-        <div>
-          <label class="stat-label">Street Address</label>
-          <div style="margin-top:6px;">
-            {{ form.street_address }}
-          </div>
-          {{ form.street_address.errors }}
-        </div>
-
-        <div id="parent-unit-number-wrap">
-          <label class="stat-label">Unit Number</label>
-          <div style="margin-top:6px;">
-            {{ form.unit_number }}
-          </div>
-          {{ form.unit_number.errors }}
-        </div>  
-
-        <div>
-          <label class="stat-label">City</label>
-          <div style="margin-top:6px;">
-            {{ form.city }}
-            <datalist id="texas-city-list"></datalist>
-          </div>
-          {{ form.city.errors }}
-        </div>
-
-        <div>
-          <label class="stat-label">State</label>
-          <div style="margin-top:6px;">
-            {{ form.state }}
-          </div>
-          {{ form.state.errors }}
-        </div>
-
-        <div>
-          <label class="stat-label">ZIP Code</label>
-          <div style="margin-top:6px;">
-            {{ form.zip_code }}
-          </div>
-          {{ form.zip_code.errors }}
-        </div>
-
-        <div>
-          <label class="stat-label">County <span style="color:#dc2626;">*</span></label>
-          <div style="margin-top:6px;">
-            {{ form.county }}
-          </div>
-          {{ form.county.errors }}
-        </div>
-
-        <div>
-          <label class="stat-label">Subdivision <span style="color:#dc2626;">*</span></label>
-          <div style="margin-top:6px;">
-            {{ form.subdivision }}
-          </div>
-          {{ form.subdivision.errors }}
-        </div>
-
-        <div style="grid-column:span 2;">
-          <label class="stat-label">Property Type <span style="color:#dc2626;">*</span></label>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px;">
-            <div>
-              {{ form.property_type }}
-              {{ form.property_type.errors }}
-            </div>
-            <div id="property-type-other-wrap" style="display:none;">
-              {{ form.property_type_other }}
-              {{ form.property_type_other.errors }}
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <label class="stat-label">Year Built</label>
-          <div style="margin-top:6px;">
-            {{ form.year_built }}
-          </div>
-          {{ form.year_built.errors }}
-        </div>
-
-        <div id="single-unit-specs"
-             style="grid-column:span 2;display:grid;grid-template-columns:1fr 1fr;gap:20px;">
-          <div>
-            <label class="stat-label">Bedrooms <span style="color:#dc2626;">*</span></label>
-            <div style="margin-top:6px;">{{ form.bedrooms }}</div>
-            {{ form.bedrooms.errors }}
-          </div>
-          <div>
-            <label class="stat-label">Bathrooms Full <span style="color:#dc2626;">*</span></label>
-            <div style="margin-top:6px;">{{ form.bathrooms_full }}</div>
-            {{ form.bathrooms_full.errors }}
-          </div>
-          <div>
-            <label class="stat-label">Bathrooms Half <span style="color:#dc2626;">*</span></label>
-            <div style="margin-top:6px;">{{ form.bathrooms_half }}</div>
-            {{ form.bathrooms_half.errors }}
-          </div>
-          <div>
-            <label class="stat-label">Square Feet <span style="color:#dc2626;">*</span></label>
-            <div style="margin-top:6px;">{{ form.sqft }}</div>
-            {{ form.sqft.errors }}
-          </div>
-        </div>
-
-        <div>
-          <label class="stat-label">Lot Size (Sq Ft)</label>
-          <div style="margin-top:6px;">
-            {{ form.lot_size_sqft }}
-          </div>
-          {{ form.lot_size_sqft.errors }}
-        </div>
-
-        <div>
-          <label class="stat-label">Latitude</label>
-          <div style="margin-top:6px;">
-            {{ form.latitude }}
-          </div>
-          {{ form.latitude.errors }}
-        </div>
-
-        <div>
-          <label class="stat-label">Longitude</label>
-          <div style="margin-top:6px;">
-            {{ form.longitude }}
-          </div>
-          {{ form.longitude.errors }}
-        </div>
-
-        <div>
-          <label class="stat-label">Management Status</label>
-          <div style="margin-top:6px;">
-            {{ form.management_status }}
-          </div>
-          {{ form.management_status.errors }}
-        </div>
-
-        <div id="multi-unit-wrap">
-          <label class="stat-label">Multi-Unit Property</label>
-          <div style="margin-top:10px;">
-            {{ form.is_multi_unit }}
-          </div>
-          <div style="margin-top:6px; font-size:12px; color:#6b7280;">
-            Enable this when the property contains multiple independently rentable units.
-          </div>
-          {{ form.is_multi_unit.errors }}
-        </div>
-
-      </div>
-
-      <div style="margin-top:24px;">
-        <label class="stat-label">Notes</label>
-        <div style="margin-top:6px;">
-          {{ form.notes }}
-        </div>
-        {{ form.notes.errors }}
-      </div>
-
-      <div style="
-          display:flex;
-          justify-content:flex-end;
-          gap:10px;
-          margin-top:24px;">
-
-        {% if property_obj %}
-          <a href="{% url 'portal:property_detail' property_obj.id %}"
-             class="btn"
-             style="background:#f1f5f9;">
-            Cancel
-          </a>
-        {% else %}
-          <a href="{% url 'portal:properties' %}"
-             class="btn"
-             style="background:#f1f5f9;">
-            Cancel
-          </a>
-        {% endif %}
-
-        <button type="submit"
-                class="btn btn-primary">
-          {{ submit_label }}
-        </button>
-
-      </div>
-
-    </form>
-
-  </div>
-
-</div>
-
-
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-  const propertyType = document.getElementById("id_property_type");
-  const otherWrap = document.getElementById("property-type-other-wrap");
-  const otherInput = document.getElementById("id_property_type_other");
-  const multiUnitWrap = document.getElementById("multi-unit-wrap");
-  const multiUnitInput = document.getElementById("id_is_multi_unit");
-  const parentUnitNumberWrap = document.getElementById("parent-unit-number-wrap");
-  const parentUnitNumberInput = document.getElementById("id_unit_number");
-  const singleUnitSpecs = document.getElementById("single-unit-specs");
-  const unitSpecInputs = [
-    document.getElementById("id_bedrooms"),
-    document.getElementById("id_bathrooms_full"),
-    document.getElementById("id_bathrooms_half"),
-    document.getElementById("id_sqft")
-  ].filter(Boolean);
-
-  function syncOtherPropertyType() {
-    if (!propertyType || !otherWrap || !otherInput) return;
-    const showOther = propertyType.value === "other";
-    otherWrap.style.display = showOther ? "block" : "none";
-    otherInput.required = showOther;
-    if (!showOther) otherInput.value = "";
-  }
-
-  function syncMultiUnitOption() {
-    if (!propertyType || !multiUnitWrap || !multiUnitInput) return;
-
-    const isSingleFamily =
-      propertyType.value === "single_family_residential";
-
-    multiUnitWrap.style.display = isSingleFamily ? "none" : "block";
-
-    if (isSingleFamily) {
-      multiUnitInput.checked = false;
-    }
-
-    const isMultiUnit = !isSingleFamily && multiUnitInput.checked;
-
-    if (parentUnitNumberWrap) {
-      parentUnitNumberWrap.style.display = isMultiUnit ? "none" : "block";
-    }
-    if (singleUnitSpecs) {
-      singleUnitSpecs.style.display = isMultiUnit ? "none" : "grid";
-    }
-    unitSpecInputs.forEach(function (input) {
-      input.required = !isMultiUnit;
+{% block title %}{{ page_heading }} | Col Realty Portal<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const form = document.getElementById('property-form');
+  if (!form) return;
+  form.querySelectorAll('details input[type="search"], details input[placeholder="Type to filter options"]').forEach(input => {
+    const dropdown = input.closest('details');
+    // Clear filtering before removing its controls so every option is visible.
+    input.value = '';
+    input.dispatchEvent(new Event('input', {bubbles:true}));
+    if (input.id) dropdown.querySelectorAll('label').forEach(label => {
+      if (label.htmlFor === input.id) label.remove();
     });
-    if (isMultiUnit && parentUnitNumberInput) {
-      parentUnitNumberInput.value = "";
-    }
-  }
-
-  if (propertyType) {
-    propertyType.addEventListener("change", function () {
-      syncOtherPropertyType();
-      syncMultiUnitOption();
-    });
-  }
-
-  if (multiUnitInput) {
-    multiUnitInput.addEventListener("change", syncMultiUnitOption);
-  }
-
-  syncOtherPropertyType();
-  syncMultiUnitOption();
-
-  // Local City autocomplete: suggestions only; staff may still type
-  // another valid city/locality manually.
-  const cityInput = document.getElementById("id_city");
-  const cityList = document.getElementById("texas-city-list");
-
-  if (cityInput && cityList) {
-    const cities = (cityInput.dataset.texasCities || "")
-      .split("|")
-      .filter(Boolean);
-
-    cities.forEach(function (city) {
-      const option = document.createElement("option");
-      option.value = city;
-      cityList.appendChild(option);
-    });
-  }
-
-  // Geocoding is coordinate-only. City, State, and ZIP are staff-entered
-  // address facts and are never overwritten by the geocoder.
-  const fields = {
-    street_address: document.getElementById("id_street_address"),
-    unit_number: document.getElementById("id_unit_number"),
-    city: document.getElementById("id_city"),
-    state: document.getElementById("id_state"),
-    zip_code: document.getElementById("id_zip_code")
-  };
-
-  const latitude = document.getElementById("id_latitude");
-  const longitude = document.getElementById("id_longitude");
-
-  if (
-    !fields.street_address ||
-    !fields.city ||
-    !fields.state ||
-    !fields.zip_code ||
-    !latitude ||
-    !longitude
-  ) return;
-
-  let timer;
-
-  async function geocode() {
-    if (
-      !fields.street_address.value.trim() ||
-      !fields.city.value.trim() ||
-      !fields.state.value.trim() ||
-      !fields.zip_code.value.trim()
-    ) return;
-
-    const params = new URLSearchParams();
-    Object.entries(fields).forEach(([key, field]) => {
-      params.set(key, field ? field.value.trim() : "");
-    });
-
-    try {
-      const response = await fetch(
-        "{% url 'portal:geocode_property_address' %}?" + params.toString(),
-        {headers: {"X-Requested-With": "XMLHttpRequest"}}
-      );
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        latitude.value = data.latitude;
-        longitude.value = data.longitude;
-      }
-    } catch (error) {
-      console.error("Property geocoding failed:", error);
-    }
-  }
-
-  function scheduleGeocode() {
-    clearTimeout(timer);
-    timer = setTimeout(geocode, 700);
-  }
-
-  Object.values(fields).filter(Boolean).forEach(field => {
-    field.addEventListener("change", scheduleGeocode);
-    field.addEventListener("blur", scheduleGeocode);
+    const enclosingLabel = input.closest('label');
+    if (enclosingLabel) enclosingLabel.remove();
+    else input.remove();
   });
 });
 </script>
+{% endblock %}
+{% block page_title %}{{ page_heading }}<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const form = document.getElementById('property-form');
+  if (!form) return;
+  form.querySelectorAll('details input[type="search"], details input[placeholder="Type to filter options"]').forEach(input => {
+    const dropdown = input.closest('details');
+    // Clear filtering before removing its controls so every option is visible.
+    input.value = '';
+    input.dispatchEvent(new Event('input', {bubbles:true}));
+    if (input.id) dropdown.querySelectorAll('label').forEach(label => {
+      if (label.htmlFor === input.id) label.remove();
+    });
+    const enclosingLabel = input.closest('label');
+    if (enclosingLabel) enclosingLabel.remove();
+    else input.remove();
+  });
+});
+</script>
+{% endblock %}
+{% block content %}
+<style>
+.property-feature-pair {grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;}
+@media(max-width:700px){.property-feature-pair{grid-template-columns:minmax(0,1fr);}}
 
+.main {min-width:0;}
+.property-editor {max-width:1150px;margin:auto;}
+.property-nav {position:sticky;top:0;z-index:20;display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 22px;padding:12px 0;background:#f1f5f9;border-bottom:1px solid #dbe3ef;}
+.property-nav a {padding:7px 11px;background:white;border:1px solid #dbe3ef;border-radius:7px;color:#334155;text-decoration:none;font-size:.85rem;}
+.property-nav a.active {background:#1d4ed8;border-color:#1d4ed8;color:#fff;}
+.property-nav a:focus-visible {outline:2px solid #2563eb;outline-offset:2px;}
+.property-section {scroll-margin-top:var(--property-nav-offset,160px);margin-bottom:20px;}
+.property-section .card-header {padding:16px 22px;}
+.property-fields {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 24px;padding:22px;}
+.property-field label {display:block;margin-bottom:7px;font-size:.9rem;font-weight:600;color:#334155;}
+.property-field input:not([type=checkbox]),.property-field select,.property-field textarea {box-sizing:border-box;width:100%;padding:10px 12px;min-height:42px;border:1px solid #cbd5e1;border-radius:7px;background:white;font:inherit;}
+/* Match text controls to the single-line Verification Rating field. */
+#property-form input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=button]):not([type=submit]),
+#property-form textarea {
+  box-sizing:border-box;
+  height:42px;
+  min-height:42px;
+  max-height:42px;
+  padding:10px 12px;
+  line-height:20px;
+}
+#property-form textarea {resize:none;overflow-y:auto;}
+.property-field input:focus,.property-field select:focus,.property-field textarea:focus {outline:2px solid #93c5fd;outline-offset:1px;}
+.property-field.wide {grid-column:1/-1;}
+.property-field[data-field='application_max_number_of_pets'],
+.property-field[data-field='application_pet_deposit'],
+.property-field[data-field='application_intermediary_yn'] {grid-column:1;}
+.overview-heading {grid-column:1/-1;margin:4px 0 0;font-size:1rem;color:#334155;}
+.property-field .errorlist {color:#b91c1c;margin:6px 0 0;padding-left:18px;font-size:.85rem;}
+.property-help {color:#64748b;font-size:.85rem;line-height:1.5;margin:8px 22px;}
+.reference-entry {border:1px solid #e2e8f0;border-radius:9px;margin:14px 22px;background:#f8fafc;}
+.reference-entry .property-fields {padding:16px;}
+.green-energy-fields, #certifications-entries .property-fields {grid-template-columns:minmax(0,1fr);}
+.property-actions {position:sticky;bottom:0;display:flex;justify-content:flex-end;gap:10px;padding:14px 18px;background:#fff;border:1px solid #e2e8f0;border-radius:9px;z-index:5;}
+.school-help-button {border:0;border-radius:50%;width:20px;height:20px;cursor:pointer;margin-left:5px;font-weight:bold;}
+.school-help-dialog {padding:0;border:1px solid #cbd5e1;border-radius:5px;width:min(720px,90vw);max-height:85vh;overflow:auto;}
+.school-help-dialog::backdrop {background:rgba(15,23,42,.35);}
+.school-help-header {display:flex;justify-content:space-between;align-items:center;padding:12px 20px;}
+.school-help-header h3 {margin:0;}
+.school-help-header button {border:0;background:transparent;color:white;font-size:1.5rem;cursor:pointer;}
+.school-help-body {padding:16px 20px;line-height:1.6;}
+.property-editor {--col360-required-background:#F4E8DC;--col360-required-border:#C69A6B;--col360-required-text:#7A4935;--col360-orange:#F5822F;--col360-info-blue:#01AACE;}
+#property-form .property-field.required-field input:not([type=hidden]):not([type=checkbox]):not([type=radio]),
+#property-form .property-field.required-field select,
+#property-form .property-field.required-field textarea,
+#property-form .property-field.required-field summary,
+#property-form .property-field.required-missing input:not([type=hidden]):not([type=checkbox]):not([type=radio]),
+#property-form .property-field.required-missing select,
+#property-form .property-field.required-missing textarea,
+#property-form .property-field.required-missing summary,
+#property-form .application-required-dropdown.has-errors > summary,
+#property-form .property-field:has(.errorlist li:not([hidden])) input:not([type=hidden]):not([type=checkbox]):not([type=radio]),
+#property-form .property-field:has(.errorlist li:not([hidden])) select,
+#property-form .property-field:has(.errorlist li:not([hidden])) textarea,
+#property-form .property-field:has(.errorlist li:not([hidden])) summary {
+  background:var(--col360-required-background)!important;
+  border-color:var(--col360-required-border)!important;
+  color:#494949;
+}
+#property-form .required-field-message,
+#property-form .errorlist,
+#property-form [aria-label="required"],
+#property-error-summary, #property-error-summary a {color:var(--col360-required-text)!important;}
+.property-editor .school-help-button,
+.property-editor button[data-school-help] {background:var(--col360-info-blue)!important;border-color:var(--col360-info-blue)!important;color:white!important;}
+.property-editor .property-nav a.active,
+.property-editor .btn-primary {background:#01AACE!important;border-color:#01AACE!important;color:#fff!important;}
+.property-editor .property-nav a:focus-visible {outline-color:#01AACE;}
+#property-form .property-field .property-help,
+#property-form .property-field .required-field-message,
+#property-form .property-field .errorlist,
+#property-form .property-field .errorlist li {
+  color:#64748b!important;
+  font-family:inherit!important;
+  font-size:.85rem!important;
+  font-weight:400!important;
+  font-style:normal!important;
+  line-height:1.5!important;
+}
+.property-editor [hidden] {display:none!important;}
+@media(max-width:700px){body{display:block}.sidebar{display:none}.main{margin-left:0}.content{padding:16px}.topbar{padding:14px 16px;flex-wrap:wrap;gap:10px}.property-fields{grid-template-columns:1fr;padding:16px;gap:16px}.property-field.wide{grid-column:auto}.property-nav{gap:5px}.property-section .card-header{padding:14px 16px}}
+.property-field:has(.errorlist) {outline:2px solid #b91c1c;outline-offset:4px;border-radius:6px;}
+.property-field:has(.errorlist) input, .property-field:has(.errorlist) select, .property-field:has(.errorlist) textarea {border-color:#b91c1c;background:#fff5f5;}
+.property-field:has(.errorlist) {scroll-margin-top:180px;}
+#property-error-summary a {color:#991b1b;text-decoration:underline;}
+.property-field:has([required]) input:not([type=hidden]):not([type=checkbox]):not([type=radio]),
+.property-field:has([required]) select, .property-field:has([required]) textarea {background:#fff6ed;border-color:#c5a385;}
+.property-field:has(.errorlist) input, .property-field:has(.errorlist) select, .property-field:has(.errorlist) textarea {background:#fff1f2;border-color:#b91c1c;}
+.property-field.required-field input:not([type=hidden]):not([type=checkbox]):not([type=radio]), .property-field.required-field select, .property-field.required-field textarea {background:#fff6ed;border-color:#c5a385;}
+.property-field:has(.errorlist) input, .property-field:has(.errorlist) select, .property-field:has(.errorlist) textarea {background:#fff1f2;border-color:#b91c1c;}
+</style>
+<div class="property-editor">
+<a href="{% if property_obj %}{% url 'portal:property_detail' property_obj.id %}{% else %}{% url 'portal:properties' %}{% endif %}">← Back to {% if property_obj %}Property 360{% else %}Properties{% endif %}</a>
+<p class="property-help" style="margin-left:0;">Keep permanent property facts here. Optional sections can be completed later. Fields marked * are required.</p>
+<nav class="property-nav" aria-label="Property sections">{% for section in property_sections %}<a href="#{{ section.id }}" data-property-section-link>{{ section.title }}</a>{% endfor %}</nav>
+<form method="post" id="property-form">
+{% csrf_token %}
+{{ form.street_address.as_hidden }}
+{% if incomplete_draft %}<p class="property-help" role="status">Incomplete draft loaded. Use Save to validate and update the property record.</p>{% endif %}
+{% if form.errors or profile_form.errors or marketing_form.errors or document_formset.total_error_count or certification_formset.total_error_count or document_formset.non_form_errors or certification_formset.non_form_errors %}
+<div class="alert alert-error" id="property-error-summary" role="alert" tabindex="-1"><strong>Please correct the errors listed below. Nothing has been saved.</strong>
+{% include 'portal/property_validation_summary.html' with error_form=form %}
+{% include 'portal/property_validation_summary.html' with error_form=profile_form %}
+{% include 'portal/property_validation_summary.html' with error_form=marketing_form %}
+{{ document_formset.non_form_errors }}{{ certification_formset.non_form_errors }}
+{% include 'portal/property_validation_summary.html' with error_form=document_formset.management_form %}
+{% include 'portal/property_validation_summary.html' with error_form=certification_formset.management_form %}
+{% for entry in document_formset %}{% if entry.errors and not entry.DELETE.value %}<p><strong>Document entry {{ forloop.counter }}</strong></p>{% include 'portal/property_validation_summary.html' with error_form=entry %}{% endif %}{% endfor %}
+{% for entry in certification_formset %}{% if entry.errors and not entry.DELETE.value %}<p><strong>Green Energy entry {{ forloop.counter }}</strong></p>{% include 'portal/property_validation_summary.html' with error_form=entry %}{% endif %}{% endfor %}
+</div>{% endif %}
+{% for section in property_sections %}
+<section class="card property-section" id="{{ section.id }}" aria-labelledby="heading-{{ section.id }}">
+<div class="card-header"><h2 id="heading-{{ section.id }}">{{ section.title }}</h2></div>
+{% if section.title == 'How to Apply, Agent Access & Services' %}<div data-application-section-body{% if not section.application_expanded %} hidden{% endif %}>{% endif %}
+{% if section.title == 'Documents, Financial Setup & Activity' %}<p class="property-help">Property tax and association reference details. Invoice approval, payments and balances are managed in Finance.</p>{% endif %}
+{% if section.title == 'Utilities, Access & Services' %}<p class="property-help">Private staff instructions. Access codes and lockbox details are never public marketing content.</p>{% endif %}
+{% if section.title == 'How to Apply, Agent Access & Services' %}<p class="property-help">Application defaults and staff access instructions. Saving does not publish a listing or initiate an application.</p>{% endif %}
+<div class="property-fields">
+{% for field in section.fields %}
+{% if field.name != 'sustainability_features' and field.name != 'energy_features' and field.name != 'green_energy_remarks' %}
+{% if field.pair_start %}<div class="property-feature-pair">{% endif %}
+{% if field.overview_heading %}<h3 class="overview-heading">{{ field.overview_heading }}</h3>{% endif %}
+{% if field.name == 'latitude' %}
+<div class="property-field wide property-map-panel">
+  {{ form.property_map_config|json_script:"property-map-config" }}
+  <div id="property-location-map" style="height:360px;border:1px solid #cbd5e1;border-radius:7px;" aria-label="Property location map"></div>
+  <p id="property-map-status" role="status" aria-live="polite">Click the map to place a pin, or enter both coordinates below.</p>
+</div>
+{% endif %}
+<div class="property-field {% if field.field.required %}required-field {% endif %}{% if field.application_default_field or field.section_remarks_field or field.name == 'level_types' or field.name == 'assigned_manager_name' or field.name == 'move_in_special_description' or field.name == 'appliances_types' or field.name == 'fema_flood_plain_types' or field.name == 'property_type_other' or field.name == 'is_multi_unit' or field.name == 'builder_name' or field.name == 'notes' or field.name == 'office_notes' or field.name == 'public_remarks' or field.name == 'private_remarks' or field.name == 'showing_instructions' %}wide{% endif %}" data-field="{{ field.name }}" data-remarks-target="{{ field.section_remarks_target }}" {% if field.dependent_hidden %}hidden{% endif %} {% if field.name == 'unit_number' %}id="parent-unit-number-wrap"{% elif field.name == 'property_type_other' %}id="property-type-other-wrap" {% if field.form.property_type.value != 'other' %}hidden{% endif %}{% elif field.name == 'is_multi_unit' %}id="multi-unit-wrap"{% endif %}>
+{% if field.name == 'application_required' %}
+{% include 'portal/property_application_required.html' %}
+{% elif field.equipment_picker %}
+{% include 'portal/property_equipment_picker.html' %}
+{% elif field.name == 'fema_flood_plain_types' %}
+{% include 'portal/property_fema_flood_plain.html' %}
+{% elif field.name == 'level_types' %}
+{% include 'portal/property_levels.html' %}
+{% elif field.name == 'flooring' %}
+<div class="feature-picker-with-info">{% include "portal/property_feature_information.html" %}{% include "portal/property_feature_information_dialog.html" %}{% include 'portal/property_flooring.html' %}</div>
+{% elif field.name == 'interior_features' %}
+<div class="feature-picker-with-info">{% include "portal/property_feature_information.html" %}{% include "portal/property_feature_information_dialog.html" %}{% include 'portal/property_interior_features.html' %}</div>
+{% elif field.name == 'exterior_features' %}
+<div class="feature-picker-with-info">{% include "portal/property_feature_information.html" %}{% include "portal/property_feature_information_dialog.html" %}{% include 'portal/property_exterior_features.html' %}</div>
+{% elif field.name == 'construction_materials' %}
+<div class="feature-picker-with-info">{% include "portal/property_feature_information.html" %}{% include "portal/property_feature_information_dialog.html" %}{% include 'portal/property_construction_materials.html' %}</div>
+{% elif field.name == 'foundation' %}
+<div class="feature-picker-with-info">{% include "portal/property_feature_information.html" %}{% include "portal/property_feature_information_dialog.html" %}{% include 'portal/property_foundation.html' %}</div>
+{% elif field.name == 'roof' %}
+<div class="feature-picker-with-info">{% include "portal/property_feature_information.html" %}{% include "portal/property_feature_information_dialog.html" %}{% include 'portal/property_roof.html' %}</div>
+{% else %}
+<label for="{{ field.id_for_label }}">{{ field.label }}{% if field.feature_help_template %}{% include "portal/property_feature_information.html" %}{% endif %}{% if field.field_help %}<button type="button" class="school-help-button btn-primary" aria-label="Information about {{ field.label }}" data-school-help="help-{{ field.id_for_label }}">i</button>{% endif %}{% if field.school_help_title %}
+<button type="button" class="school-help-button btn-primary" aria-label="Help for {{ field.label }}" data-school-help="help-{{ field.id_for_label }}">?</button>{% endif %}{% if field.field.required %} <span aria-label="required" style="color:#b91c1c">*</span>{% endif %}</label>
+{% if field.feature_help_template %}{% include "portal/property_feature_information_dialog.html" %}{% endif %}
+{% if field.field_help %}
+<dialog class="school-help-dialog" id="help-{{ field.id_for_label }}" aria-labelledby="help-title-{{ field.id_for_label }}">
+<div class="school-help-header btn-primary"><h3 id="help-title-{{ field.id_for_label }}">{{ field.label }}{% if field.name == "parking_features" %} Help{% endif %}</h3><button type="button" data-school-help-close aria-label="Close help">×</button></div>
+{% if field.name == "parking_features" %}{% include "portal/property_parking_features_help.html" %}{% elif field.name == "laundry_location" %}{% include "portal/property_laundry_location_help.html" %}{% else %}<div class="school-help-body"><p>{{ field.field_help }}</p></div>{% endif %}
+</dialog>{% endif %}
+{% if field.school_help_title %}
+<dialog class="school-help-dialog" id="help-{{ field.id_for_label }}" aria-labelledby="help-title-{{ field.id_for_label }}">
+<div class="school-help-header btn-primary"><h3 id="help-title-{{ field.id_for_label }}">{{ field.school_help_title }}</h3><button type="button" data-school-help-close aria-label="Close help">×</button></div>
+<div class="school-help-body"><p>Rule Help:</p><ul><li>{{ field.school_help_rule }}</li></ul><p>General Field Help:</p><p>{{ field.school_help_text }}</p>{% if field.school_help_text_extra %}<p>{{ field.school_help_text_extra }}</p>{% endif %}</div>
+</dialog>{% endif %}
+{{ field }}{{ field.errors }}{% if field.name == "move_in_special_description" %}<p class="property-help" style="margin-left:0;">Characters remaining: <span data-special-remaining>1000</span></p>{% endif %}{% if field.name == "tax_legal_description" %}<p id="tax-legal-remaining" class="property-help" style="margin-left:0;">Characters remaining: <span data-tax-legal-remaining>255</span></p>{% endif %}{% if field.help_text %}<div class="property-help">{{ field.help_text }}</div>{% endif %}
+{% endif %}
+</div>
+{% if field.pair_end %}</div>{% endif %}
+{% endif %}
+{% endfor %}
+</div>
+{% if section.title == 'How to Apply, Agent Access & Services' %}</div>{% endif %}
+{% if section.title == 'Property Overview' %}<datalist id="texas-city-list"></datalist><p class="property-help">For a multi-unit property, manage bedroom, bathroom and living-area details on each unit.</p>{% endif %}
+{% if section.title == 'Documents, Financial Setup & Activity' %}
+<div style="padding:0 22px;"><h3>Document Links</h3><p class="property-help" style="margin-left:0;">Link existing Google Drive documents. Drive permissions still control access; adding a link does not grant access.</p></div>
+{% include 'portal/property_reference_formset.html' with formset=document_formset kind='documents' label='Document' %}
+{% endif %}
+{% if section.title == 'Physical Features & Construction' %}
+<div style="padding:0 22px;"><h3>Green Energy</h3><h4>Energy, Environment and Sustainability Information</h4></div>
+<div class="property-fields green-energy-fields">
+<div class="property-field" data-remarks-target="green_energy_remarks">{% include 'portal/property_equipment_picker.html' with field=profile_form.energy_features %}</div>
+<div class="property-field" data-remarks-target="green_energy_remarks">{% include 'portal/property_equipment_picker.html' with field=profile_form.sustainability_features %}</div>
+</div>
+<div style="padding:0 22px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;"><h4>Green Energy Count <span id="green-energy-count">{{ certification_formset.initial_form_count }}</span></h4><button type="button" class="btn btn-primary" data-green-more>More</button></div>
+{% include 'portal/property_reference_formset.html' with formset=certification_formset kind='certifications' label='Green Energy Verification' %}
+<div class="property-fields"><div class="property-field wide" data-field="green_energy_remarks"><label for="{{ profile_form.green_energy_remarks.id_for_label }}">{{ profile_form.green_energy_remarks.label }}</label>{{ profile_form.green_energy_remarks }}{{ profile_form.green_energy_remarks.errors }}</div></div>
+
+{% endif %}
+</section>
+{% endfor %}
+<div class="property-actions"><a class="btn" href="{% if property_obj %}{% url 'portal:property_detail' property_obj.id %}{% else %}{% url 'portal:properties' %}{% endif %}">Cancel</a><button class="btn btn-primary" type="submit" name="save_action" value="incomplete" formnovalidate>Save as Incomplete</button><button class="btn btn-primary" type="submit" name="save_action" value="complete">Save</button></div>
+</form>
+</div>
+{% include 'portal/property_required_feedback.html' %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const form = document.getElementById('property-form');
+  if (!form) return;
+  function value(name) { const field = document.getElementById('id_profile-' + name); return field ? field.value : ''; }
+  function syncFeatures() {
+    const waterfront = Array.from(form.querySelectorAll('[data-field="waterfront_features"] input[type=checkbox]:checked')).map(field => field.value);
+    const count = value('fireplaces');
+    const visible = {
+      fireplace_features_types: count !== '' && Number(count) > 0,
+      pool_features_types: ['true', 'True', 'yes'].includes(value('has_pool')),
+      water_body_name: waterfront.length > 0 && !waterfront.includes('none'),
+      solar_ownership: ['true', 'True', 'yes'].includes(value('solar')),
+      spa_features_types: value('spa') === 'yes',
+      move_in_special_description: value('move_in_special_yn') === 'yes'
+    };
+    Object.entries(visible).forEach(([name, show]) => {
+      const wrapper = form.querySelector('[data-field="' + name + '"]');
+      if (wrapper) wrapper.hidden = !show;
+    });
+  }
+  form.addEventListener('input', syncFeatures);
+  form.addEventListener('change', () => { syncFeatures(); });
+  syncFeatures();
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+  const form = document.getElementById('property-form');
+  if (!form) return;
+  const normalize = value => String(value).toLowerCase().replace(/[^a-z]/g, '');
+  function syncRemarks() {
+    const needed = new Set();
+    form.querySelectorAll('[data-remarks-target]').forEach(wrapper => {
+      const target = wrapper.dataset.remarksTarget;
+      if (!target || wrapper.hidden) return;
+      wrapper.querySelectorAll('input[type=checkbox]:checked, input[type=radio]:checked, select option:checked').forEach(option => {
+        if (normalize(option.value) === 'seeremarks' || normalize(option.textContent) === 'seeremarks') needed.add(target);
+      });
+    });
+    form.querySelectorAll('[data-field]').forEach(wrapper => {
+      const name = wrapper.dataset.field;
+      if (!['ownership_management_remarks', 'property_overview_remarks', 'physical_features_remarks', 'utilities_services_remarks', 'rules_compliance_remarks', 'green_energy_remarks', 'showing_instructions'].includes(name)) return;
+      const input = wrapper.querySelector('textarea, input');
+      if (!input) return;
+      input.required = needed.has(name);
+      wrapper.classList.toggle('required-field', input.required);
+    });
+  }
+  form.addEventListener('change', syncRemarks);
+  syncRemarks();
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+  const form = document.getElementById('property-form');
+  if (!form) return;
+  form.addEventListener('submit', () => {
+    form.querySelectorAll('[name="draft_green_active"]').forEach(input => input.remove());
+    document.querySelectorAll('[data-green-entry][data-green-active="true"]').forEach(entry => {
+      const type = entry.querySelector('[name$="-verification_type"]');
+      if (!type) return;
+      const hidden = document.createElement('input');
+      hidden.type = 'hidden'; hidden.name = 'draft_green_active';
+      hidden.value = type.name.replace(/-verification_type$/, '');
+      form.appendChild(hidden);
+    });
+  });
+});
+document.addEventListener('DOMContentLoaded', function () {
+  const summary = document.getElementById('property-error-summary');
+  if (!summary) return;
+  document.querySelectorAll('.property-field .errorlist').forEach(errors => {
+    const field = errors.closest('.property-field');
+    field.hidden = false;
+    field.querySelectorAll('input, select, textarea').forEach(input => input.setAttribute('aria-invalid', 'true'));
+  });
+  summary.addEventListener('click', event => {
+    const link = event.target.closest('[data-error-target]');
+    if (!link) return;
+    const id = link.dataset.errorTarget;
+    const input = document.getElementById(id) || document.getElementById(id + '_0');
+    if (!input || input.type === 'hidden') return;
+    event.preventDefault();
+    const field = input.closest('.property-field');
+    if (field) field.hidden = false;
+    const entry = input.closest('.reference-entry');
+    if (entry) entry.hidden = false;
+    let parent = input.parentElement;
+    while (parent) {
+      if (parent.tagName === 'DETAILS') parent.open = true;
+      parent = parent.parentElement;
+    }
+    input.scrollIntoView({behavior: 'smooth', block: 'center'});
+    input.focus({preventScroll: true});
+  });
+});
+document.addEventListener('DOMContentLoaded', function () {
+  const propertyType = document.getElementById('id_property_type');
+  const ownership = document.querySelector('[data-property-ownership-defaults]');
+  if (!propertyType || !ownership) return;
+  const defaults = JSON.parse(ownership.dataset.propertyOwnershipDefaults);
+  function suggestOwnership() {
+    ownership.value = defaults[propertyType.value] || '';
+  }
+  // Preserve saved selections and submitted overrides on page load.
+  if (!ownership.value) suggestOwnership();
+  propertyType.addEventListener('change', suggestOwnership);
+  const otherDetails = document.getElementById('id_property_type_other');
+  const otherWrap = document.getElementById('property-type-other-wrap');
+  function syncOtherSubType() {
+    const isOther = propertyType.value === 'other';
+    if (otherWrap) otherWrap.hidden = !isOther;
+    if (otherDetails) otherDetails.required = isOther;
+  }
+  propertyType.addEventListener('change', syncOtherSubType);
+  syncOtherSubType();
+});
+document.addEventListener('DOMContentLoaded', function () {
+  function updateGreenEnergyCount() {
+    const container = document.getElementById('certifications-entries');
+    const badge = document.getElementById('green-energy-count');
+    if (!container || !badge) return;
+    badge.textContent = container.querySelectorAll('[data-green-entry][data-green-active="true"]').length;
+  }
+  const greenEntries = document.getElementById('certifications-entries');
+  function setGreenEntryActive(entry, active) {
+    entry.dataset.greenActive = String(active);
+    entry.hidden = !active;
+    entry.querySelectorAll('input, select, textarea').forEach(input => {
+      if (!input.name.endsWith('-id') && !input.name.endsWith('-DELETE')) input.disabled = !active;
+    });
+    const deleted = entry.querySelector('[name$="-DELETE"]');
+    if (deleted) deleted.value = active ? '' : 'on';
+  }
+  if (greenEntries) {
+    greenEntries.querySelectorAll('[data-green-entry]').forEach(entry => {
+      if (entry.dataset.greenActive !== 'true') {
+        entry.querySelectorAll('input, select, textarea').forEach(input => {
+          if (input.type !== 'hidden') input.disabled = true;
+        });
+      }
+    });
+  }
+  document.addEventListener('click', event => {
+    const remove = event.target.closest('[data-green-remove]');
+    if (remove) {
+      setGreenEntryActive(remove.closest('[data-green-entry]'), false);
+      updateGreenEnergyCount();
+      document.querySelector('[data-green-more]').focus();
+    }
+    const more = event.target.closest('[data-green-more]');
+    if (!more || !greenEntries) return;
+    let spare = Array.from(greenEntries.querySelectorAll('[data-green-entry]')).find(entry => {
+      const id = entry.querySelector('[name$="-id"]');
+      return entry.dataset.greenActive !== 'true' && (!id || !id.value);
+    });
+    if (spare) {
+      spare.querySelectorAll('input:not([type=hidden]), select, textarea').forEach(input => {
+        if (input.type === 'checkbox' || input.type === 'radio') input.checked = false;
+        else input.value = '';
+      });
+      spare.querySelectorAll('.errorlist').forEach(errors => errors.remove());
+    } else {
+      const total = document.getElementById('id_certifications-TOTAL_FORMS');
+      const maximum = document.getElementById('id_certifications-MAX_NUM_FORMS');
+      if (Number(total.value) >= Number(maximum.value)) return;
+      const wrapper = document.createElement('div');
+      wrapper.appendChild(document.getElementById('certifications-empty').content.cloneNode(true));
+      wrapper.innerHTML = wrapper.innerHTML.replaceAll('__prefix__', total.value);
+      spare = wrapper.querySelector('[data-green-entry]');
+      greenEntries.append(...wrapper.childNodes);
+      total.value = Number(total.value) + 1;
+    }
+    setGreenEntryActive(spare, true);
+    updateGreenEnergyCount();
+    spare.querySelector('select, input:not([type=hidden]), textarea')?.focus();
+  });
+  document.addEventListener('change', updateGreenEnergyCount);
+  document.addEventListener('input', updateGreenEnergyCount);
+  updateGreenEnergyCount();
+});
+document.addEventListener('DOMContentLoaded', function () {
+  document.addEventListener('click', event => {
+    const open = event.target.closest('[data-school-help]');
+    if (open) {
+      event.preventDefault();
+      const dialog = document.getElementById(open.dataset.schoolHelp);
+      if (dialog) dialog.showModal();
+    }
+    const backdrop = event.target;
+    if (backdrop.matches('dialog.school-help-dialog[open]')) {
+      const bounds = backdrop.getBoundingClientRect();
+      const outside = event.clientX < bounds.left || event.clientX > bounds.right
+        || event.clientY < bounds.top || event.clientY > bounds.bottom;
+      if (outside) backdrop.close();
+    }
+    const close = event.target.closest('[data-school-help-close]');
+    if (close) close.closest('dialog').close();
+  });
+  const navigation = document.querySelector('.property-nav');
+  const editor = document.querySelector('.property-editor');
+  const sections = Array.from(document.querySelectorAll('.property-section'));
+  const sectionLinks = Array.from(document.querySelectorAll('[data-property-section-link]'));
+  let navigationFrame;
+  function updateCurrentSection() {
+    navigationFrame = null;
+    const offset = navigation.getBoundingClientRect().height + 16;
+    editor.style.setProperty('--property-nav-offset', offset + 'px');
+    let current = sections[0];
+    sections.forEach(section => {
+      if (section.getBoundingClientRect().top <= offset + 1) current = section;
+    });
+    // The last section may be too short to reach the top of the viewport.
+    if (window.scrollY > 0 && window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) {
+      current = sections[sections.length - 1];
+    }
+    sectionLinks.forEach(link => {
+      const active = link.hash === '#' + current.id;
+      link.classList.toggle('active', active);
+      if (active) link.setAttribute('aria-current', 'location');
+      else link.removeAttribute('aria-current');
+    });
+  }
+  function scheduleNavigationUpdate() {
+    if (!navigationFrame) navigationFrame = requestAnimationFrame(updateCurrentSection);
+  }
+  window.addEventListener('scroll', scheduleNavigationUpdate, {passive: true});
+  window.addEventListener('resize', scheduleNavigationUpdate);
+  if (window.ResizeObserver) new ResizeObserver(scheduleNavigationUpdate).observe(navigation);
+  updateCurrentSection();
+  // Re-align bookmarked sections after measuring the wrapped menu.
+  const bookmarkedSection = sections.find(section => '#' + section.id === window.location.hash);
+  if (bookmarkedSection) requestAnimationFrame(() => bookmarkedSection.scrollIntoView());
+
+  const type = document.getElementById('id_property_type');
+  const multi = document.getElementById('id_is_multi_unit');
+  const other = document.getElementById('id_property_type_other');
+  function syncPropertyType() {
+    const single = type.value === 'single_family_residential';
+    if (single) multi.checked = false;
+    document.getElementById('multi-unit-wrap').hidden = single;
+    document.getElementById('property-type-other-wrap').hidden = type.value !== 'other';
+    other.required = type.value === 'other';
+    document.getElementById('parent-unit-number-wrap').hidden = multi.checked;
+    document.querySelector('[data-field=street_address]')?.classList.toggle('wide', multi.checked);
+    ['main_level_bedrooms', 'other_level_beds', 'bathrooms_full', 'bathrooms_half', 'sqft'].forEach(name => {
+      const input = document.getElementById('id_' + name);
+      input.closest('.property-field').hidden = multi.checked;
+      input.required = !multi.checked;
+    });
+  }
+  type.addEventListener('change', syncPropertyType);
+  multi.addEventListener('change', syncPropertyType);
+  syncPropertyType();
+
+  // Hide inapplicable details, while preserving entered values and visible errors.
+  const dependencies = {
+    has_hoa: ['association_name', 'hoa_management_company', 'association_fee',
+      'association_fee_frequency', 'association_requirements', 'association_fees_include', 'special_assessment'],
+
+  };
+  Object.entries(dependencies).forEach(([name, names]) => {
+    const control = document.getElementById('id_profile-' + name);
+    function update() {
+      names.forEach(dependent => {
+        const field = document.querySelector('[data-field="' + dependent + '"]');
+        if (!field) return;
+        field.hidden = control.value === 'false' && !field.querySelector('.errorlist');
+      });
+    }
+    control.addEventListener('change', update);
+    update();
+  });
+
+  const city = document.getElementById('id_city');
+  city.setAttribute('list', 'texas-city-list');
+  (city.dataset.texasCities || '').split('|').filter(Boolean).forEach(value => {
+    const option = document.createElement('option');
+    option.value = value;
+    document.getElementById('texas-city-list').appendChild(option);
+  });
+
+  document.querySelectorAll('[data-add-reference]').forEach(button => {
+    button.addEventListener('click', () => {
+      const kind = button.dataset.addReference;
+      const total = document.getElementById('id_' + kind + '-TOTAL_FORMS');
+      const maximum = document.getElementById('id_' + kind + '-MAX_NUM_FORMS');
+      if (Number(total.value) >= Number(maximum.value)) return;
+      const template = document.getElementById(kind + '-empty');
+      const wrapper = document.createElement('div');
+      wrapper.appendChild(template.content.cloneNode(true));
+      wrapper.innerHTML = wrapper.innerHTML.replaceAll('__prefix__', total.value);
+      document.getElementById(kind + '-entries').append(...wrapper.childNodes);
+      total.value = Number(total.value) + 1;
+    });
+  });
+
+  const legalDescription = document.getElementById('id_profile-tax_legal_description');
+  const legalRemaining = document.querySelector('[data-tax-legal-remaining]');
+  if (legalDescription && legalRemaining) {
+    function updateLegalRemaining() {
+      legalRemaining.textContent = Math.max(0, 255 - Array.from(legalDescription.value).length);
+    }
+    legalDescription.addEventListener('input', updateLegalRemaining);
+    updateLegalRemaining();
+  }
+
+  // Optional geocoding never replaces manually entered or saved coordinates.
+  const latitude = document.getElementById('id_latitude');
+  const longitude = document.getElementById('id_longitude');
+  const addressFields = ['street_address', 'unit_number', 'city', 'state', 'zip_code'];
+  let timer, controller;
+  async function geocode() {
+    if (latitude.value || longitude.value) return;
+    const params = new URLSearchParams();
+    addressFields.forEach(name => params.set(name, document.getElementById('id_' + name).value.trim()));
+    if (!['street_address', 'city', 'state', 'zip_code'].every(name => params.get(name))) return;
+    if (controller) controller.abort();
+    controller = new AbortController();
+    try {
+      const response = await fetch("{% url 'portal:geocode_property_address' %}?" + params.toString(), {
+        signal: controller.signal, headers: {'X-Requested-With': 'XMLHttpRequest'}
+      });
+      const data = await response.json();
+      const unchanged = addressFields.every(name =>
+        document.getElementById('id_' + name).value.trim() === params.get(name));
+      if (response.ok && data.success && unchanged && !latitude.value && !longitude.value) {
+        latitude.value = data.latitude;
+        longitude.value = data.longitude;
+        latitude.dispatchEvent(new Event("change", {bubbles: true}));
+      }
+    } catch (error) { /* Coordinates may be left blank if geocoding is unavailable. */ }
+  }
+  addressFields.forEach(name => document.getElementById('id_' + name).addEventListener('change', () => {
+    clearTimeout(timer);
+    timer = setTimeout(geocode, 700);
+  }));
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const canvas = document.getElementById('property-location-map');
+  if (!canvas) return;
+  const config = JSON.parse(document.getElementById('property-map-config').textContent);
+  const status = document.getElementById('property-map-status');
+  const latitude = document.getElementById('id_latitude');
+  const longitude = document.getElementById('id_longitude');
+  let map, marker;
+  function coordinates() {
+    if (!latitude.value.trim() || !longitude.value.trim()) return null;
+    const lat = Number(latitude.value), lng = Number(longitude.value);
+    return Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180 ? {lat, lng} : null;
+  }
+  function syncPin() {
+    if (!map) return;
+    const position = coordinates();
+    if (!position) {
+      if (marker) marker.map = null;
+      status.textContent = 'Click the map to place a pin, or enter both coordinates below.';
+      return;
+    }
+    if (!marker) {
+      marker = new google.maps.marker.AdvancedMarkerElement({map, position, gmpDraggable: true, title: 'Property location'});
+      marker.addListener('dragend', () => {
+        const p = marker.position;
+        placePin(typeof p.lat === 'function' ? p.lat() : p.lat, typeof p.lng === 'function' ? p.lng() : p.lng);
+      });
+    }
+    marker.position = position;
+    marker.map = map;
+    map.setCenter(position);
+    map.setZoom(16);
+    status.textContent = 'Pin placed. Click the map or drag the pin to adjust the location.';
+  }
+  function placePin(lat, lng) {
+    latitude.value = lat.toFixed(7);
+    longitude.value = lng.toFixed(7);
+    latitude.dispatchEvent(new Event('change', {bubbles: true}));
+    longitude.dispatchEvent(new Event('change', {bubbles: true}));
+  }
+  latitude.addEventListener('change', syncPin);
+  longitude.addEventListener('change', syncPin);
+  function unavailable() {
+    canvas.hidden = true;
+    status.textContent = 'Map unavailable. You can still enter Latitude and Longitude below.';
+  }
+  if (!config.apiKey) {unavailable(); return;}
+  async function initialize() {
+    try {
+      const {Map} = await google.maps.importLibrary('maps');
+      await google.maps.importLibrary('marker');
+      const position = coordinates();
+      map = new Map(canvas, {center: position || {lat: 0, lng: 0}, zoom: position ? 16 : 2,
+        mapId: config.mapId, mapTypeControl: true, fullscreenControl: true, streetViewControl: false});
+      map.addListener('click', event => {if (event.latLng) placePin(event.latLng.lat(), event.latLng.lng());});
+      syncPin();
+    } catch (error) {unavailable();}
+  }
+  if (window.google && google.maps && google.maps.importLibrary) {initialize(); return;}
+  window.col360InitializePropertyMap = initialize;
+  const script = document.createElement('script');
+  const url = new URL('https://maps.googleapis.com/maps/api/js');
+  url.search = new URLSearchParams({key: config.apiKey, loading: 'async', callback: 'col360InitializePropertyMap', v: 'weekly'});
+  script.src = url.toString(); script.async = true; script.onerror = unavailable;
+  document.head.appendChild(script);
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const input = document.querySelector('[name="move_in_special_description"]');
+  const remaining = document.querySelector('[data-special-remaining]');
+  if (input && remaining) {
+    const update = () => {remaining.textContent = Math.max(0, 1000 - Array.from(input.value).length);};
+    input.addEventListener('input', update); update();
+  }
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const form = document.getElementById('property-form');
+  if (!form) return;
+  form.querySelectorAll('details input[type="search"], details input[placeholder="Type to filter options"]').forEach(input => {
+    const dropdown = input.closest('details');
+    // Clear filtering before removing its controls so every option is visible.
+    input.value = '';
+    input.dispatchEvent(new Event('input', {bubbles:true}));
+    if (input.id) dropdown.querySelectorAll('label').forEach(label => {
+      if (label.htmlFor === input.id) label.remove();
+    });
+    const enclosingLabel = input.closest('label');
+    if (enclosingLabel) enclosingLabel.remove();
+    else input.remove();
+  });
+});
+</script>
+<style>
+#property-form .selection-tags {display:inline-flex;flex-wrap:wrap;gap:6px;vertical-align:middle;}
+#property-form .selection-tag {display:inline-flex;align-items:center;gap:8px;background:#01AACE;color:#fff;border-radius:4px;padding:4px 8px;font-size:.85rem;font-weight:600;}
+#property-form .selection-tag button {background:transparent;border:0;color:inherit;font:inherit;padding:0 2px;cursor:pointer;line-height:1;}
+#property-form details:has(input[type=checkbox]) > summary {min-height:44px;box-sizing:border-box;}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const form = document.getElementById('property-form');
+  if (!form) return;
+  form.querySelectorAll('details').forEach(dropdown => {
+    const summary = dropdown.querySelector(':scope > summary');
+    const inputs = Array.from(dropdown.querySelectorAll('input[type=checkbox]'));
+    if (!summary || !inputs.length) return;
+    function labelFor(input) {
+      const label = input.closest('label') || Array.from(dropdown.querySelectorAll('label')).find(label => label.htmlFor === input.id);
+      return label ? label.textContent.trim() : input.value;
+    }
+    inputs.filter(input => !input.value || labelFor(input).toLowerCase() === 'select one').forEach(input => {
+      input.checked = false;
+      input.dispatchEvent(new Event('change', {bubbles:true}));
+      const entry = input.closest('[data-option]') || input.closest('label');
+      if (entry) entry.remove(); else input.remove();
+    });
+    function renderTags() {
+      const target = summary.querySelector('[data-application-required-summary]') || summary;
+      target.replaceChildren();
+      const tags = document.createElement('span');
+      tags.className = 'selection-tags';
+      inputs.filter(input => input.isConnected && input.checked).forEach(input => {
+        const text = labelFor(input);
+        const tag = document.createElement('span');
+        tag.className = 'selection-tag';
+        tag.append(document.createTextNode(text));
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.textContent = '×';
+        remove.setAttribute('aria-label', 'Remove ' + text);
+        remove.addEventListener('click', event => {
+          event.preventDefault();
+          event.stopPropagation();
+          input.checked = false;
+          input.dispatchEvent(new Event('change', {bubbles:true}));
+          renderTags();
+          summary.focus();
+        });
+        remove.addEventListener('keydown', event => {
+          if (event.key === ' ' || event.key === 'Enter') event.stopPropagation();
+        });
+        tag.append(remove);
+        tags.append(tag);
+      });
+      target.append(tags);
+    }
+    dropdown.addEventListener('change', () => queueMicrotask(renderTags));
+    form.addEventListener('reset', () => setTimeout(renderTags, 0));
+    renderTags();
+  });
+});
+</script>
+<style>
+#property-form [data-field="level_types"] label:has(input:disabled),
+#property-form [data-field="level_types"] [data-option]:has(input:disabled) {opacity:.45;cursor:not-allowed;}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const wrapper = document.querySelector('#property-form [data-field="level_types"]');
+  if (!wrapper) return;
+  const inputs = Array.from(wrapper.querySelectorAll('input[type=checkbox]'));
+  function updateLevels() {
+    const hasSelection = inputs.some(input => input.checked);
+    inputs.forEach(input => {input.disabled = hasSelection && !input.checked;});
+  }
+  wrapper.addEventListener('change', event => {
+    if (inputs.includes(event.target) && event.target.checked && inputs.some(input => input !== event.target && input.checked)) {
+      event.target.checked = false;
+    }
+    updateLevels();
+    queueMicrotask(updateLevels);
+  }, true);
+  wrapper.closest('form').addEventListener('reset', () => setTimeout(updateLevels, 0));
+  updateLevels();
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const form = document.getElementById('property-form');
+  if (!form) return;
+  const closePickers = () => {
+    form.querySelectorAll('details').forEach(dropdown => {
+      if (dropdown.querySelector('input[type="checkbox"]')) dropdown.open = false;
+    });
+  };
+  const revealField = input => {
+    let parent = input.parentElement;
+    while (parent && parent !== form) {
+      if (parent.tagName === 'DETAILS') parent.open = true;
+      if (parent.matches('.property-field, .reference-entry')) parent.hidden = false;
+      parent = parent.parentElement;
+    }
+    input.scrollIntoView({block: 'center'});
+    input.focus({preventScroll: true});
+  };
+  // Click runs before native validation, which can prevent the submit event.
+  form.addEventListener('click', event => {
+    const button = event.target.closest('button[type="submit"], input[type="submit"]');
+    if (button && button.form === form) closePickers();
+  }, true);
+  form.addEventListener('submit', closePickers);
+  let firstInvalid = null;
+  form.addEventListener('invalid', event => {
+    // Suppress native focus attempts while a checkbox picker is collapsed.
+    event.preventDefault();
+    if (firstInvalid) return;
+    firstInvalid = event.target;
+    closePickers();
+    revealField(firstInvalid);
+    setTimeout(() => {
+      const input = firstInvalid;
+      firstInvalid = null;
+      revealField(input);
+    }, 0);
+  }, true);
+  // Server validation also returns bound forms with the selections preserved.
+  const errors = document.getElementById('property-error-summary');
+  if (errors) {
+    const link = errors.querySelector('[data-error-target]');
+    if (link) link.click();
+    else errors.focus();
+  }
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const form = document.getElementById('property-form');
+  const lifecycle = document.getElementById('id_management_status');
+  const body = form && form.querySelector('[data-application-section-body]');
+  if (!lifecycle || !body) return;
+  function syncApplicationSection() {
+    const expanded = ['prospect', 'onboarding'].includes(lifecycle.value.toLowerCase());
+    body.hidden = !expanded;
+    const hidden = !expanded;
+    const section = body.closest('.property-section');
+    if (section) {
+      section.hidden = hidden;
+      section.setAttribute('data-application-lifecycle-item', '');
+      const title = 'How to Apply, Agent Access & Services';
+      document.querySelectorAll('a').forEach(link => {
+        const href = link.getAttribute('href') || '';
+        if (href === '#' + section.id || link.textContent.trim() === title) {
+          link.setAttribute('data-application-lifecycle-item', '');
+          link.hidden = hidden;
+        }
+      });
+    }
+    body.querySelectorAll('[data-lifecycle-required]').forEach(input => {
+      if (!['checkbox', 'radio', 'hidden'].includes(input.type)) input.required = expanded;
+      const wrapper = input.closest('.property-field');
+      if (wrapper) wrapper.classList.toggle('required-field', expanded);
+    });
+    if (!expanded) body.querySelectorAll('details').forEach(picker => picker.open = false);
+  }
+  lifecycle.addEventListener('change', syncApplicationSection);
+  form.addEventListener('reset', () => setTimeout(syncApplicationSection, 0));
+  syncApplicationSection();
+});
+</script>
+<style>
+[data-application-lifecycle-item][hidden] {display:none !important;}
+</style>
 {% endblock %}

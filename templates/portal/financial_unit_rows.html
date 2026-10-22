@@ -1,0 +1,1 @@
+{% for unit_row in units %}<div class="financial-values financial-unit"><span>{{ unit_row.label }}</span>{% include "portal/financial_cells.html" with cells=unit_row.cells %}</div>{% endfor %}

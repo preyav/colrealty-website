@@ -1,0 +1,53 @@
+<style>
+.col-table-sort{display:flex;align-items:center;gap:10px;width:100%;border:0;background:transparent;padding:0;font:inherit;font-weight:inherit;color:inherit;text-align:inherit;cursor:pointer}.col-table-sort>span:last-child{margin-left:auto;opacity:.65}.col-table-sort:hover{color:#087c96}.col-table-sort:focus-visible{outline:2px solid #01AACE;outline-offset:4px}
+</style>
+<script>
+(()=>{
+const collator=new Intl.Collator(undefined,{numeric:true,sensitivity:'base'}),originalOrder=new WeakMap();let serial=0;
+function sortValue(cell){
+ if(!cell)return {kind:'empty',value:''};
+ const explicit=cell.getAttribute('data-sort-value');
+ const controls=[...cell.querySelectorAll('input:not([type=hidden]),select,textarea,output')].filter(node=>node.closest('td,th')===cell);
+ let text=explicit!==null?explicit:controls.length?controls.map(node=>node.tagName==='SELECT'?node.selectedOptions[0]?.textContent||'':node.type==='checkbox'?(node.checked?'1':'0'):node.value??node.textContent).join(' '):cell.textContent;
+ text=text.trim().replace(/\s+/g,' ');
+ if(!text||/^[—–-]$/.test(text))return {kind:'empty',value:''};
+ const iso=text.match(/^(\d{4})-(\d{2})-(\d{2})(?:$|[T\s])/),us=text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:$|\s)/);
+ if(iso)return {kind:'number',value:Number(iso[1]+iso[2]+iso[3])};
+ if(us)return {kind:'number',value:Number(us[3]+us[1].padStart(2,'0')+us[2].padStart(2,'0'))};
+ const named=text.match(/^([A-Za-z]+\.?\s+\d{1,2},\s+\d{4})/);
+ if(named){const time=Date.parse(named[1]);if(Number.isFinite(time))return {kind:'number',value:time};}
+ if(/^\(?\s*[-+]?\s*[$£€]?\s*[-+]?\s*\d[\d,]*(?:\.\d+)?\s*%?\s*\)?$/.test(text)){
+  let number=Number(text.replace(/[$£€,%()\s]/g,''));if(text.startsWith('('))number=-Math.abs(number);return {kind:'number',value:number};
+ }
+ return {kind:'text',value:text};
+}
+function compare(a,b,ascending){if(a.kind==='empty'||b.kind==='empty')return a.kind===b.kind?0:a.kind==='empty'?1:-1;const value=a.kind==='number'&&b.kind==='number'?a.value-b.value:collator.compare(String(a.value),String(b.value));return ascending?value:-value;}
+function boundary(row){return row.hasAttribute('data-sort-fixed')||/(?:^|[\s_-])(total|subtotal|prior|opening|closing|net)(?:$|[\s_-])/.test(row.className)||[...row.cells].some(cell=>cell.colSpan>1||cell.rowSpan>1);}
+function sortBody(body,index,ascending){
+ const output=[];let segment=[];
+ function flush(){segment.sort((a,b)=>compare(sortValue(a[0].cells[index]),sortValue(b[0].cells[index]),ascending)||originalOrder.get(a[0])-originalOrder.get(b[0]));segment.forEach(bundle=>output.push(...bundle));segment=[];}
+ [...body.rows].forEach(row=>{
+  if(!originalOrder.has(row))originalOrder.set(row,serial++);
+  const previous=segment[segment.length-1]?.[0];
+  if(previous&&row.id&&[...previous.querySelectorAll('[aria-controls]')].some(control=>control.getAttribute('aria-controls')===row.id)){segment[segment.length-1].push(row);return;}
+  if(boundary(row)){flush();output.push(row);}else segment.push([row]);
+ });flush();output.forEach(row=>body.append(row));
+}
+function initialize(table){
+ if(table.matches('[data-sortable="false"]'))return;
+ const headers=table.tHead?.rows;if(!headers||headers.length!==1)return;
+ // Preserve dedicated server-side and lease-ledger sorting.
+ if(table.tHead.querySelector('[data-account-sort],[data-ledger-sort]'))return;
+ [...headers[0].cells].forEach((header,index)=>{
+  if(header.dataset.colSortReady||header.colSpan>1||header.rowSpan>1||header.matches('[data-sortable="false"]')||header.querySelector('button,a,input,select'))return;
+  const label=header.textContent.trim();if(!label||/^(actions?|manage|select)$/i.test(label))return;
+  header.dataset.colSortReady='1';header.setAttribute('scope','col');header.setAttribute('aria-sort','none');
+  const button=document.createElement('button');button.type='button';button.className='col-table-sort';const title=document.createElement('span'),indicator=document.createElement('span');title.textContent=label;indicator.textContent='↕';indicator.setAttribute('aria-hidden','true');button.append(title,indicator);header.replaceChildren(button);
+  button.addEventListener('click',()=>{const ascending=header.getAttribute('aria-sort')!=='ascending';[...table.tBodies].forEach(body=>sortBody(body,index,ascending));[...headers[0].cells].forEach(other=>{if(!other.dataset.colSortReady)return;other.setAttribute('aria-sort',other===header?(ascending?'ascending':'descending'):'none');other.querySelector('.col-table-sort>span:last-child').textContent=other===header?(ascending?'↑':'↓'):'↕';});});
+ });
+}
+function scan(root){if(root.nodeType!==1&&root.nodeType!==9)return;if(root.matches?.('table'))initialize(root);root.querySelectorAll('table').forEach(initialize);}
+function start(){scan(document);new MutationObserver(changes=>changes.forEach(change=>change.addedNodes.forEach(node=>scan(node)))).observe(document.body,{childList:true,subtree:true});}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
+})();
+</script>

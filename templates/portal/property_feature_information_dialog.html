@@ -1,0 +1,5 @@
+<dialog class="school-help-dialog" id="feature-info-{{ field.auto_id }}" aria-labelledby="feature-info-title-{{ field.auto_id }}">
+<div class="school-help-header btn-primary"><h3 id="feature-info-title-{{ field.auto_id }}">{{ field.label }} Help</h3><button type="button" data-school-help-close aria-label="Close help">×</button></div>
+<div class="school-help-body">{% if field.field.required %}<p>Rule Help:</p><ul><li>{{ field.label }} is required.</li></ul>{% endif %}{% include field.feature_help_template %}</div>
+</dialog>
+<style>.feature-info-definitions{padding-left:24px}.feature-info-definitions li{margin-bottom:18px}.feature-picker-with-info{position:relative}.feature-picker-with-info>.school-help-button{position:absolute;right:0;top:0;z-index:1}</style>

@@ -1,0 +1,2 @@
+{% load tenant_work %}{% tenant_work_labels as tenant_ui %}
+{% if work_order.status == 'assigned' or work_order.status == 'scheduled' or work_order.status == 'in_progress' %}<a class="btn btn-primary btn-sm" href="{% url 'portal:record_work_completion' work_order.pk %}">{{ ui.action }}</a>{% elif work_order.status == 'completed' and work_order.is_self_performed %}<span>{{ tenant_ui.financial_help }}</span>{% elif work_order.status == 'completed' %}<a class="btn btn-primary btn-sm" href="{% url 'portal:add_vendor_invoice' work_order.pk %}">{{ ui.invoice }}</a>{% endif %}

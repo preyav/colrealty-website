@@ -1,7 +1,8 @@
+from leasing.lease_sections import LeaseSectionsMixin
 from datetime import date, datetime, timedelta
 import re
 from django import forms
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
@@ -12,6 +13,7 @@ from maintenance.models import (
     VendorAward,
     VendorEstimate,
     VendorInvoice,
+    VendorPayment,
     VendorQuoteRequest,
     WorkOrder,
 )
@@ -20,6 +22,7 @@ from leasing.models import Lease, LeaseTenant, LeaseIntentRecord
 from tenants.models import TenantProfile
 from properties.models import Property, PropertyUnit
 from owners.models import OwnerProfile, PropertyOwnership
+from accounting.models import FinancialAccount
 
 
 def _next_quarter_hour():
@@ -286,15 +289,25 @@ class CancelVendorAssignmentForm(forms.Form):
         return notes
 
 class VendorScheduleForm(forms.Form):
-    scheduled_for = forms.DateTimeField(
-        widget=forms.DateTimeInput(
-            attrs={
-                "class": "form-control",
-                "type": "datetime-local",
-            },
-            format="%Y-%m-%dT%H:%M",
+    scheduled_date = forms.DateField(
+        label="Scheduled date",
+        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+    )
+    arrival_start_time = forms.TimeField(
+        label="Arrival window start",
+        widget=forms.TimeInput(
+            attrs={"class": "form-control", "type": "time", "step": "900"},
+            format="%H:%M",
         ),
-        input_formats=["%Y-%m-%dT%H:%M"],
+        input_formats=["%H:%M"],
+    )
+    arrival_end_time = forms.TimeField(
+        label="Arrival window end",
+        widget=forms.TimeInput(
+            attrs={"class": "form-control", "type": "time", "step": "900"},
+            format="%H:%M",
+        ),
+        input_formats=["%H:%M"],
     )
 
     vendor_notes = forms.CharField(
@@ -308,22 +321,61 @@ class VendorScheduleForm(forms.Form):
         ),
     )
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        minimum_time = _next_quarter_hour()
-        self.fields["scheduled_for"].widget.attrs.update(
-            {
-                "min": minimum_time.strftime("%Y-%m-%dT%H:%M"),
-                "step": "900",
-            }
-        )
+    reschedule_reason = forms.CharField(
+        required=False,
+        label="Reason for rescheduling",
+        widget=forms.Textarea(
+            attrs={"class": "form-control", "rows": 3, "placeholder": "Explain why the schedule is changing..."}
+        ),
+    )
 
-    def clean_scheduled_for(self):
-        scheduled_for = self.cleaned_data["scheduled_for"]
-        return _validate_future_quarter_hour(scheduled_for)
+    def __init__(self, *args, assignment=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.assignment = assignment
+        self.fields["scheduled_date"].widget.attrs["min"] = timezone.localdate().isoformat()
+        if assignment and assignment.scheduled_for and not self.is_bound:
+            start = timezone.localtime(assignment.scheduled_for)
+            end = timezone.localtime(assignment.scheduled_until) if assignment.scheduled_until else None
+            self.initial.update({
+                "scheduled_date": start.date(),
+                "arrival_start_time": start.time().replace(tzinfo=None),
+                "arrival_end_time": end.time().replace(tzinfo=None) if end else None,
+                "vendor_notes": assignment.vendor_notes,
+            })
+
+    def clean(self):
+        cleaned = super().clean()
+        scheduled_date = cleaned.get("scheduled_date")
+        start_time = cleaned.get("arrival_start_time")
+        end_time = cleaned.get("arrival_end_time")
+        if not all((scheduled_date, start_time, end_time)):
+            return cleaned
+
+        if start_time.minute % 15 or start_time.second or end_time.minute % 15 or end_time.second:
+            raise forms.ValidationError("Select start and end times in 15-minute increments.")
+        if end_time <= start_time:
+            self.add_error("arrival_end_time", "The arrival-window end must be later than its start.")
+            return cleaned
+
+        start = timezone.make_aware(datetime.combine(scheduled_date, start_time), timezone.get_current_timezone())
+        end = timezone.make_aware(datetime.combine(scheduled_date, end_time), timezone.get_current_timezone())
+        if start < timezone.now():
+            self.add_error("arrival_start_time", "The arrival window cannot begin in the past.")
+            return cleaned
+
+        cleaned["scheduled_for"] = start
+        cleaned["scheduled_until"] = end
+        if self.assignment and self.assignment.scheduled_for:
+            old_start = self.assignment.scheduled_for
+            old_end = self.assignment.scheduled_until
+            changed = old_start != start or old_end != end
+            if changed and not cleaned.get("reschedule_reason", "").strip():
+                self.add_error("reschedule_reason", "Explain why the schedule is changing.")
+        return cleaned
 
 class WorkOrderCompleteForm(forms.Form):
     actual_cost = forms.DecimalField(
+        label="Final Actual Cost",
         max_digits=12,
         decimal_places=2,
         min_value=0,
@@ -336,7 +388,8 @@ class WorkOrderCompleteForm(forms.Form):
     )
 
     completion_notes = forms.CharField(
-        required=False,
+        required=True,
+        label="Completion Notes",
         widget=forms.Textarea(
             attrs={
                 "class": "form-control",
@@ -345,6 +398,31 @@ class WorkOrderCompleteForm(forms.Form):
             }
         ),
     )
+
+    def __init__(self, *args, started_at=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.started_at = started_at
+        self.fields["completed_at"].widget.attrs["max"] = (
+            timezone.localtime().strftime("%Y-%m-%dT%H:%M")
+        )
+
+    def clean_completion_notes(self):
+        notes = self.cleaned_data["completion_notes"].strip()
+        if not notes:
+            raise ValidationError("Describe the work that was completed.")
+        return notes
+
+    def clean_completed_at(self):
+        completed_at = self.cleaned_data.get("completed_at")
+        if completed_at is None:
+            return completed_at
+        if completed_at > timezone.now():
+            raise ValidationError("The completion time cannot be in the future.")
+        if self.started_at and completed_at < self.started_at:
+            raise ValidationError(
+                "The completion time cannot be earlier than the work start time."
+            )
+        return completed_at
 
     completed_at = forms.DateTimeField(
         required=False,
@@ -373,6 +451,13 @@ class WorkOrderCancelForm(forms.Form):
     )
 
 class VendorInvoiceForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["invoice_number"].required = True
+        self.fields["invoice_date"].required = True
+        self.fields["due_date"].required = True
+        self.fields["invoice_number"].label = "Vendor Invoice Number"
+
     class Meta:
         model = VendorInvoice
 
@@ -391,7 +476,11 @@ class VendorInvoiceForm(forms.ModelForm):
             ),
 
             "invoice_number": forms.TextInput(
-                attrs={"class": "form-control"}
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Enter the number shown on the vendor invoice",
+                    "autocomplete": "off",
+                }
             ),
 
             "amount": forms.NumberInput(
@@ -422,6 +511,134 @@ class VendorInvoiceForm(forms.ModelForm):
                 }
             ),
         }
+
+    def clean_invoice_number(self):
+        invoice_number = self.cleaned_data["invoice_number"].strip()
+        if not invoice_number:
+            raise ValidationError("Enter the invoice number supplied by the vendor.")
+        return invoice_number
+
+    def clean_amount(self):
+        amount = self.cleaned_data.get("amount")
+        if amount is not None and amount <= 0:
+            raise ValidationError("The invoice amount must be greater than zero.")
+        return amount
+
+    def clean_invoice_date(self):
+        invoice_date = self.cleaned_data.get("invoice_date")
+        if invoice_date and invoice_date > timezone.localdate():
+            raise ValidationError("The invoice date cannot be in the future.")
+        return invoice_date
+
+    def clean(self):
+        cleaned = super().clean()
+        invoice_date = cleaned.get("invoice_date")
+        due_date = cleaned.get("due_date")
+        if invoice_date and due_date and due_date < invoice_date:
+            self.add_error(
+                "due_date",
+                "The due date cannot be earlier than the invoice date.",
+            )
+        return cleaned
+
+
+class VendorPaymentForm(forms.ModelForm):
+    class Meta:
+        model = VendorPayment
+        fields = [
+            "amount",
+            "payment_date",
+            "payment_method",
+            "reference_number",
+            "financial_account",
+            "notes",
+        ]
+        widgets = {
+            "amount": forms.NumberInput(
+                attrs={"class": "form-control", "step": "0.01", "min": "0.01"}
+            ),
+            "payment_date": forms.DateInput(
+                attrs={"class": "form-control", "type": "date"}
+            ),
+            "payment_method": forms.Select(attrs={"class": "form-control"}),
+            "reference_number": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Check, confirmation, or transaction number",
+                }
+            ),
+            "financial_account": forms.Select(attrs={"class": "form-control"}),
+            "notes": forms.Textarea(
+                attrs={"class": "form-control", "rows": 4}
+            ),
+        }
+
+    def __init__(self, *args, invoice=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.invoice = invoice
+        self.fields["financial_account"].queryset = FinancialAccount.objects.filter(
+            is_active=True
+        ).select_related("ledger_account").order_by("name")
+        self.fields["financial_account"].required = True
+        self.fields["amount"].label = "Payment Amount"
+        self.fields["payment_date"].label = "Payment Date"
+        self.fields["payment_method"].label = "Payment Method"
+        self.fields["reference_number"].label = "Reference / Transaction Number"
+        self.fields["financial_account"].label = "Paid From"
+
+    def clean_payment_date(self):
+        payment_date = self.cleaned_data.get("payment_date")
+        if payment_date and payment_date > timezone.localdate():
+            raise ValidationError("The payment date cannot be in the future.")
+        if (
+            payment_date
+            and self.invoice
+            and self.invoice.invoice_date
+            and payment_date < self.invoice.invoice_date
+        ):
+            raise ValidationError("The payment date cannot be earlier than the invoice date.")
+        return payment_date
+
+    def clean_amount(self):
+        amount = self.cleaned_data.get("amount")
+        if amount is not None and amount <= 0:
+            raise ValidationError("The payment amount must be greater than zero.")
+        return amount
+
+    def clean(self):
+        cleaned = super().clean()
+        amount = cleaned.get("amount")
+        method = cleaned.get("payment_method")
+        reference = (cleaned.get("reference_number") or "").strip()
+        if method in {"ach", "check", "card", "electronic_transfer"} and not reference:
+            self.add_error(
+                "reference_number",
+                "Enter the check, confirmation, or transaction number for this payment.",
+            )
+        if self.invoice and amount is not None:
+            paid = self.invoice.payments.filter(status="recorded").aggregate(
+                total=Sum("amount")
+            )["total"] or 0
+            outstanding = self.invoice.amount - paid
+            if amount > outstanding:
+                self.add_error(
+                    "amount",
+                    f"Payment cannot exceed the outstanding balance of ${outstanding:.2f}.",
+                )
+        return cleaned
+
+
+class VoidVendorPaymentForm(forms.Form):
+    reason = forms.CharField(
+        label="Reason for voiding this payment",
+        widget=forms.Textarea(
+            attrs={
+                "class": "form-control",
+                "rows": 3,
+                "placeholder": "Explain why this payment record must be reversed.",
+            }
+        ),
+    )
 
 
 class MaintenancePhotoForm(forms.ModelForm):
@@ -1056,7 +1273,10 @@ class MaintenanceRequestReviewForm(forms.ModelForm):
         return cleaned_data
 
 
-class VendorForm(forms.ModelForm):
+from portal.vendor_contact_validation import VendorContactValidationMixin
+
+
+class VendorForm(VendorContactValidationMixin, forms.ModelForm):
     class Meta:
         model = Vendor
         fields = [
@@ -1734,7 +1954,10 @@ class PropertyUnitForm(forms.ModelForm):
 
         return unit_number
 
-class OwnerProfileForm(forms.ModelForm):
+from portal.owner_presentation import OwnerPresentationMixin
+
+
+class OwnerProfileForm(OwnerPresentationMixin, forms.ModelForm):
     class Meta:
         model = OwnerProfile
 
@@ -1745,6 +1968,9 @@ class OwnerProfileForm(forms.ModelForm):
             "entity_name",
             "email",
             "phone",
+            "preferred_contact_method",
+            "alternate_contact_name", "alternate_contact_email", "alternate_contact_phone",
+            "representative_name", "representative_role", "representative_email", "representative_phone",
             "mailing_address",
             "mailing_city",
             "mailing_state",
@@ -1844,6 +2070,8 @@ class PropertyOwnershipForm(forms.ModelForm):
             "is_primary_contact",
             "start_date",
             "end_date",
+            "statement_recipient_name", "statement_recipient_email",
+            "maintenance_approval_limit", "distribution_instructions",
             "notes",
         ]
 
@@ -1888,6 +2116,8 @@ class PropertyOwnershipForm(forms.ModelForm):
     def __init__(self, *args, property_obj=None, **kwargs):
         super().__init__(*args, **kwargs)
 
+        from portal.owner_property_settings import configure_ownership_fields
+        configure_ownership_fields(self)
         self.property_obj = property_obj
 
         self.fields["owner"].queryset = (
@@ -2081,7 +2311,7 @@ class TenantProfileForm(forms.ModelForm):
 
         return dob
 
-class LeaseForm(forms.ModelForm):
+class LeaseForm(LeaseSectionsMixin, forms.ModelForm):
     property = forms.ModelChoiceField(
         queryset=Property.objects.none(),
         required=False,
@@ -2553,7 +2783,7 @@ class LeaseForm(forms.ModelForm):
         return cleaned_data
 
 
-class ActiveLeaseOperationalForm(forms.ModelForm):
+class ActiveLeaseOperationalForm(LeaseSectionsMixin, forms.ModelForm):
     """
     Controlled edit surface for an executed Active lease.
 

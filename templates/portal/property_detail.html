@@ -1,118 +1,33 @@
 {% extends "portal/base.html" %}
-{% block title %}{{ property.full_address }} | Col Realty Portal{% endblock %}
-
+{% block title %}{{ property.full_address }}{% endblock %}
 {% block page_title %}{{ property.full_address }}{% endblock %}
-
 {% block content %}
-
-<div style="margin-bottom:18px;">
-  <a href="{% url 'portal:properties' %}"
-     style="color:#2563eb;text-decoration:none;font-size:0.85rem;">
-    ← Back to Properties
-  </a>
+<div class="property360-overview">
+{% include 'portal/property_workspace_nav.html' with property_financial_active=False %}
+<a href="{% url 'portal:properties' %}" class="p360-back">{{ overview.ui.back }}</a>
+<div class="p360-stats">
+  <div class="stat-card"><div class="stat-label">{{ overview.ui.management_status }}</div><strong>{{ property.get_management_status_display }}</strong></div>
+  <div class="stat-card"><div class="stat-label">{{ overview.ui.occupancy }}</div><strong>{{ overview.occupancy }}</strong></div>
+  <div class="stat-card"><div class="stat-label">{{ overview.ui.active_leases }}</div><strong>{{ overview.current_count }}</strong></div>
+  <div class="stat-card"><div class="stat-label">{{ overview.ui.open_maintenance }}</div><strong>{{ open_maintenance_count }}</strong></div>
 </div>
-
-<!-- SUMMARY -->
-<div class="stat-grid">
-
-  <div class="stat-card blue">
-    <div class="stat-label">Status</div>
-    <div class="stat-value" style="font-size:1.4rem;">
-      {{ property.get_management_status_display }}
-    </div>
-  </div>
-
-  <div class="stat-card green">
-    <div class="stat-label">Active Leases</div>
-    <div class="stat-value">{{ current_leases.count }}</div>
-  </div>
-
-  <div class="stat-card {% if open_maintenance_count %}orange{% endif %}">
-    <div class="stat-label">Open Maintenance</div>
-    <div class="stat-value">{{ open_maintenance_count }}</div>
-  </div>
-
-  <div class="stat-card {% if open_work_order_count %}orange{% endif %}">
-    <div class="stat-label">Open Work Orders</div>
-    <div class="stat-value">{{ open_work_order_count }}</div>
-  </div>
-
-</div>
-
-
-<!-- PROPERTY DETAILS -->
-<div class="card">
-
-  <div class="card-header">
-    <h2>Property Details</h2>
-
-    <a href="{% url 'portal:edit_property' property.id %}"
-       class="btn btn-primary btn-sm">
-      Edit Property
-    </a>
-  </div>
-
-  <div style="
-      display:grid;
-      grid-template-columns:repeat(3,1fr);
-      gap:20px;
-      padding:20px;">
-
-    <div>
-      <div class="stat-label">Address</div>
-      <strong>
-        {{ property.street_address }}
-        {% if property.unit_number %}
-          #{{ property.unit_number }}
-        {% endif %}
-      </strong><br>
-      {{ property.city }}, {{ property.state }} {{ property.zip_code }}
-    </div>
-
-    <div>
-      <div class="stat-label">Property Type</div>
-      {{ property.get_property_type_display|default:"—" }}
-    </div>
-
-    <div>
-      <div class="stat-label">Year Built</div>
-      {{ property.year_built|default:"—" }}
-    </div>
-
-    {% if not property.is_multi_unit %}
-    <div>
-      <div class="stat-label">Bedrooms</div>
-      {{ property.bedrooms|default:"—" }}
-    </div>
-    <div>
-      <div class="stat-label">Bathrooms Full</div>
-      {{ property.bathrooms_full|default:"—" }}
-    </div>
-    <div>
-      <div class="stat-label">Bathrooms Half</div>
-      {{ property.bathrooms_half|default:"—" }}
-    </div>
-    <div>
-      <div class="stat-label">Square Feet</div>
-      {{ property.sqft|default:"—" }}
-    </div>
+<div class="p360-layout"><main class="p360-main">
+<section class="card"><div class="card-header"><h2>{{ overview.ui.details }}</h2><a class="btn btn-sm" href="{% url 'portal:edit_property' property.pk %}">{{ overview.ui.edit_property }}</a></div>
+<div class="p360-property">
+  <div class="p360-image">{% if overview.image %}<img src="{{ overview.image }}" alt="{{ property.full_address }}" onerror="this.hidden=true;this.nextElementSibling.hidden=false;"><span hidden>{{ overview.ui.no_image }}</span>{% else %}<span>{{ overview.ui.no_image }}</span>{% endif %}</div>
+  <div class="p360-facts">
+    <div><div class="stat-label">{{ overview.ui.address }}</div><strong>{{ property.street_address }}</strong><div>{{ property.city }}, {{ property.state }} {{ property.zip_code }}</div></div>
+    <div><div class="stat-label">{{ overview.ui.unit }}</div>{% if overview.single_unit %}{{ overview.single_unit.unit_number|default:'—' }} <a href="{% url 'portal:edit_property_unit' property.pk overview.single_unit.pk %}">{{ overview.ui.edit_unit }}</a>{% else %}{{ unit_rows|length }} {{ overview.ui.units }} <a href="{% url 'portal:create_property_unit' property.pk %}">{{ overview.ui.add_unit }}</a>{% endif %}</div>
+    <div><div class="stat-label">{{ overview.ui.property_type }}</div>{{ property.get_property_type_display|default:'—' }}</div>
+    <div><div class="stat-label">{{ overview.ui.year }}</div>{{ property.year_built|default:'—' }}</div>
+    {% if not overview.show_units %}
+    <div><div class="stat-label">{{ overview.ui.bedrooms }}</div>{{ property.bedrooms|default_if_none:'—' }}</div>
+    <div><div class="stat-label">{{ overview.ui.bathrooms }}</div>{{ property.bathrooms_full|default_if_none:'—' }} / {{ property.bathrooms_half|default_if_none:'—' }}</div>
+    <div><div class="stat-label">{{ overview.ui.sqft }}</div>{{ property.sqft|default_if_none:'—' }}</div>
     {% endif %}
-
-    <div>
-      <div class="stat-label">County</div>
-      {{ property.county|default:"—" }}
-    </div>
-
-    <div>
-      <div class="stat-label">Subdivision</div>
-      {{ property.subdivision|default:"—" }}
-    </div>
-
+    <div><div class="stat-label">{{ overview.ui.manager }}</div>{{ overview.manager|default:'—' }}</div>
   </div>
-
-</div>
-
-
+</div>{% if overview.instructions %}<details class="p360-operational"><summary>{{ overview.ui.access_instructions }}</summary><p>{{ overview.instructions|linebreaksbr }}</p></details>{% endif %}</section>
 <!-- OWNERS -->
 <div class="card">
 
@@ -144,7 +59,7 @@
       {% for ownership in property.ownerships.all %}
 
       <tr>
-        <td><strong>{{ ownership.owner }}</strong></td>
+        <td><strong>{{ ownership.owner }}</strong>{% if ownership.maintenance_approval_limit != None %}<details class="p360-info"><summary aria-label="{{ overview.ui.approval_limit }}">ⓘ</summary><p>{{ overview.ui.approval_limit }}: ${{ ownership.maintenance_approval_limit|floatformat:2 }}</p></details>{% endif %}</td>
 
         <td>{{ ownership.ownership_percentage }}%</td>
 
@@ -202,7 +117,7 @@
 
 
 
-{% if property.is_multi_unit %}
+{% if overview.show_units %}
 <!-- RENTABLE UNITS -->
 <div class="card">
 
@@ -304,9 +219,9 @@
   </table>
 
 </div>
+
+
 {% endif %}
-
-
 <!-- CURRENT & UPCOMING LEASES -->
 <div class="card">
 
@@ -363,9 +278,9 @@
           </td>
           <td>
             {{ lease.start_date|date:"M d, Y" }} -
-            {{ lease.end_date|date:"M d, Y" }}
+            {{ lease.overview_terms.expiration_date|default:lease.end_date|date:"M d, Y" }}
           </td>
-          <td>${{ lease.monthly_rent|floatformat:2 }}</td>
+          <td>{% if lease.overview_terms %}${{ lease.overview_terms.monthly_rent|floatformat:2 }}{% else %}${{ lease.monthly_rent|floatformat:2 }}{% endif %}</td>
           <td>${{ lease.security_deposit|floatformat:2 }}</td>
           <td><span class="badge badge-green">{{ lease.get_status_display }}</span></td>
           <td>
@@ -418,9 +333,9 @@
           </td>
           <td>
             {{ lease.start_date|date:"M d, Y" }} -
-            {{ lease.end_date|date:"M d, Y" }}
+            {{ lease.overview_terms.expiration_date|default:lease.end_date|date:"M d, Y" }}
           </td>
-          <td>${{ lease.monthly_rent|floatformat:2 }}</td>
+          <td>{% if lease.overview_terms %}${{ lease.overview_terms.monthly_rent|floatformat:2 }}{% else %}${{ lease.monthly_rent|floatformat:2 }}{% endif %}</td>
           <td>${{ lease.security_deposit|floatformat:2 }}</td>
           <td><span class="badge badge-gray">{{ lease.get_status_display }}</span></td>
           <td>
@@ -436,244 +351,10 @@
 {% endif %}
 
 
-<!-- MAINTENANCE -->
-<div class="card">
-  <div class="card-header">
-    <h2>Maintenance</h2>
-
-    <div style="display:flex;gap:8px;align-items:center;">
-      {% if property.is_multi_unit %}
-        <a href="{% url 'portal:create_maintenance_request' %}"
-           class="btn btn-primary btn-sm">
-          + New Request
-        </a>
-      {% else %}
-        <a href="{% url 'portal:create_maintenance_request' %}?unit_id={{ units.0.id }}"
-           class="btn btn-primary btn-sm">
-          + New Request
-        </a>
-      {% endif %}
-
-      <a href="{% url 'portal:maintenance' %}?q={{ property.street_address|urlencode }}"
-         class="btn btn-sm"
-         style="background:#f1f5f9;">
-        View All
-      </a>
-    </div>
-  </div>
-
-  {% if maintenance_requests %}
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Issue</th>
-          <th>Tenant</th>
-          <th>Priority</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-
-      <tbody>
-        {% for item in maintenance_requests %}
-          <tr>
-            <td>{{ item.submitted_at|date:"M d, Y" }}</td>
-            <td>
-              <a href="{% url 'portal:maintenance_detail' item.id %}"
-                 style="text-decoration:none;">
-                <strong>{{ item.title }}</strong>
-              </a>
-            </td>
-            <td>{{ item.reported_by_tenant|default:"—" }}</td>
-            <td>
-              {% if item.priority == "emergency" %}
-                <span class="badge badge-red">Emergency</span>
-              {% elif item.priority == "high" %}
-                <span class="badge badge-orange">High</span>
-              {% else %}
-                <span class="badge badge-gray">{{ item.get_priority_display }}</span>
-              {% endif %}
-            </td>
-            <td>
-              {% if item.status == "completed" %}
-                <span class="badge badge-green">Completed</span>
-              {% else %}
-                <span class="badge badge-orange">{{ item.get_status_display }}</span>
-              {% endif %}
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  {% endif %}
+</main>{% include 'portal/property_cash_banking.html' %}</div>
+{% include 'portal/property_maintenance_compact.html' %}
 </div>
-
-
-<!-- WORK ORDERS -->
-<div class="card">
-
-  <div class="card-header">
-    <h2>Work Orders & Costs</h2>
-  </div>
-
-  <table class="data-table">
-
-    <thead>
-      <tr>
-        <th>Work Order</th>
-        <th>Status</th>
-        <th>Vendor</th>
-        <th>Estimate</th>
-        <th>Actual Cost</th>
-        <th>Invoice</th>
-      </tr>
-    </thead>
-
-    <tbody>
-
-      {% for work_order in work_orders %}
-
-      <tr>
-
-        <td>
-          <a href="{% url 'portal:work_order_detail' work_order.id %}"
-            style="color:#2563eb;text-decoration:none;font-weight:600;">
-            #{{ work_order.id }} - {{ work_order.title }}
-          </a>
-        </td>
-
-        <td>
-          {% if work_order.status == "completed" %}
-            <span class="badge badge-green">Completed</span>
-          {% else %}
-            <span class="badge badge-orange">
-              {{ work_order.get_status_display }}
-            </span>
-          {% endif %}
-        </td>
-
-        <td>
-          {% for assignment in work_order.vendor_assignments.all %}
-            {{ assignment.vendor }}
-            {% if not forloop.last %}, {% endif %}
-          {% empty %}
-            —
-          {% endfor %}
-        </td>
-
-        <td>
-          {% for estimate in work_order.vendor_estimates.all %}
-            ${{ estimate.amount|floatformat:2 }}
-            {% if not forloop.last %}<br>{% endif %}
-          {% empty %}
-            —
-          {% endfor %}
-        </td>
-
-        <td>
-          {% if work_order.actual_cost %}
-            ${{ work_order.actual_cost|floatformat:2 }}
-          {% else %}
-            —
-          {% endif %}
-        </td>
-
-        <td>
-          {% for invoice in work_order.vendor_invoices.all %}
-            ${{ invoice.amount|floatformat:2 }}
-          {% empty %}
-            —
-          {% endfor %}
-        </td>
-
-      </tr>
-
-      {% empty %}
-
-      <tr>
-        <td colspan="6"
-            style="text-align:center;color:#94a3b8;padding:24px;">
-          No work orders.
-        </td>
-      </tr>
-
-      {% endfor %}
-
-    </tbody>
-
-  </table>
-
-</div>
-
-
-<!-- ACTIVITY & AUDIT HISTORY -->
-<div class="card" style="margin-top:20px;">
-  <div class="card-header">
-    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-      <div>
-        <h2 style="margin-bottom:3px;">Activity &amp; Audit History</h2>
-        <div style="color:#64748b;font-size:0.82rem;">
-          Meaningful property, ownership, lease, and maintenance activity recorded in COL360.
-        </div>
-      </div>
-
-      <button type="button"
-              id="audit-history-toggle"
-              aria-expanded="false"
-              aria-controls="audit-history-body"
-              onclick="toggleAuditHistory()"
-              style="border:0;background:transparent;color:#2563eb;font-size:0.8rem;font-weight:600;cursor:pointer;padding:2px 4px;">
-        Show More
-      </button>
-    </div>
-  </div>
-
-  <div id="audit-history-body" style="display:none;padding:0 20px 8px 20px;">
-    {% for event in audit_events %}
-      <div style="padding:14px 0;{% if not forloop.last %}border-bottom:1px solid #e2e8f0;{% endif %}">
-        <div style="font-weight:650;color:#0f172a;">{{ event.display_action }}</div>
-
-        <div style="margin-top:3px;color:#64748b;font-size:0.8rem;">
-          {{ event.occurred_at|date:"M d, Y" }} ·
-          {{ event.occurred_at|date:"g:i A" }} ·
-          {{ event.actor_display|default:"System" }}
-        </div>
-
-        {% if event.display_changes %}
-          <div style="margin-top:8px;display:flex;flex-direction:column;gap:4px;">
-            {% for change in event.display_changes %}
-              <div style="font-size:0.84rem;line-height:1.5;color:#334155;">
-                <span style="font-weight:600;color:#475569;">{{ change.label }}:</span>
-                <span style="white-space:pre-line;">{{ change.summary }}</span>
-              </div>
-            {% endfor %}
-          </div>
-        {% endif %}
-
-        {% if event.display_reason %}
-          <div style="margin-top:7px;font-size:0.82rem;color:#64748b;font-style:italic;">
-            {{ event.display_reason }}
-          </div>
-        {% endif %}
-      </div>
-    {% empty %}
-      <div style="padding:22px 0;color:#94a3b8;text-align:center;">
-        No meaningful property or unit changes have been recorded yet.
-      </div>
-    {% endfor %}
-  </div>
-</div>
-
-<script>
-  function toggleAuditHistory() {
-    const body = document.getElementById("audit-history-body");
-    const button = document.getElementById("audit-history-toggle");
-    const isOpen = body.style.display !== "none";
-
-    body.style.display = isOpen ? "none" : "block";
-    button.textContent = isOpen ? "Show More" : "Show Less";
-    button.setAttribute("aria-expanded", isOpen ? "false" : "true");
-  }
-</script>
-
+<style>
+.content:has(.property360-overview){max-width:none!important;width:100%;padding:20px 24px}.property360-overview{max-width:1680px;margin-inline:auto;color:#334155}.property360-overview .card{margin-bottom:16px;min-width:0}.property360-overview .card-header{padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px}.property360-overview h2{font-size:1rem}.p360-back{display:inline-block;margin-bottom:14px}.p360-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:18px}.p360-stats .stat-card{padding:16px 18px}.p360-stats strong{display:block;font-size:1.25rem;margin-top:6px}.p360-layout{display:grid;grid-template-columns:minmax(0,2fr) minmax(300px,1fr);gap:20px;align-items:start}.p360-main{min-width:0}.p360-property{display:grid;grid-template-columns:minmax(160px,.8fr) minmax(0,1.5fr);gap:20px;padding:18px}.p360-image{aspect-ratio:4/3;min-height:160px;max-height:240px;background:#eef2f6;border-radius:8px;display:grid;place-items:center;overflow:hidden;color:#64748b}.p360-image img{width:100%;height:100%;object-fit:cover}.p360-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;font-size:.88rem}.p360-facts a{display:inline-block;margin-left:8px}.p360-body{padding:18px}.p360-balances{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;font-size:.88rem}.p360-balances dd{text-align:right;font-variant-numeric:tabular-nums}.p360-bank{margin:14px 0;font-size:.88rem}.p360-bank strong{overflow-wrap:anywhere}.p360-muted{font-size:.82rem;color:#64748b;line-height:1.5;margin:10px 0}.p360-notice{display:block;font-size:.82rem;color:#805b12;background:#fff8e8;padding:10px;margin:12px 0;line-height:1.5}.p360-cash hr{border:0;border-top:1px solid #e2e8f0;margin:16px 0}.p360-actions{display:flex;gap:8px;flex-wrap:wrap}.p360-maintenance{padding:12px 0;border-bottom:1px solid #e2e8f0}.p360-maintenance>summary{display:flex;justify-content:space-between;gap:14px;cursor:pointer;font-size:.9rem}.p360-work{background:#f8fafc;border-left:3px solid #01AACE;padding:12px;margin-top:10px;font-size:.85rem}.property360-overview table{width:100%;font-size:.85rem}.property360-overview th{text-transform:uppercase;font-size:.72rem}.property360-overview td,.property360-overview th{padding:12px}.p360-operational{padding:0 18px 18px;font-size:.85rem}.p360-operational summary{color:#087c96;cursor:pointer}.p360-operational p{padding-top:12px;line-height:1.5}.p360-info{display:inline-block;color:#01AACE;margin-top:12px;cursor:pointer}.p360-info p{color:#64748b;line-height:1.5;font-size:.82rem}.property360-overview a{color:#087c96}.property360-overview .btn{background:#01AACE!important;color:white!important}.property360-overview .card:has(>table){overflow-x:auto}@media(max-width:1150px){.p360-layout{grid-template-columns:minmax(0,1.6fr) minmax(280px,1fr)}.p360-property{grid-template-columns:1fr}.p360-image{max-height:200px;width:100%}}@media(max-width:850px){.p360-layout{grid-template-columns:1fr}.p360-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:500px){.content:has(.property360-overview){padding:14px}.p360-facts{grid-template-columns:1fr}.p360-stats strong{font-size:1.05rem}}
+</style>
 {% endblock %}

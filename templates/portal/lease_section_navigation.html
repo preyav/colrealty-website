@@ -1,0 +1,50 @@
+<style>
+.lease-section{padding:22px;scroll-margin-top:24px}.lease-section h2{font-size:1.1rem;margin:0 0 20px}.lease-field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.lease-field-grid label{display:block;font-size:.85rem;font-weight:600;margin-bottom:6px}.lease-field-grid input,.lease-field-grid select,.lease-field-grid textarea{width:100%;box-sizing:border-box}.lease-field-grid [required]{background:#F4E8DC;border-color:#C69A6B}.lease-required{color:#C69A6B}.lease-help,.lease-field-grid .errorlist{color:#64748b;font-family:inherit;font-size:.85rem;font-weight:400;line-height:1.5}.lease-readonly{padding:10px;background:#f8fafc;border-radius:6px;white-space:normal;overflow-wrap:anywhere}.lease-section-nav{display:flex;flex-wrap:wrap;gap:8px;margin:20px 0}.lease-section-nav a{border:1px solid #01AACE;border-radius:6px;padding:8px 12px;color:#087c96;text-decoration:none;font-size:.85rem}.lease-section-nav a.active,[data-lease-section-link].active{background:#01AACE;color:white}.lease-section details{margin-top:12px}@media(max-width:760px){.lease-field-grid{grid-template-columns:1fr}}
+</style>
+<nav class="lease-section-nav" aria-label="Lease sections"{% if tabbed %} data-lease-tabs{% endif %}>{% for group in sections %}<a href="#{{ group.id }}" data-lease-section-link>{{ group.title }}</a>{% if forloop.first and financials %}<a href="#lease-financials" data-lease-section-link>{{ financials }}</a>{% endif %}{% endfor %}</nav>
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+if(document.querySelector('[data-lease-tabs]'))return;
+const sections=[...document.querySelectorAll('.lease-section')];
+const links=[...document.querySelectorAll('[data-lease-section-link]')];
+if('IntersectionObserver' in window){const observer=new IntersectionObserver(entries=>{const entry=entries.find(e=>e.isIntersecting);if(!entry)return;links.forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+entry.target.id));},{rootMargin:'-10% 0px -65% 0px'});sections.forEach(s=>observer.observe(s));}
+const form=document.getElementById('lease-form');if(form){form.addEventListener('invalid',event=>{event.target.closest('section')?.scrollIntoView({block:'center'});},true);const error=form.querySelector('.errorlist');if(error)error.closest('section')?.scrollIntoView({block:'center'});}
+});
+</script>
+
+<style>
+.lease-label-line{display:flex;align-items:center;gap:7px;margin-bottom:6px;position:relative}.lease-label-line label{margin-bottom:0}.lease-section .lease-field-info{margin:0;position:static}.lease-field-info summary{list-style:none;width:19px;height:19px;border-radius:50%;background:#01AACE;color:white;text-align:center;font:bold 13px/19px Arial;cursor:pointer}.lease-field-info summary::-webkit-details-marker{display:none}.lease-field-info summary:focus-visible{outline:2px solid #087c96;outline-offset:3px}.lease-info-popover{position:absolute;top:28px;left:0;width:min(440px,85vw);max-height:360px;overflow:auto;padding:16px;border:1px solid #01AACE;border-radius:8px;background:white;box-shadow:0 6px 22px #0002;z-index:50;font-size:.85rem;line-height:1.5;color:#475569;font-weight:400}.lease-info-item+.lease-info-item{border-top:1px solid #e2e8f0;margin-top:12px;padding-top:12px}.lease-info-item p{margin-top:5px;overflow-wrap:anywhere}
+</style>
+<script>
+document.addEventListener('click',event=>{const current=event.target.closest('.lease-field-info');document.querySelectorAll('.lease-field-info[open]').forEach(item=>{if(item!==current)item.open=false;});});
+document.addEventListener('keydown',event=>{if(event.key==='Escape')document.querySelectorAll('.lease-field-info[open]').forEach(item=>{item.open=false;item.querySelector('summary').focus();});});
+</script>
+
+<style>
+.lease-section-nav{position:sticky;top:0;z-index:100;background:#f8fafc;padding:12px 0;border-bottom:1px solid #e2e8f0;box-shadow:0 3px 8px #0000000a;max-height:40vh;overflow-y:auto}
+.lease-section{scroll-margin-top:var(--lease-navigation-height,120px)}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+const nav=document.querySelector('.lease-section-nav');if(!nav)return;
+const update=()=>document.documentElement.style.setProperty('--lease-navigation-height',(nav.getBoundingClientRect().height+16)+'px');
+update();if('ResizeObserver' in window)new ResizeObserver(update).observe(nav);else window.addEventListener('resize',update);
+});
+</script>
+
+<style>
+.lease-section.card{overflow:visible}
+.lease-field-info .lease-info-popover{position:fixed;z-index:1000;background:#fff;border:1px solid #01AACE;box-shadow:0 10px 30px rgba(15,23,42,.18);border-radius:10px;max-height:min(360px,70vh);width:min(440px,calc(100vw - 24px));padding:16px}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+const items=[...document.querySelectorAll('.lease-field-info')];
+function place(item){const popup=item.querySelector('.lease-info-popover');const icon=item.querySelector('summary');if(!popup||!icon)return;
+const rect=icon.getBoundingClientRect();const width=Math.min(440,window.innerWidth-24);popup.style.width=width+'px';popup.style.left=Math.max(12,Math.min(rect.left,window.innerWidth-width-12))+'px';
+const below=window.innerHeight-rect.bottom-20;const above=rect.top-20;const useAbove=below<180&&above>below;const available=Math.max(60,useAbove?above:below);popup.style.maxHeight=Math.min(360,available)+'px';
+popup.style.top=(useAbove?Math.max(12,rect.top-popup.getBoundingClientRect().height-8):rect.bottom+8)+'px';}
+items.forEach(item=>item.addEventListener('toggle',()=>{if(item.open)place(item);}));
+window.addEventListener('resize',()=>items.forEach(item=>{if(item.open)place(item);}));
+document.addEventListener('scroll',event=>{items.forEach(item=>{if(item.open&&!item.querySelector('.lease-info-popover').contains(event.target))item.open=false;});},true);
+});
+</script>

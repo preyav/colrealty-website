@@ -1,0 +1,11 @@
+{% extends "portal/base.html" %}
+{% block title %}{{ ui.title }}{% endblock %}{% block page_title %}{{ ui.title }}{% endblock %}
+{% block content %}{% include "portal/rent_styles.html" %}<div class="rent-page">
+<div class="rent-head"><a href="{% url 'portal:rent_ledger' lease.id %}">{{ ui.title }}</a><strong>{{ lease.unit }}</strong></div>
+<section class="card"><div class="card-header"><h2>{% if kind == 'charge' %}{{ ui.add_charge }}{% elif kind == 'receipt' %}{{ ui.add_receipt }}{% elif kind == 'edit' %}{{ ui.edit }}{% else %}{{ ui.delete }}{% endif %}</h2></div>
+<form method="post" class="entry">{% csrf_token %}{% if entry_token %}<input type="hidden" name="entry_token" value="{{ entry_token }}">{% endif %}
+<p class="help">{% if kind == 'charge' %}{{ ui.charge_help }}{% elif kind == 'receipt' %}{{ ui.receipt_help }}{% elif kind == 'edit' %}{{ ui.edit_help }}{% else %}{{ ui.void_help }}{% endif %}</p>
+{% if entry %}<p>{{ entry }}</p>{% endif %}{{ form.non_field_errors }}
+<div class="fields">{% for field in form %}<div{% if field.name == 'income_items' or field.name == 'notes' or field.name == 'reason' %} class="wide"{% endif %}><div class="rent-label-line"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{% if field.help_text %}<details class="rent-help"><summary aria-label="{{ field.label }}">i</summary><p class="help">{{ field.help_text }}</p></details>{% endif %}</div>{{ field }}{{ field.errors }}</div>{% endfor %}</div>
+<div class="buttons"><a class="btn" href="{% url 'portal:rent_ledger' lease.id %}">{{ ui.cancel }}</a><button class="btn {% if kind == 'void' %}danger{% else %}btn-primary{% endif %}" type="submit">{% if kind == 'void' %}{{ ui.delete }}{% else %}{{ ui.save }}{% endif %}</button></div>
+</form></section></div>{% endblock %}

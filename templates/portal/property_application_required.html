@@ -1,0 +1,53 @@
+<style>
+.application-required-dropdown {position:relative;}
+.application-required-dropdown > summary {list-style:none;min-height:44px;padding:10px 14px;border:1px solid #cbd5e1;border-radius:6px;cursor:pointer;}
+.application-required-dropdown > summary::-webkit-details-marker {display:none;}
+.application-required-dropdown > summary:focus-visible {outline:2px solid #93c5fd;}
+.application-required-dropdown.has-errors > summary {border-color:#dc3545;background:#f9e5ec;}
+.application-required-options {position:absolute;top:100%;left:0;right:0;z-index:30;background:#fff;box-shadow:0 4px 8px #0002;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:14px;border:1px solid #cbd5e1;border-radius:8px;}
+#property-form .application-required-options label {display:flex;align-items:center;gap:8px;margin:0;cursor:pointer;}
+#property-form .application-required-options input[type="checkbox"] {width:18px;height:18px;flex:0 0 18px;margin:0;}
+@media (max-width:600px) {.application-required-options {grid-template-columns:1fr;}}
+</style>
+<div id="application-required-label">
+  {{ field.label }}{% if field.field.required %} <span aria-label="required" style="color:#b91c1c">*</span>{% endif %}
+  {% if field.feature_help_template %}<button type="button" class="school-help-button btn-primary" aria-label="Information about {{ field.label }}" data-school-help="application-required-help">i</button>{% endif %}
+</div>
+<details class="application-required-dropdown{% if field.errors %} has-errors{% endif %}" id="application-required-dropdown">
+<summary aria-labelledby="application-required-label"><span data-application-required-summary></span></summary>
+<div class="application-required-options" role="group" aria-labelledby="application-required-label">
+  {% for option in field %}
+  <label for="{{ option.id_for_label }}">{{ option.tag }} <span>{{ option.choice_label }}</span></label>
+  {% endfor %}
+</div>
+</details>
+{{ field.errors }}
+{% if field.feature_help_template %}
+<dialog class="school-help-dialog" id="application-required-help" aria-labelledby="application-required-help-title">
+  <div class="school-help-header btn-primary">
+    <h3 id="application-required-help-title">{{ field.label }}</h3>
+    <button type="button" data-school-help-close aria-label="Close help">×</button>
+  </div>
+  <div class="school-help-body">{% include field.feature_help_template %}</div>
+</dialog>{% endif %}
+<script>
+(function () {
+  const dropdown = document.getElementById('application-required-dropdown');
+  const summary = dropdown.querySelector('[data-application-required-summary]');
+  function updateSummary() {
+    summary.textContent = Array.from(dropdown.querySelectorAll('input[type="checkbox"]:checked'))
+      .map(input => input.closest('label').querySelector('span').textContent.trim()).join(', ');
+  }
+  dropdown.addEventListener('change', updateSummary);
+  document.addEventListener('click', event => {
+    if (!dropdown.contains(event.target)) dropdown.open = false;
+  });
+  dropdown.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+      dropdown.open = false;
+      dropdown.querySelector('summary').focus();
+    }
+  });
+  updateSummary();
+})();
+</script>

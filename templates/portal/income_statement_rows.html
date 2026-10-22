@@ -1,0 +1,23 @@
+{% if income.rows_form %}
+<form method="post" action="{{ income.rows_action }}" class="income-row-controls">
+  {% csrf_token %}
+  <input type="hidden" name="income_period" value="{{ income.form.income_period.value }}">
+  <input type="hidden" name="income_basis" value="{{ income.form.income_basis.value }}">
+  {{ income.rows_form.non_field_errors }}{{ income.rows_form.accounts.errors }}
+  <label>{{ income.rows_form.hide_empty }} {{ income.rows_ui.hide_empty }}</label>
+  <details class="income-row-picker">
+    <summary>{{ income.rows_ui.customize }} · <span data-selected-count>{{ income.rows_form.accounts.value|length }}</span> {{ income.rows_ui.selected }}</summary>
+    <div class="income-row-options">
+      <p>{{ income.rows_ui.help }}</p>
+      <div><button type="button" data-row-check="1">{{ income.rows_ui.select_all }}</button> · <button type="button" data-row-check="0">{{ income.rows_ui.select_none }}</button></div>
+      {% for group in income.rows_form.groups %}<fieldset><legend>{{ group.title }}</legend>{% for option in group.options %}<label>{{ option.tag }} {{ option.choice_label }}</label>{% endfor %}</fieldset>{% endfor %}
+    </div>
+  </details>
+  <button class="btn btn-primary" name="row_action" value="save" type="submit">{{ income.rows_ui.save }}</button>
+  <button class="btn" name="row_action" value="show_all" type="submit">{{ income.rows_ui.show_all }}</button>
+</form>
+{% if income.hidden_activity %}<p class="income-coverage" role="status">{{ income.hidden_activity }} · {{ income.rows_ui.hidden_activity }}</p>{% endif %}
+{% if income.hidden_empty %}<p class="financial-note">{{ income.rows_ui.hidden_empty }}: {{ income.hidden_empty }}</p>{% endif %}
+<style>.income-row-controls{display:flex;gap:16px;align-items:center;flex-wrap:wrap;padding:14px 16px;margin-top:12px;border:1px solid #e2e8f0;background:#fff;border-radius:5px;font:inherit;font-size:.85rem}.income-row-controls label{display:flex;gap:8px;align-items:center}.income-row-controls input{accent-color:#01AACE}.income-row-picker{position:relative}.income-row-picker>summary{cursor:pointer;color:#087c96;list-style:none;border:1px solid #cbd5e1;border-radius:5px;padding:10px 12px}.income-row-options{position:absolute;z-index:60;top:100%;left:0;margin-top:6px;width:min(420px,80vw);max-height:420px;overflow:auto;padding:18px;background:#fff;border:1px solid #cbd5e1;border-radius:7px;box-shadow:0 6px 20px #0002}.income-row-options p{color:#64748b;line-height:1.5}.income-row-options fieldset{margin:16px 0 0;border:0;padding:0}.income-row-options legend{font-weight:600;margin-bottom:8px}.income-row-options label{padding:6px 0}.income-row-options button{border:0;background:none;color:#01AACE;font:inherit;cursor:pointer}</style>
+<script>document.querySelectorAll('.income-row-controls').forEach(form=>{const boxes=[...form.querySelectorAll('input[name="accounts"]')];const sync=()=>{form.querySelector('[data-selected-count]').textContent=boxes.filter(b=>b.checked).length;};form.querySelectorAll('[data-row-check]').forEach(button=>button.addEventListener('click',()=>{boxes.forEach(b=>b.checked=button.dataset.rowCheck==='1');sync();}));boxes.forEach(b=>b.addEventListener('change',sync));sync();});document.addEventListener('click',e=>{document.querySelectorAll('.income-row-picker[open]').forEach(d=>{if(!d.contains(e.target))d.open=false;});});</script>
+{% endif %}

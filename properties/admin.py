@@ -69,3 +69,86 @@ class PropertyUnitAdmin(admin.ModelAdmin):
         "property__zip_code",
         "unit_number",
     )
+
+from .models import FlooringOption
+
+
+@admin.register(FlooringOption)
+class FlooringOptionAdmin(admin.ModelAdmin):
+    list_display = ("label", "code", "sort_order", "is_active")
+    list_editable = ("sort_order", "is_active")
+    list_filter = ("is_active",)
+    search_fields = ("label", "code")
+
+    def get_readonly_fields(self, request, obj=None):
+        return ("code",) if obj else ()
+
+
+from .models import InteriorFeatureOption
+
+
+@admin.register(InteriorFeatureOption)
+class InteriorFeatureOptionAdmin(admin.ModelAdmin):
+    list_display = ("label", "code", "sort_order", "is_active")
+    list_editable = ("sort_order", "is_active")
+    list_filter = ("is_active",)
+    search_fields = ("label", "code")
+
+    def get_readonly_fields(self, request, obj=None):
+        return ("code",) if obj else ()
+
+
+from .models import ExteriorFeatureOption
+
+
+@admin.register(ExteriorFeatureOption)
+class ExteriorFeatureOptionAdmin(admin.ModelAdmin):
+    list_display = ("label", "code", "sort_order", "is_active")
+    list_editable = ("sort_order", "is_active")
+    list_filter = ("is_active",)
+    search_fields = ("label", "code")
+
+    def get_readonly_fields(self, request, obj=None):
+        return ("code",) if obj else ()
+
+
+from .models import ConstructionMaterialOption
+
+
+@admin.register(ConstructionMaterialOption)
+class ConstructionMaterialOptionAdmin(admin.ModelAdmin):
+    list_display = ("label", "code", "sort_order", "is_active")
+    list_editable = ("sort_order", "is_active")
+    list_filter = ("is_active",)
+    search_fields = ("label", "code")
+
+    def get_readonly_fields(self, request, obj=None):
+        return ("code",) if obj else ()
+
+
+from .models import FoundationOption
+
+
+@admin.register(FoundationOption)
+class FoundationOptionAdmin(admin.ModelAdmin):
+    list_display = ("label", "code", "sort_order", "is_active")
+    list_editable = ("sort_order", "is_active")
+    list_filter = ("is_active",)
+    search_fields = ("label", "code")
+
+    def get_readonly_fields(self, request, obj=None):
+        return ("code",) if obj else ()
+
+
+from .models import RoofOption
+
+
+@admin.register(RoofOption)
+class RoofOptionAdmin(admin.ModelAdmin):
+    list_display = ("label", "code", "sort_order", "is_active")
+    list_editable = ("sort_order", "is_active")
+    list_filter = ("is_active",)
+    search_fields = ("label", "code")
+
+    def get_readonly_fields(self, request, obj=None):
+        return ("code",) if obj else ()

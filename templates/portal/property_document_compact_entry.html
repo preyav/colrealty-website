@@ -1,0 +1,18 @@
+<div class="reference-entry" data-document-row data-document-saved="{% if entry.instance.pk %}true{% else %}false{% endif %}">
+{% for hidden in entry.hidden_fields %}{{ hidden }}{% endfor %}
+<div hidden>{{ entry.DELETE }}</div>
+{{ entry.non_field_errors }}
+<div data-document-line style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 16px;">
+<a data-document-link target="_blank" rel="noopener noreferrer" style="flex:1;overflow-wrap:anywhere;">Document</a>
+<span data-document-pending class="property-help">Save to attach</span>
+<button type="button" class="btn" data-document-edit>Edit details</button>
+<button type="button" class="btn" data-document-remove>Remove</button>
+</div>
+<div data-document-editor hidden class="property-fields">
+<div class="property-field"><label for="{{ entry.title.id_for_label }}">Title</label>{{ entry.title }}{{ entry.title.errors }}</div>
+<div class="property-field"><label for="{{ entry.category.id_for_label }}">Category</label>{{ entry.category }}{{ entry.category.errors }}</div>
+<div class="property-field"><label for="{{ entry.url.id_for_label }}">Google Drive / Document Link</label>{{ entry.url }}{{ entry.url.errors }}</div>
+<div class="property-field"><label for="{{ entry.notes.id_for_label }}">Notes</label>{{ entry.notes }}{{ entry.notes.errors }}</div>
+<div><button type="button" class="btn" data-document-done>Done</button></div>
+</div>
+</div>

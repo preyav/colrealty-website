@@ -1,0 +1,98 @@
+<style>
+.property-detail-nav { position:sticky; top:0; z-index:30; display:flex; flex-wrap:wrap; gap:8px; padding:12px; margin:0 0 20px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; box-shadow:0 3px 8px #0f172a0d; }
+.property-detail-nav a { padding:7px 11px; border:1px solid #cbd5e1; border-radius:7px; background:#fff; color:#334155; font-size:.85rem; text-decoration:none; }
+.property-detail-nav a[aria-current="true"] { background:#01AACE; border-color:#01AACE; color:#fff; }
+.property-detail-nav a:focus-visible { outline:2px solid #01AACE; outline-offset:2px; }
+[data-property-detail-section] { scroll-margin-top:var(--property-detail-nav-offset,150px); }
+@media(max-width:700px) { .property-detail-nav { flex-wrap:nowrap; overflow-x:auto; } .property-detail-nav a { flex:0 0 auto; } }
+</style>
+<script>
+(() => {
+  const content = document.querySelector('.main .content');
+  const properties = document.querySelector('.sidebar a[href="{% url 'portal:properties' %}"]');
+  if (!content || content.querySelector('.property360-overview')) return;
+  // Labels and visibility come from the rendered page, including lifecycle rules.
+  const candidates = Array.from(content.querySelectorAll('details')).filter(el =>
+    !el.parentElement.closest('details') && el.querySelector(':scope > summary'));
+  if (!candidates.length) return;
+  const top = document.createElement('nav');
+  top.className = 'property-detail-nav';
+  top.setAttribute('aria-label', 'Property sections');
+  content.prepend(top);
+  let side = null;
+  if (properties) {
+    side = document.createElement('nav');
+    side.setAttribute('aria-label', 'Property sections');
+    properties.insertAdjacentElement('afterend', side);
+    // Replace an existing detail-page section menu instead of showing duplicates.
+    const old = side.nextElementSibling;
+    if (old?.matches('nav[aria-label="Property editor sections"]')) old.hidden = true;
+  }
+  let sections = [], links = [], signature = '';
+  function offset() {
+    content.style.setProperty('--property-detail-nav-offset', `${top.getBoundingClientRect().height + 20}px`);
+  }
+  function activate(id) {
+    links.forEach(link => {
+      const active = link.dataset.sectionId === id;
+      link.classList.toggle('active', active);
+      if (active) link.setAttribute('aria-current', 'true');
+      else link.removeAttribute('aria-current');
+    });
+  }
+  function refresh() {
+    const visible = candidates.filter(el => el.querySelector(':scope > summary').getClientRects().length > 0);
+    const next = visible.map(el => candidates.indexOf(el) + ':' + el.querySelector(':scope > summary').textContent.trim()).join('|');
+    if (next === signature) return;
+    signature = next; sections = visible; links = [];
+    top.replaceChildren(); side?.replaceChildren();
+    top.hidden = !sections.length;
+    sections.forEach((el, index) => {
+      if (!el.id) {
+        let id = `property-detail-section-${candidates.indexOf(el) + 1}`;
+        while (document.getElementById(id)) id += '-section';
+        el.id = id;
+      }
+      el.setAttribute('data-property-detail-section', '');
+      const label = el.querySelector(':scope > summary').textContent.trim();
+      [top, side].filter(Boolean).forEach(container => {
+        const link = document.createElement('a');
+        link.href = '#' + encodeURIComponent(el.id);
+        link.textContent = label;
+        link.dataset.sectionId = el.id;
+        if (container === side) link.className = 'nav-subitem';
+        link.addEventListener('click', event => {
+          event.preventDefault(); el.open = true; offset();
+          history.replaceState(null, '', '#' + encodeURIComponent(el.id));
+          el.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block:'start'});
+          activate(el.id);
+        });
+        container.append(link); links.push(link);
+      });
+    });
+    offset(); activate(sections[0]?.id);
+  }
+  refresh();
+  let pending = false;
+  function updateActive() {
+    pending = false;
+    const boundary = top.getBoundingClientRect().bottom + 24;
+    let selected = sections[0];
+    sections.forEach(el => { if (el.getBoundingClientRect().top <= boundary) selected = el; });
+    if (selected) activate(selected.id);
+  }
+  window.addEventListener('scroll', () => {
+    if (!pending) { pending = true; requestAnimationFrame(updateActive); }
+  }, {passive:true});
+  window.addEventListener('resize', () => { refresh(); offset(); });
+  new ResizeObserver(offset).observe(top);
+  new MutationObserver(records => {
+    if (records.some(record => !top.contains(record.target) && record.target !== content)) refresh();
+  }).observe(content, {subtree:true, attributes:true, attributeFilter:['hidden','style','class']});
+  if (location.hash) {
+    let id; try { id = decodeURIComponent(location.hash.slice(1)); } catch { return; }
+    const target = sections.find(el => el.id === id);
+    if (target) { target.open = true; requestAnimationFrame(() => { offset(); target.scrollIntoView(); activate(id); }); }
+  }
+})();
+</script>

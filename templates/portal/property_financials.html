@@ -1,0 +1,4 @@
+{% extends 'portal/base.html' %}
+{% block title %}{{ property.full_address }} · {{ ui.financials }}{% endblock %}
+{% block page_title %}{{ ui.financials }}{% endblock %}
+{% block content %}{% include 'portal/accounting_styles.html' %}<div class="accounting-page"><a href="{% url 'portal:properties' %}">{{ ui.back }}</a><header class="accounting-heading" style="margin-top:18px"><h1>{{ property.full_address }}</h1></header>{% include 'portal/property_workspace_nav.html' %}<section id="property-financials"><h2 style="font-size:.95rem;font-weight:500;border-bottom:2px solid #01AACE;padding:0 0 12px;width:fit-content">{{ ui.income_statement }}</h2>{% include 'portal/lease_income_statement.html' %}</section></div>{% endblock %}

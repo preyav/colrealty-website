@@ -74,6 +74,8 @@ class Lease(models.Model):
         blank=True,
     )
 
+    contract_details = models.JSONField(default=dict, blank=True)
+
     notes = models.TextField(blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -234,3 +236,64 @@ class LeaseTenant(models.Model):
 
     def __str__(self):
         return f"{self.tenant} → {self.lease}"
+
+class LeaseDocument(models.Model):
+    CATEGORY_CHOICES = [('lease', 'Lease'), ('amendment', 'Amendment'),
+                        ('extension', 'Lease Extension'), ('animal', 'Animal Agreement'),
+                        ('other', 'Other')]
+    lease = models.ForeignKey(Lease, on_delete=models.PROTECT, related_name='documents')
+    agreement = models.ForeignKey('LeaseAgreement', null=True, blank=True, on_delete=models.PROTECT, related_name='documents')
+    title = models.CharField(max_length=255)
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='other')
+    url = models.URLField(max_length=2000, blank=True)
+    storage_key = models.CharField(max_length=1000, blank=True)
+    original_name = models.CharField(max_length=255, blank=True)
+    uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at', '-pk']
+        constraints = [models.CheckConstraint(
+            condition=(models.Q(storage_key='', url__gt='') | models.Q(url='', storage_key__gt='')),
+            name='lease_document_file_or_link')]
+
+    def __str__(self):
+        return self.title
+
+
+class LeaseAgreement(models.Model):
+    KIND_CHOICES = [('extension','Lease Extension'),('amendment','Amendment'),
+                    ('animal','Animal Agreement'),('addendum','Addendum'),('other','Other')]
+    STATUS_CHOICES = [('draft','Draft'),('executed','Executed'),('void','Voided')]
+    lease = models.ForeignKey(Lease, on_delete=models.PROTECT, related_name='agreements')
+    kind = models.CharField(max_length=20, choices=KIND_CHOICES, default='extension')
+    title = models.CharField(max_length=255)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    effective_date = models.DateField()
+    signed_date = models.DateField(null=True, blank=True)
+    expiration_date = models.DateField(null=True, blank=True)
+    rent_action = models.CharField(max_length=20, choices=[('unchanged','Remains the same'),('changed','Changed'),('unspecified','Not specified')], default='unspecified')
+    monthly_rent = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, validators=[MinValueValidator(Decimal('0'))])
+    contact_action = models.CharField(max_length=20, choices=[('unchanged','Remains the same'),('changed','Changed'),('unspecified','Not specified')], default='unspecified')
+    named_landlords = models.TextField(blank=True)
+    named_tenants = models.TextField(blank=True)
+    contact_details = models.TextField(blank=True)
+    paragraph_references = models.CharField(max_length=500, blank=True)
+    amendment_text = models.TextField(blank=True)
+    return_deadline = models.DateField(null=True, blank=True)
+    unsigned_outcome = models.CharField(max_length=20, choices=[('month_to_month','Month-to-month'),('terminate','Terminate'),('unspecified','Not specified')], default='unspecified')
+    unsigned_rent = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, validators=[MinValueValidator(Decimal('0'))])
+    unsigned_effective_date = models.DateField(null=True, blank=True)
+    signature_details = models.TextField(blank=True)
+    review_notes = models.TextField(blank=True)
+    source_key = models.CharField(max_length=255, blank=True)
+    recorded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['effective_date','signed_date','pk']
+        constraints = [models.UniqueConstraint(fields=['lease','source_key'], condition=~models.Q(source_key=''), name='unique_lease_agreement_source'),
+            models.CheckConstraint(condition=(~models.Q(rent_action='changed') | models.Q(monthly_rent__isnull=False)), name='agreement_changed_rent_present')]
+
+    def __str__(self):
+        return self.title

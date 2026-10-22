@@ -1,0 +1,6 @@
+{% for work_order in orders %}<div class="p360-work">
+  <a href="{% url 'portal:work_order_detail' work_order.pk %}">#{{ work_order.pk }} · {{ work_order.title }}</a> · {{ work_order.get_status_display }}
+  <div class="p360-muted">{{ overview.ui.vendor }}: {% for assignment in work_order.vendor_assignments.all %}{% if assignment.status != 'cancelled' and assignment.status != 'declined' %}{{ assignment.vendor }} {% endif %}{% empty %}—{% endfor %}</div>
+  <div>{{ overview.ui.actual_cost }}: {% if work_order.actual_cost != None %}${{ work_order.actual_cost|floatformat:2 }}{% else %}—{% endif %}</div>
+  {% for invoice in work_order.vendor_invoices.all %}{% if invoice.status != 'void' %}<div><a href="{% url 'portal:finance_vendor_invoice_detail' invoice.pk %}">{{ overview.ui.bill }} · {{ invoice.invoice_number|default:invoice.pk }} · ${{ invoice.amount|floatformat:2 }}</a> · {{ invoice.get_status_display }}</div>{% endif %}{% endfor %}
+</div>{% empty %}<p class="p360-muted">{{ overview.ui.no_work }}</p>{% endfor %}

@@ -1,0 +1,11 @@
+{% extends 'portal/base.html' %}
+{% block title %}{{ ui.title }}{% endblock %}
+{% block content %}{% include 'portal/rent_styles.html' %}<div class="rent-page">
+<h1>{{ ui.title }}</h1><p>{{ lease.unit.property }}</p><p>{{ ui.help }}</p>
+<form method="post">{% csrf_token %}<input type="hidden" name="entry_token" value="{{ entry_token }}">{{ form.non_field_errors }}
+{% for row in rows %}<details id="payment-{{ row.receipt.pk }}" class="card"><summary>{{ row.receipt.received_date|date:'m/d/Y' }} · ${{ row.receipt.amount|floatformat:2 }} · {{ row.receipt.reference }}</summary>
+<p>{{ row.receipt.financial_account }}</p><table><thead><tr><th>{{ ui.period }}</th><th>{{ ui.amount }}</th></tr></thead><tbody>{% for field in row.fields %}<tr><td><label for="{{ field.id_for_label }}">{{ field.label }}</label></td><td>{{ field }}{{ field.errors }}</td></tr>{% endfor %}</tbody></table><p data-credit data-total="{{ row.receipt.amount|stringformat:'.2f' }}">{{ ui.credit }}: <span></span></p></details>{% endfor %}
+<p><label for="{{ form.reason.id_for_label }}">{{ form.reason.label }}</label>{{ form.reason }}{{ form.reason.errors }}</p>
+<a class="btn" href="{% url 'portal:rent_ledger' lease.pk %}">{{ ui.cancel }}</a> <button class="btn btn-primary">{{ ui.save }}</button></form></div>
+<script>(()=>{document.querySelectorAll('[data-credit]').forEach(el=>{const box=el.closest('details');const update=()=>{const sum=[...box.querySelectorAll('input[type=number]')].reduce((n,i)=>n+Math.round(Number(i.value||0)*100),0);el.querySelector('span').textContent=((Math.round(Number(el.dataset.total)*100)-sum)/100).toFixed(2)};box.addEventListener('input',update);update()});const target=document.getElementById(location.hash.slice(1));if(target){target.open=true;target.scrollIntoView()}})();</script>
+{% endblock %}

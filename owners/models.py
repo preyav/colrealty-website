@@ -41,6 +41,15 @@ class OwnerProfile(models.Model):
     email = models.EmailField(blank=True)
     phone = models.CharField(max_length=30, blank=True)
 
+    preferred_contact_method = models.CharField(max_length=30, blank=True)
+    alternate_contact_name = models.CharField(max_length=200, blank=True)
+    alternate_contact_email = models.EmailField(blank=True)
+    alternate_contact_phone = models.CharField(max_length=30, blank=True)
+    representative_name = models.CharField(max_length=200, blank=True)
+    representative_role = models.CharField(max_length=100, blank=True)
+    representative_email = models.EmailField(blank=True)
+    representative_phone = models.CharField(max_length=30, blank=True)
+
     mailing_address = models.CharField(max_length=255, blank=True)
     mailing_city = models.CharField(max_length=100, blank=True)
     mailing_state = models.CharField(max_length=50, blank=True)
@@ -104,6 +113,14 @@ class PropertyOwnership(models.Model):
         null=True,
         blank=True,
     )
+
+    statement_recipient_name = models.CharField(max_length=200, blank=True)
+    statement_recipient_email = models.EmailField(blank=True)
+    maintenance_approval_limit = models.DecimalField(
+        max_digits=12, decimal_places=2, null=True, blank=True,
+        validators=[MinValueValidator(Decimal("0.00"))],
+    )
+    distribution_instructions = models.TextField(blank=True)
 
     notes = models.TextField(blank=True)
 
