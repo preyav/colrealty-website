@@ -4,6 +4,20 @@
 {% block page_title %}{% if is_editing %}Edit{% else %}Add{% endif %} Vendor Invoice{% endblock %}
 
 {% block content %}
+<style>
+.invoice-entry input:not([type=hidden]),.invoice-entry select,.invoice-entry textarea{box-sizing:border-box;display:block;width:100%;min-width:0;min-height:52px;padding:12px 15px;border:1px solid #cbd5e1;border-radius:9px;background:#fff;color:inherit;font:inherit}
+.invoice-entry textarea{min-height:130px;resize:vertical}
+.invoice-entry .required{color:#F5822F}
+.invoice-entry .errorlist{color:#b42318}
+.invoice-entry :is(input,select,textarea,summary):focus-visible{outline:2px solid #01AACE;outline-offset:3px}
+.invoice-entry .accounting-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 24px}
+.invoice-entry details{position:relative;display:inline-block}
+.invoice-entry summary{display:inline-flex;align-items:center;justify-content:center;width:21px;height:21px;border-radius:50%;background:#01AACE;color:white;cursor:pointer;list-style:none;font-size:14px}
+.invoice-entry summary::-webkit-details-marker{display:none}
+.invoice-entry details>div{position:absolute;z-index:10;top:27px;width:min(290px,65vw);padding:14px;border:1px solid #dce4ef;border-radius:9px;background:white;box-shadow:0 6px 20px #24364b22;font-weight:400}
+@media(max-width:760px){.invoice-entry .accounting-grid,.invoice-entry div[style*="grid-template-columns"]{grid-template-columns:minmax(0,1fr)!important}}
+</style>
+<div class="invoice-entry">
 
 <div style="margin-bottom:18px;">
   <a href="{% if invoice %}{% url 'portal:finance_vendor_invoice_detail' invoice.id %}{% else %}{% url 'portal:finance_vendor_invoices' %}{% endif %}"
@@ -70,33 +84,50 @@
 
       <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 24px;">
         <div>
-          <label for="{{ form.vendor.id_for_label }}" style="display:block;font-weight:600;margin-bottom:7px;">Vendor <span style="color:#dc2626;">*</span></label>
+          <label for="{{ form.vendor.id_for_label }}" style="display:block;font-weight:600;margin-bottom:7px;">Vendor <span style="color:#F5822F;">*</span></label>
           {{ form.vendor }}
           {{ form.vendor.errors }}
         </div>
         <div>
-          <label for="{{ form.invoice_number.id_for_label }}" style="display:block;font-weight:600;margin-bottom:7px;">{{ form.invoice_number.label }} <span style="color:#dc2626;">*</span></label>
+          <label for="{{ form.invoice_number.id_for_label }}" style="display:block;font-weight:600;margin-bottom:7px;">{{ form.invoice_number.label }} <span style="color:#F5822F;">*</span></label>
           {{ form.invoice_number }}
           <div style="margin-top:6px;color:#64748b;font-size:0.8rem;">Use the exact number printed on the vendor's invoice.</div>
           {{ form.invoice_number.errors }}
         </div>
         <div>
-          <label for="{{ form.amount.id_for_label }}" style="display:block;font-weight:600;margin-bottom:7px;">Amount <span style="color:#dc2626;">*</span></label>
+          <label for="{{ form.amount.id_for_label }}" style="display:block;font-weight:600;margin-bottom:7px;">Amount <span style="color:#F5822F;">*</span></label>
           {{ form.amount }}
           {{ form.amount.errors }}
         </div>
         <div>
-          <label for="{{ form.invoice_date.id_for_label }}" style="display:block;font-weight:600;margin-bottom:7px;">Invoice Date <span style="color:#dc2626;">*</span></label>
+          <label for="{{ form.invoice_date.id_for_label }}" style="display:block;font-weight:600;margin-bottom:7px;">Invoice Date <span style="color:#F5822F;">*</span></label>
           {{ form.invoice_date }}
           {{ form.invoice_date.errors }}
         </div>
         <div>
-          <label for="{{ form.due_date.id_for_label }}" style="display:block;font-weight:600;margin-bottom:7px;">Due Date <span style="color:#dc2626;">*</span></label>
+          <label for="{{ form.due_date.id_for_label }}" style="display:block;font-weight:600;margin-bottom:7px;">Due Date <span style="color:#F5822F;">*</span></label>
           {{ form.due_date }}
           <div style="margin-top:6px;color:#64748b;font-size:0.8rem;">Defaults to Net 30 and can be adjusted to match the invoice.</div>
           {{ form.due_date.errors }}
         </div>
       </div>
+
+      {% if form.accounting_fields %}
+      <fieldset style="margin:26px 0 0;padding:20px;border:1px solid #dce4ef;border-radius:10px;min-width:0;">
+        <legend style="padding:0 8px;font-weight:600;">{{ form.accounting_ui.heading }}</legend>
+        <div class="accounting-grid">
+          {% for field in form.accounting_fields %}
+          <div style="min-width:0;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+              <label for="{{ field.id_for_label }}" style="font-weight:600;">{{ field.label }}{% if field.field.required %} <span class="required">*</span>{% endif %}</label>
+              {% if field.help_text %}<details><summary aria-label="{{ field.label }} help">i</summary><div>{{ field.help_text }}</div></details>{% endif %}
+            </div>
+            {{ field }}{{ field.errors }}
+          </div>
+          {% endfor %}
+        </div>
+      </fieldset>
+      {% endif %}
 
       <div style="margin-top:20px;">
         <label for="{{ form.notes.id_for_label }}" style="display:block;font-weight:600;margin-bottom:7px;">Notes</label>
@@ -124,4 +155,9 @@
 
 </div>
 
+</div>
+<script>
+document.addEventListener('click',function(e){document.querySelectorAll('.invoice-entry details[open]').forEach(function(d){if(!d.contains(e.target))d.open=false;});});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')document.querySelectorAll('.invoice-entry details[open]').forEach(function(d){d.open=false;});});
+</script>
 {% endblock %}

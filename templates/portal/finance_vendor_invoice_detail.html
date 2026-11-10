@@ -2,6 +2,7 @@
 {% block title %}Invoice {{ invoice.invoice_number|default:invoice.id }} | Finance{% endblock %}
 {% block page_title %}Vendor Bill{% endblock %}
 {% block content %}
+{% load invoice_accounting_tags %}
 {% include 'portal/bill_reimbursements.html' %}
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;gap:16px;">
   <a href="{% url 'portal:finance_vendor_invoices' %}" style="color:#2563eb;text-decoration:none;">← Back to Vendor Bills</a>
@@ -39,6 +40,7 @@
   </div>
 </div>
 {% endif %}
+{% invoice_accounting_summary invoice %}
 {% if payments %}
 <div class="card" style="margin-top:18px;">
   <div class="card-header"><h2>Payment History</h2></div>

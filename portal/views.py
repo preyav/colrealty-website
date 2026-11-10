@@ -3279,8 +3279,11 @@ def finance_dashboard(request):
         else:
             invoice.attention_reason = "QuickBooks sync issue"
     sync_error_count = invoices.filter(sync_error_filter).distinct().count()
-
-    ready_to_bill = WorkOrder.objects.filter(status="completed").exclude(
+    ready_to_bill = WorkOrder.objects.filter(
+    status="completed",
+    performer_tenant__isnull=True,
+    performer_owner__isnull=True,
+    ).exclude(
         vendor_invoices__status__in=[
             "submitted", "approved", "partially_paid", "paid", "disputed"
         ]
@@ -3636,7 +3639,11 @@ def finance_vendor_invoices(request):
             | Q(quickbooks_bill_mapping__last_error__gt="")
             | Q(payments__quickbooks_payment_mapping__last_error__gt="")
         ).distinct()
-    ready_to_bill = WorkOrder.objects.filter(status="completed").exclude(
+    ready_to_bill = WorkOrder.objects.filter(
+        status="completed",
+        performer_tenant__isnull=True,
+        performer_owner__isnull=True,
+    ).exclude(
         vendor_invoices__status__in=[
             "submitted", "approved", "partially_paid", "paid", "disputed"
         ]

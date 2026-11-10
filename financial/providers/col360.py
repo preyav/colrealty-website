@@ -5,7 +5,10 @@ from django.db.models import Sum
 from django.utils import timezone
 
 from maintenance.models import VendorInvoice, VendorPayment
-from portal.forms import VendorInvoiceForm, VendorPaymentForm
+from portal.forms import VendorPaymentForm
+from portal.invoice_accounting import NativeVendorInvoiceForm, wording
+from django.core.exceptions import ValidationError
+from accounting.book_models import BillAccounting, BookPosting
 
 from .base import BaseFinancialProvider, FinancialProviderError
 
@@ -62,7 +65,7 @@ class COL360FinancialProvider(BaseFinancialProvider):
         initial=None,
         instance=None,
     ):
-        form = VendorInvoiceForm(data, initial=initial, instance=instance)
+        form = NativeVendorInvoiceForm(data, initial=initial, instance=instance)
         if vendor_queryset is not None:
             form.fields["vendor"].queryset = vendor_queryset
         return form
@@ -70,21 +73,34 @@ class COL360FinancialProvider(BaseFinancialProvider):
     def create_invoice(self, form, *, work_order):
         if not form.is_valid():
             raise FinancialProviderError("Invoice form is not valid.")
-        invoice = form.save(commit=False)
-        invoice.work_order = work_order
-        invoice.status = "submitted"
-        invoice.save()
+        try:
+            with transaction.atomic():
+                invoice = form.save(commit=False)
+                invoice.work_order = work_order
+                invoice.status = "submitted"
+                invoice.save()
+                form.save_accounting(invoice)
+        except ValidationError as exc:
+            raise FinancialProviderError('; '.join(exc.messages)) from exc
         return invoice
 
     def update_invoice(self, form, *, invoice):
-        if invoice.status != "submitted":
-            raise FinancialProviderError("Only a submitted invoice can be edited.")
         if not form.is_valid():
             raise FinancialProviderError("Invoice form is not valid.")
-        updated_invoice = form.save(commit=False)
-        updated_invoice.work_order = invoice.work_order
-        updated_invoice.status = "submitted"
-        updated_invoice.save()
+        try:
+            with transaction.atomic():
+                locked = VendorInvoice.objects.select_for_update().get(pk=invoice.pk)
+                if locked.status != "submitted":
+                    raise FinancialProviderError(wording()['status_locked'])
+                if BookPosting.objects.filter(source_key='bill:' + str(locked.pk)).exists():
+                    raise FinancialProviderError(wording()['locked'])
+                updated_invoice = form.save(commit=False)
+                updated_invoice.work_order = locked.work_order
+                updated_invoice.status = "submitted"
+                updated_invoice.save()
+                form.save_accounting(updated_invoice)
+        except ValidationError as exc:
+            raise FinancialProviderError('; '.join(exc.messages)) from exc
         return updated_invoice
 
     def get_invoice(self, invoice_id):
@@ -94,20 +110,24 @@ class COL360FinancialProvider(BaseFinancialProvider):
             raise FinancialProviderError("Invoice not found.") from exc
 
     def approve_invoice(self, invoice, *, actor):
-        if invoice.status == "approved":
-            return invoice, "already_approved"
-        if invoice.status == "paid":
-            return invoice, "already_paid"
-        if invoice.status in {"void", "disputed"}:
-            raise FinancialProviderError("A void or disputed invoice cannot be approved.")
-        if invoice.status != "submitted":
-            raise FinancialProviderError("Only submitted invoices can be approved.")
         with transaction.atomic():
-            invoice.status = "approved"
+            invoice = VendorInvoice.objects.select_for_update().get(pk=invoice.pk)
+            if invoice.status in {'approved', 'paid'}:
+                return invoice, 'already_' + invoice.status
+            if invoice.status != 'submitted':
+                raise FinancialProviderError("Only submitted invoices can be approved.")
+            details = BillAccounting.objects.filter(invoice=invoice).first()
+            if not details:
+                raise FinancialProviderError(wording()['required'])
+            try:
+                details.full_clean()
+            except ValidationError as exc:
+                raise FinancialProviderError('; '.join(exc.messages)) from exc
+            invoice.status = 'approved'
             invoice.approved_by = actor
             invoice.approved_at = timezone.now()
-            invoice.save(update_fields=["status", "approved_by", "approved_at", "updated_at"])
-        return invoice, "approved"
+            invoice.save(update_fields=['status', 'approved_by', 'approved_at', 'updated_at'])
+        return invoice, 'approved'
 
     def get_payment_form(self, data=None, *, invoice, initial=None):
         return VendorPaymentForm(data, invoice=invoice, initial=initial)

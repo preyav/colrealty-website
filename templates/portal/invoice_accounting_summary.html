@@ -1,0 +1,7 @@
+<div class="card" style="margin-top:18px;">
+  <div class="card-header"><h2>{{ ui.heading }}</h2></div>
+  <div style="padding:22px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;">
+    {% for row in rows %}<div><div class="stat-label" style="display:block;">{{ row.label }}</div>{% if row.is_date %}{{ row.value|date:"M d, Y" }}{% else %}{{ row.value }}{% endif %}</div>{% empty %}<div>{{ ui.missing }}</div>{% endfor %}
+    {% if posted %}<div style="grid-column:1/-1;color:#64748b;">{{ ui.locked }}</div>{% endif %}
+  </div>
+</div>
