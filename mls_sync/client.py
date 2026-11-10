@@ -12,6 +12,16 @@ class MLSClientError(Exception):
     pass
 
 
+class MLSRateLimitError(MLSClientError):
+    """MLS Grid rejected a request because of rate limiting."""
+    pass
+
+
+class MLSBatchStopError(MLSClientError):
+    """Stop batch recovery when MLS Grid denies access or is unavailable."""
+    pass
+
+
 class MLSClient:
     """
     Client for MLS Grid Web API (ACTRIS/ABOR).
@@ -54,18 +64,95 @@ class MLSClient:
 
         try:
             response = requests.get(
-                f"{self.base_url}/Property('{key}')",
+                f"{self.base_url}/Property",
                 headers=self._headers(),
-                params={"$expand": "Media"},
+                params={
+                    "$filter": (
+                        f"ListingKey eq '{key}' "
+                        f"and OriginatingSystemName eq '{self.originating}' "
+                        "and MlgCanView eq true"
+                    ),
+                    "$expand": "Media",
+                    "$top": 1,
+                },
                 timeout=30,
             )
+            if response.status_code == 429:
+                raise MLSRateLimitError(
+                    "MLS Grid rate limit reached (HTTP 429)"
+                )
+            if response.status_code in (403, 503):
+                raise MLSBatchStopError(
+                    f"MLS Grid media lookup stopped (HTTP {response.status_code})"
+                )
+            if response.status_code == 400:
+                try:
+                    payload = response.json()
+                    error = payload.get("error", {}) if isinstance(payload, dict) else {}
+                    if isinstance(error, dict):
+                        diagnostic = str(error.get("message", ""))
+                    else:
+                        diagnostic = ""
+                except (ValueError, TypeError):
+                    diagnostic = ""
+
+                # Report only recognized query terms, never raw API responses.
+                message = diagnostic.lower()
+                categories = [
+                    name for name, term in (
+                        ("filter", "$filter"),
+                        ("top", "$top"),
+                        ("expand", "$expand"),
+                        ("ListingKey", "listingkey"),
+                        ("syntax", "syntax"),
+                        ("unsupported", "unsupported"),
+                        ("invalid", "invalid"),
+                        ("parameter", "parameter"),
+                        ("property", "property"),
+                        ("field", "field"),
+                        ("query", "query"),
+                        ("permission", "permission"),
+                        ("forbidden", "forbidden"),
+                        ("not found", "not found"),
+                        ("not supported", "not supported"),
+                    )
+                    if term in message
+                ]
+                category = ", ".join(categories) if categories else "unspecified"
+
+                logger.warning(
+                    "MLS Grid targeted Property query rejected: HTTP 400 (%s)",
+                    category,
+                )
+                raise MLSClientError(
+                    f"Single-property MLS media lookup failed "
+                    f"(HTTP 400; diagnostic: {category})"
+                )
+
             response.raise_for_status()
             record = response.json()
         except (requests.RequestException, ValueError) as exc:
-            raise MLSClientError("Single-property MLS media lookup failed") from exc
+            status = getattr(getattr(exc, "response", None), "status_code", None)
+            detail = (
+                f"HTTP {status}"
+                if status is not None
+                else type(exc).__name__
+            )
+            raise MLSClientError(
+                f"Single-property MLS media lookup failed ({detail})"
+            ) from exc
 
         if not isinstance(record, dict):
             raise MLSClientError("Unexpected MLS Grid response")
+
+        records = record.get("value")
+        if not isinstance(records, list):
+            raise MLSClientError("Unexpected MLS Grid Property collection")
+        if len(records) != 1 or not isinstance(records[0], dict):
+            raise MLSClientError("Expected exactly one MLS Grid Property")
+
+        record = records[0]
+
         if str(record.get("ListingKey")) != key:
             raise MLSClientError("MLS Grid returned a different ListingKey")
         if record.get("OriginatingSystemName") != self.originating:

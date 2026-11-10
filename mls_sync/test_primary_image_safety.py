@@ -5,6 +5,7 @@ from django.test import SimpleTestCase
 
 from mls_sync.image_cache import (
     PRIMARY_MAX_BYTES,
+    PrimaryImageRateLimitError,
     cache_primary_photo,
 )
 
@@ -59,4 +60,24 @@ class PrimaryImageSafetyTests(SimpleTestCase):
 
         self.assertIsNone(result)
         mock_get.assert_called_once()
+        mock_storage.save.assert_not_called()
+
+
+    @patch("django.core.files.storage.default_storage")
+    @patch("mls_sync.image_cache.requests.get")
+    def test_http_429_stops_primary_download(self, mock_get, mock_storage):
+        mock_storage.exists.return_value = False
+
+        response = MagicMock()
+        response.status_code = 429
+        mock_get.return_value.__enter__.return_value = response
+
+        with self.assertRaises(PrimaryImageRateLimitError):
+            cache_primary_photo(
+                "TEST-SAFETY-429",
+                "https://media.example.test/photo.jpg",
+            )
+
+        mock_get.assert_called_once()
+        response.iter_content.assert_not_called()
         mock_storage.save.assert_not_called()

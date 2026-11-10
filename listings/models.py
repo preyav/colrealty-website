@@ -21,8 +21,8 @@ class Listing(models.Model):
 
     # ---- NEW -------------------------------------------------------------
     listing_category = models.CharField(
-        max_length=20, 
-        choices=LISTING_CATEGORY_CHOICES, 
+        max_length=20,
+        choices=LISTING_CATEGORY_CHOICES,
         default="sale",
         db_index=True,
     )
@@ -148,27 +148,33 @@ class Listing(models.Model):
         return f"{self.street_address}, {self.city}, {self.state} {self.zip_code}"
 
     @property
-    def display_image_url(self):
+    def display_image_urls(self):
+        """Return permanently cached images suitable for public display.
+
+        Temporary MLS Grid URLs are excluded.
         """
-        Best available image for cards, maps, and search results.
+        from common.media_storage import media_storage_key
 
-        Prefer the true main image when it has been permanently cached.
-        If the main image is still an MLS Grid URL, use the first
-        permanently cached secondary image as a temporary display fallback.
+        urls = []
 
-        This does not modify main_image_url or image_urls, so the image
-        cacher can continue retrying the true MLS main image.
-        """
-        s3_marker = "colrealty-media.s3"
-
-        if self.main_image_url and s3_marker in self.main_image_url:
-            return self.main_image_url
+        if self.main_image_url and media_storage_key(self.main_image_url):
+            urls.append(self.main_image_url)
 
         for url in self.image_urls or []:
-            if url and s3_marker in url:
-                return url
+            if (
+                isinstance(url, str)
+                and media_storage_key(url)
+                and url not in urls
+            ):
+                urls.append(url)
 
-        return self.main_image_url or ""
+        return urls
+
+    @property
+    def display_image_url(self):
+        """Return the best available permanent image URL."""
+        urls = self.display_image_urls
+        return urls[0] if urls else ""
 
     def interior_features_list(self):
         return [f.strip() for f in self.interior_features.split(",") if f.strip()]

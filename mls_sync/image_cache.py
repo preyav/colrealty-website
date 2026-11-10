@@ -174,6 +174,14 @@ def cache_listing_photos(
 PRIMARY_MAX_BYTES = 5 * 1024 * 1024
 
 
+class PrimaryImageBatchStopError(Exception):
+    """Stop primary-image recovery on HTTP 403 or 503."""
+
+
+class PrimaryImageRateLimitError(Exception):
+    """Stop primary-photo recovery when the image server returns HTTP 429."""
+
+
 def cache_primary_photo(mls_id: str, url: str) -> str | None:
     """Cache only photo_000, with a hard per-image byte cap and one request."""
     from urllib.parse import urlparse
@@ -193,7 +201,13 @@ def cache_primary_photo(mls_id: str, url: str) -> str | None:
         with requests.get(url, timeout=REQUEST_TIMEOUT, stream=True) as response:
             if response.status_code == 429:
                 logger.warning("Primary cache: rate limited for %s; stopping", mls_id)
-                return None
+                raise PrimaryImageRateLimitError(
+                    f"Primary image download rate limited (HTTP 429): {mls_id}"
+                )
+            if response.status_code in (403, 503):
+                raise PrimaryImageBatchStopError(
+                    f"Primary image download stopped (HTTP {response.status_code})"
+                )
             response.raise_for_status()
             content_type = response.headers.get("Content-Type", "").lower()
             if not content_type.startswith("image/"):

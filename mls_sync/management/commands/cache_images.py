@@ -24,10 +24,11 @@ from pathlib import Path
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
+from common.media_storage import media_storage_key
 from listings.models import Listing
 from rentals.models import Rental
-from mls_sync.image_cache import cache_primary_photo
-from mls_sync.client import MLSClient, MLSClientError
+from mls_sync.image_cache import cache_primary_photo, PrimaryImageRateLimitError, PrimaryImageBatchStopError
+from mls_sync.client import MLSClient, MLSClientError, MLSRateLimitError, MLSBatchStopError
 from django.core.files.storage import default_storage
 from mls_sync.image_cache import _get_cache_path
 
@@ -44,20 +45,8 @@ DEFAULT_LIMIT = 10
 
 
 def is_permanent_media_url(url):
-    """
-    Return True when a URL points to COL Realty's configured
-    permanent media storage.
-    """
-    if not url:
-        return False
-
-    bucket_name = getattr(settings, "AWS_STORAGE_BUCKET_NAME", None)
-
-    if bucket_name:
-        return bucket_name in url
-
-    media_url = getattr(settings, "MEDIA_URL", "/media/")
-    return bool(media_url and url.startswith(media_url))
+    """Identify references belonging to configured public media storage."""
+    return media_storage_key(url) is not None
 
 
 def load_not_found_cache():
@@ -109,6 +98,11 @@ class Command(BaseCommand):
             help="Fetch fresh primary Media for exactly one --mls-id (no bulk scan)",
         )
         parser.add_argument(
+            "--refresh-batch",
+            action="store_true",
+            help="Recover missing primary images in a bounded batch (max 10)",
+        )
+        parser.add_argument(
             "--mls-id",
             type=str,
             help="Cache images for a single record by MLS ID",
@@ -148,9 +142,10 @@ class Command(BaseCommand):
 
         # Do not touch records whose existing permanent main photo is usable.
         existing = record.main_image_url or ""
-        if is_permanent_media_url(existing):
+        storage_key = media_storage_key(existing)
+        if storage_key and default_storage.exists(storage_key):
             self.stdout.write(self.style.SUCCESS(
-                f"{mls_id}: permanent primary URL already set; skipping"
+                f"{mls_id}: permanent primary image exists; skipping"
             ))
             return
 
@@ -167,9 +162,41 @@ class Command(BaseCommand):
                 ))
                 return
 
+        # Respect existing recovery cooldowns before contacting MLS Grid.
+        now = datetime.now(timezone.utc)
+
+        for cache, duration, label in (
+            (load_main_image_cooldown(), timedelta(hours=MAIN_IMAGE_COOLDOWN_HOURS), "main-image"),
+            (load_not_found_cache(), timedelta(days=NOT_FOUND_COOLDOWN_DAYS), "not-found"),
+        ):
+            timestamp = cache.get(mls_id)
+            if not timestamp:
+                continue
+            try:
+                recorded = datetime.fromisoformat(timestamp)
+                if recorded.tzinfo is None:
+                    recorded = recorded.replace(tzinfo=timezone.utc)
+            except (TypeError, ValueError):
+                continue
+
+            if recorded + duration > now:
+                self.stdout.write(self.style.WARNING(
+                    f"{mls_id}: {label} cooldown active until "
+                    f"{(recorded + duration).isoformat()}; skipping"
+                ))
+                return
+
         try:
             media = MLSClient().get_property_media(mls_id)
+        except (MLSRateLimitError, MLSBatchStopError) as exc:
+            cooldown = load_main_image_cooldown()
+            cooldown[mls_id] = now.isoformat()
+            save_main_image_cooldown(cooldown)
+            raise CommandError(f"MLS recovery stopped: {exc}") from exc
         except MLSClientError as exc:
+            cooldown = load_main_image_cooldown()
+            cooldown[mls_id] = now.isoformat()
+            save_main_image_cooldown(cooldown)
             raise CommandError(str(exc)) from exc
         urls = []
         for item in media:
@@ -179,13 +206,31 @@ class Command(BaseCommand):
             if isinstance(url, str) and url.strip():
                 urls.append(url.strip())
         if not urls:
+            cooldown = load_not_found_cache()
+            cooldown[mls_id] = now.isoformat()
+            save_not_found_cache(cooldown)
             self.stdout.write(self.style.WARNING(
                 f"{mls_id}: MLS Grid returned no photo URL; unchanged"
             ))
             return
 
-        cached_url = cache_primary_photo(mls_id, urls[0])
+        try:
+            cached_url = cache_primary_photo(mls_id, urls[0])
+        except (PrimaryImageRateLimitError, PrimaryImageBatchStopError) as exc:
+            cooldown = load_main_image_cooldown()
+            cooldown[mls_id] = now.isoformat()
+            save_main_image_cooldown(cooldown)
+            raise CommandError(f"MLS image caching stopped: {exc}") from exc
+        except Exception:
+            cooldown = load_main_image_cooldown()
+            cooldown[mls_id] = now.isoformat()
+            save_main_image_cooldown(cooldown)
+            raise
+
         if not cached_url or not is_permanent_media_url(cached_url):
+            cooldown = load_main_image_cooldown()
+            cooldown[mls_id] = now.isoformat()
+            save_main_image_cooldown(cooldown)
             self.stdout.write(self.style.WARNING(
                 f"{mls_id}: primary photo could not be cached; unchanged"
             ))
@@ -195,7 +240,229 @@ class Command(BaseCommand):
             f"{mls_id}: primary image recovered; gallery preserved"
         ))
 
+
+    def _refresh_batch(self, limit, use_rentals):
+        """Recover at most ten primary images without scanning the MLS feed."""
+        import time
+
+        Model = Rental if use_rentals else Listing
+        model_name = "Rental" if use_rentals else "Listing"
+
+        now = datetime.now(timezone.utc)
+        main_cooldown = load_main_image_cooldown()
+        not_found = load_not_found_cache()
+
+        def cooling_down(cache, mls_id, duration):
+            timestamp = cache.get(mls_id)
+            if not timestamp:
+                return False
+            try:
+                failed_at = datetime.fromisoformat(timestamp)
+                if failed_at.tzinfo is None:
+                    failed_at = failed_at.replace(tzinfo=timezone.utc)
+                return failed_at >= now - duration
+            except (TypeError, ValueError):
+                return False
+
+        self.stdout.write(
+            f"=== Bounded MLS Primary Image Recovery [{model_name}] ==="
+        )
+
+        # Query local active records only. No MLS Property-feed traversal.
+        qs = (
+            Model.objects.filter(status="active")
+            .exclude(mls_id__isnull=True)
+            .exclude(mls_id="")
+            .order_by("created_at", "pk")
+        )
+
+        # Keep database traversal bounded as well as API requests.
+        scan_limit = min(100, max(20, limit * 10))
+        candidates = list(qs[:scan_limit])
+
+        selected = []
+
+        for record in candidates:
+            mls_id = record.mls_id
+            current_url = record.main_image_url or ""
+
+            # Skip records with an existing permanent primary image.
+            storage_key = media_storage_key(current_url)
+            if storage_key and default_storage.exists(storage_key):
+                continue
+
+            # Reuse cached S3 images even during cooldown.
+            # This requires no MLS Grid API request.
+            existing_path = None
+            for ext in (".jpg", ".jpeg", ".png", ".webp"):
+                path = f"listings/{mls_id}/photo_000{ext}"
+                if default_storage.exists(path):
+                    existing_path = path
+                    break
+
+            # Apply cooldown only when an MLS request may be needed.
+            if not existing_path:
+                if cooling_down(
+                    main_cooldown,
+                    mls_id,
+                    timedelta(hours=MAIN_IMAGE_COOLDOWN_HOURS),
+                ):
+                    continue
+
+                if cooling_down(
+                    not_found,
+                    mls_id,
+                    timedelta(days=NOT_FOUND_COOLDOWN_DAYS),
+                ):
+                    continue
+
+            selected.append(record)
+
+            if len(selected) >= limit:
+                break
+        self.stdout.write(
+            f"Selected {len(selected)} records; maximum allowed: {limit}"
+        )
+
+        recovered = 0
+        reused = 0
+        failed = 0
+        api_requests = 0
+        client = None
+
+        for record in selected:
+            mls_id = record.mls_id
+
+            # Reuse existing permanent storage before requesting MLS data.
+            existing_path = None
+            for ext in (".jpg", ".jpeg", ".png", ".webp"):
+                path = f"listings/{mls_id}/photo_000{ext}"
+                if default_storage.exists(path):
+                    existing_path = path
+                    break
+
+            if existing_path:
+                permanent_url = default_storage.url(existing_path)
+                Model.objects.filter(pk=record.pk).update(
+                    main_image_url=permanent_url
+                )
+                reused += 1
+                main_cooldown.pop(mls_id, None)
+                not_found.pop(mls_id, None)
+                save_main_image_cooldown(main_cooldown)
+                save_not_found_cache(not_found)
+                continue
+
+            if cooling_down(
+                main_cooldown,
+                mls_id,
+                timedelta(hours=MAIN_IMAGE_COOLDOWN_HOURS),
+            ):
+                continue
+
+            if cooling_down(
+                not_found,
+                mls_id,
+                timedelta(days=NOT_FOUND_COOLDOWN_DAYS),
+            ):
+                continue
+
+            try:
+                if client is None:
+                    client = MLSClient()
+
+                # Exactly one property-specific media lookup per record.
+                api_requests += 1
+                media = client.get_property_media(mls_id)
+
+                url = next(
+                    (
+                        value.strip()
+                        for item in media
+                        if isinstance(item, dict)
+                        for value in [
+                            item.get("MediaURL")
+                            or item.get("MediaURLLarge")
+                            or item.get("MediaURLMedium")
+                        ]
+                        if isinstance(value, str) and value.strip()
+                    ),
+                    None,
+                )
+
+                if not url:
+                    failed += 1
+                    main_cooldown[mls_id] = now.isoformat()
+                    continue
+
+                permanent_url = cache_primary_photo(mls_id, url)
+
+                if permanent_url and is_permanent_media_url(permanent_url):
+                    Model.objects.filter(pk=record.pk).update(
+                        main_image_url=permanent_url
+                    )
+                    recovered += 1
+                    main_cooldown.pop(mls_id, None)
+                    not_found.pop(mls_id, None)
+                else:
+                    failed += 1
+                    main_cooldown[mls_id] = now.isoformat()
+
+            except (MLSRateLimitError, MLSBatchStopError, PrimaryImageRateLimitError, PrimaryImageBatchStopError):
+                self.stderr.write(
+                    self.style.ERROR(
+                        f"MLS access/rate-limit error: stopping batch immediately at {mls_id}"
+                    )
+                )
+                main_cooldown[mls_id] = now.isoformat()
+                break
+
+            except MLSClientError as exc:
+                failed += 1
+                main_cooldown[mls_id] = now.isoformat()
+                self.stderr.write(
+                    f"{mls_id}: MLS media lookup failed: {exc}"
+                )
+
+            except Exception:
+                failed += 1
+                main_cooldown[mls_id] = now.isoformat()
+                logger.exception(
+                    "Batch primary-image recovery failed for %s", mls_id
+                )
+
+            finally:
+                save_main_image_cooldown(main_cooldown)
+                save_not_found_cache(not_found)
+
+            # Conservative spacing between property-specific requests.
+            time.sleep(2)
+
+        self.stdout.write(
+            f"Batch complete: recovered={recovered}, reused={reused}, "
+            f"failed={failed}, MLS media requests={api_requests}"
+        )
+
     def handle(self, *args, **options):
+        if options.get("refresh_batch"):
+            if options.get("refresh_media"):
+                raise CommandError(
+                    "--refresh-batch cannot be combined with --refresh-media"
+                )
+            if options.get("mls_id") or options.get("all"):
+                raise CommandError(
+                    "--refresh-batch cannot be combined with --mls-id or --all"
+                )
+            limit = options.get("limit")
+            if limit is None or not 1 <= limit <= 10:
+                raise CommandError(
+                    "--refresh-batch requires --limit between 1 and 10"
+                )
+            return self._refresh_batch(
+                limit=limit,
+                use_rentals=options.get("rentals", False),
+            )
+
         if options.get("refresh_media"):
             single_id = options.get("mls_id")
             if not single_id:

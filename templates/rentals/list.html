@@ -81,10 +81,12 @@
       {% for r in rentals %}
       <a class="listing-card" href="{% url 'rentals:detail' r.id %}">
         <div class="listing-image-wrap">
-          {% if r.image_urls and r.image_urls|length > 0 %}
-          <img class="listing-image" src="{{ r.image_urls.0 }}" alt="{{ r.title }}">
-          {% elif r.main_image_url %}
-          <img class="listing-image" src="{{ r.main_image_url }}" alt="{{ r.title }}">
+          {% if r.display_image_url %}
+            <img class="listing-image" src="{{ r.display_image_url }}" alt="{{ r.title }}">
+          {% else %}
+            <div class="listing-image" style="display:flex;align-items:center;justify-content:center;background:#f1f3f5;color:#777;">
+              Photo coming soon
+            </div>
           {% endif %}
           <div class="badge-strip">
             <span class="badge badge-status-active">{{ r.status|title }}</span>

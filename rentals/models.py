@@ -1,5 +1,6 @@
 from django.db import models
 from django.urls import reverse
+from common.media_storage import media_storage_key
 
 
 class Rental(models.Model):
@@ -139,21 +140,20 @@ class Rental(models.Model):
     @property
     def display_image_urls(self):
         """
-        Permanently cached images that are safe for public display.
-
-        Raw MLS Grid URLs may remain in image_urls for background processing,
-        but are never exposed through this presentation property.
+        Return permanently cached media URLs for public display.
+        Exclude temporary MLS Grid image URLs.
         """
-        s3_marker = "colrealty-media.s3"
         urls = []
 
-        # Keep the true main image first when it has been cached.
-        if self.main_image_url and s3_marker in self.main_image_url:
+        if self.main_image_url and media_storage_key(self.main_image_url) is not None:
             urls.append(self.main_image_url)
 
-        # Add cached gallery images in their existing MLS order.
         for url in self.image_urls or []:
-            if url and s3_marker in url and url not in urls:
+            if (
+                url
+                and media_storage_key(url) is not None
+                and url not in urls
+            ):
                 urls.append(url)
 
         return urls
