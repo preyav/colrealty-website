@@ -363,17 +363,18 @@
          class="nav-item {% if section == 'dashboard' %}active{% endif %}">
         <span class="nav-icon">📊</span> Dashboard
       </a>
+      <div style="padding:14px 20px 6px;font-size:0.68rem;text-transform:uppercase;letter-spacing:1px;color:#475569;">{{ portal_menu_labels.website_marketing }}</div>
       <a href="{% url 'portal:leads' %}"
          class="nav-item {% if section == 'leads' %}active{% endif %}">
-        <span class="nav-icon">👥</span> Leads
+        <span class="nav-icon">👥</span> {{ portal_menu_labels.leads }}
       </a>
       <a href="{% url 'portal:listings' %}"
          class="nav-item {% if section == 'listings' %}active{% endif %}">
-        <span class="nav-icon">🏠</span> Buy Listings
+        <span class="nav-icon">🏠</span> {{ portal_menu_labels.buy_listings }}
       </a>
       <a href="{% url 'portal:rentals' %}"
          class="nav-item {% if section == 'rentals' %}active{% endif %}">
-        <span class="nav-icon">🔑</span> {{ portal_menu_labels.leasing }}
+        <span class="nav-icon">🔑</span> {{ portal_menu_labels.rental_listings }}
       </a>
       <div style="padding:14px 20px 6px;
             font-size:0.68rem;
