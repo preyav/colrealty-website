@@ -363,7 +363,7 @@
          class="nav-item {% if section == 'dashboard' %}active{% endif %}">
         <span class="nav-icon">📊</span> Dashboard
       </a>
-      <div style="padding:14px 20px 6px;font-size:0.68rem;text-transform:uppercase;letter-spacing:1px;color:#475569;">{{ portal_menu_labels.website_marketing }}</div>
+      <div style="padding:14px 20px 6px;font-size:0.68rem;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;">{{ portal_menu_labels.website_marketing }}</div>
       <a href="{% url 'portal:leads' %}"
          class="nav-item {% if section == 'leads' %}active{% endif %}">
         <span class="nav-icon">👥</span> {{ portal_menu_labels.leads }}
@@ -380,14 +380,14 @@
             font-size:0.68rem;
             text-transform:uppercase;
             letter-spacing:1px;
-            color:#475569;">
+            color:#94a3b8;">
         Property Management
       </div>
 
       {% portal_group 'rentals' %}
       {% portal_group 'maintenance' %}
 
-      <div style="padding:14px 20px 6px;font-size:0.68rem;text-transform:uppercase;letter-spacing:1px;color:#475569;">Financial Management</div>
+      <div style="padding:14px 20px 6px;font-size:0.68rem;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;">Financial Management</div>
       <details class="accounting-popout" id="accounting-popout"><summary class="nav-item {% if section == 'finance' %}active{% endif %}"><span class="nav-icon">💰</span> {{ accounting_labels.accounting }} <span aria-hidden="true" style="margin-left:auto">›</span></summary>
       {% accounting_navigation %}</details>
     </div>
