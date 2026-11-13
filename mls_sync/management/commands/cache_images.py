@@ -23,6 +23,7 @@ from pathlib import Path
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
+from django.db.models import Q
 
 from common.media_storage import media_storage_key
 from listings.models import Listing
@@ -268,17 +269,53 @@ class Command(BaseCommand):
             f"=== Bounded MLS Primary Image Recovery [{model_name}] ==="
         )
 
-        # Query local active records only. No MLS Property-feed traversal.
+        # Inspect a bounded mix of recently modified and older local records.
+        # Reserving backlog capacity prevents new inventory from starving
+        # older records; looking at recent records prevents an old backlog
+        # from hiding newly modified rentals or listings.
         qs = (
             Model.objects.filter(status="active")
             .exclude(mls_id__isnull=True)
             .exclude(mls_id="")
-            .order_by("created_at", "pk")
         )
-
-        # Keep database traversal bounded as well as API requests.
         scan_limit = min(100, max(20, limit * 10))
-        candidates = list(qs[:scan_limit])
+        recent_cutoff = now - timedelta(hours=24)
+        recent_scan_slots = scan_limit // 2
+        backlog_scan_slots = scan_limit - recent_scan_slots
+
+        recent_qs = qs.filter(
+            mls_modification_timestamp__gte=recent_cutoff
+        ).order_by("-mls_modification_timestamp", "pk")
+        backlog_qs = qs.filter(
+            Q(mls_modification_timestamp__lt=recent_cutoff)
+            | Q(mls_modification_timestamp__isnull=True)
+        ).order_by("created_at", "pk")
+
+        recent_candidates = list(recent_qs[:recent_scan_slots])
+        backlog_candidates = list(backlog_qs[:backlog_scan_slots])
+
+        # Fill unused scan capacity from the other group, still respecting
+        # the fixed overall database scan bound.
+        if len(recent_candidates) < recent_scan_slots:
+            backlog_candidates = list(
+                backlog_qs[:scan_limit - len(recent_candidates)]
+            )
+        elif len(backlog_candidates) < backlog_scan_slots:
+            recent_candidates = list(
+                recent_qs[:scan_limit - len(backlog_candidates)]
+            )
+
+        # Reserve approximately one third of recovery capacity for backlog
+        # when both groups contain eligible records. For limit=1, prefer
+        # recent inventory; older records are considered when none qualify.
+        backlog_slots = max(1, (limit + 2) // 3) if limit > 1 else 0
+        recent_slots = limit - backlog_slots
+        candidates = (
+            recent_candidates[:recent_slots]
+            + backlog_candidates[:backlog_slots]
+            + recent_candidates[recent_slots:]
+            + backlog_candidates[backlog_slots:]
+        )
 
         selected = []
 
@@ -632,56 +669,62 @@ class Command(BaseCommand):
         # This keeps new inventory fresh while steadily shrinking the
         # historical backlog.
         # -------------------------------------------------------------
-        if not use_rentals and not mls_id:
-            recent_cutoff = (
-                datetime.now(timezone.utc)
-                - timedelta(hours=24)
+        if not mls_id and not process_all:
+            recent_cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+
+            # Reserve backlog capacity for batches of two or more.
+            backlog_slots = (
+                max(1, (limit + 2) // 3)
+                if limit > 1 else 0
             )
+            recent_slots = limit - backlog_slots
 
             recent_ids = list(
                 qs.filter(
-                    created_at__gte=recent_cutoff
+                    mls_modification_timestamp__gte=recent_cutoff
                 )
-                .order_by("-created_at")
-                .values_list(
-                    "mls_id",
-                    flat=True,
-                )[:limit]
+                .order_by("-mls_modification_timestamp", "pk")
+                .values_list("mls_id", flat=True)[:recent_slots]
             )
 
-            remaining_slots = max(
-                0,
-                limit - len(recent_ids),
+            remaining_slots = limit - len(recent_ids)
+
+            # Prefer genuinely older records for backlog capacity.
+            backlog_ids = list(
+                qs.filter(
+                    Q(mls_modification_timestamp__lt=recent_cutoff)
+                    | Q(mls_modification_timestamp__isnull=True)
+                )
+                .exclude(mls_id__in=recent_ids)
+                .order_by("created_at", "pk")
+                .values_list("mls_id", flat=True)[:remaining_slots]
             )
 
-            backlog_ids = []
-
-            if remaining_slots:
-                backlog_ids = list(
+            # Fill unused capacity if either group has too few records.
+            if len(recent_ids) + len(backlog_ids) < limit:
+                extra_slots = limit - len(recent_ids) - len(backlog_ids)
+                extra_ids = list(
                     qs.exclude(
-                        mls_id__in=recent_ids
+                        mls_id__in=recent_ids + backlog_ids
                     )
-                    .order_by("created_at")
-                    .values_list(
-                        "mls_id",
-                        flat=True,
-                    )[:remaining_slots]
+                    .order_by("-mls_modification_timestamp", "pk")
+                    .values_list("mls_id", flat=True)[:extra_slots]
                 )
+            else:
+                extra_ids = []
 
-            selected_ids = recent_ids + backlog_ids
+            selected_ids = recent_ids + backlog_ids + extra_ids
 
             self.stdout.write(
-                f"Selected {len(recent_ids)} recent "
-                f"and {len(backlog_ids)} backlog listings."
+                f"Selected {len(recent_ids)} recent, "
+                f"{len(backlog_ids)} backlog, and "
+                f"{len(extra_ids)} additional {model_name.lower()} records."
             )
 
         else:
             selected_ids = list(
-                qs.order_by("created_at")
-                .values_list(
-                    "mls_id",
-                    flat=True,
-                )[:limit]
+                qs.order_by("created_at", "pk")
+                .values_list("mls_id", flat=True)[:limit]
             )
 
         if not selected_ids:
