@@ -4,20 +4,21 @@
 {% block page_title %}Record Vendor Payment{% endblock %}
 
 {% block content %}
+<div class="payment-editor">
 <div style="margin-bottom:18px;">
   <a href="{% url 'portal:finance_vendor_invoice_detail' invoice.id %}" style="color:#2563eb;text-decoration:none;font-size:0.85rem;">
     ← Back to Invoice {{ invoice.invoice_number|default:invoice.id }}
   </a>
 </div>
 
-<div class="card" style="max-width:1040px;margin:0 auto 20px;">
+<div class="card" style="margin-bottom:20px;">
   <div class="card-header"><h2>Approved Invoice {{ invoice.invoice_number|default:invoice.id }}</h2></div>
-  <div style="padding:22px 24px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:center;">
+  <div class="payment-summary">
     <div>
       <strong style="display:block;font-size:1rem;">{{ invoice.vendor }}</strong>
       <div style="margin-top:7px;color:#64748b;">Work Order #{{ work_order.id }} · {{ work_order.title }}</div>
     </div>
-    <div style="display:flex;gap:30px;flex-wrap:wrap;">
+    <div class="payment-totals">
       <div><div class="stat-label">Invoice Total</div><strong>${{ invoice.amount|floatformat:2 }}</strong></div>
       <div><div class="stat-label">Previously Paid</div><strong>${{ paid|floatformat:2 }}</strong></div>
       <div><div class="stat-label">Balance Due</div><strong style="color:#dc2626;">${{ outstanding|floatformat:2 }}</strong></div>
@@ -25,11 +26,12 @@
   </div>
 </div>
 
-<div class="card" style="max-width:1040px;margin:0 auto;">
+<div class="card" style="">
   <div class="card-header"><h2>Payment Details</h2></div>
   <div style="padding:24px;">
     {% if native_provider %}<p><a class="btn btn-primary" href="?funding=on_behalf">{{ reimbursement_ui.source_action }}</a></p>{% endif %}
     <form method="post">
+      {% for hidden in form.hidden_fields %}{{ hidden }}{{ hidden.errors }}{% endfor %}
       {% csrf_token %}
       {% if form.non_field_errors %}
       <div style="margin-bottom:18px;padding:12px 14px;border:1px solid #fecaca;background:#fef2f2;color:#b91c1c;border-radius:8px;">{{ form.non_field_errors }}</div>
@@ -45,7 +47,7 @@
       {% if quickbooks_connection %}
       <div style="margin-bottom:20px;padding:16px;border:1px solid #bfdbfe;background:#eff6ff;border-radius:10px;">
         <label for="id_quickbooks_account_id" style="display:block;font-weight:600;margin-bottom:7px;">
-          QuickBooks Payment Account <span style="color:#dc2626;">*</span>
+          QuickBooks Payment Account <span style="color:#F5822F;">*</span>
         </label>
         <select name="quickbooks_account_id" id="id_quickbooks_account_id" class="form-control" required>
           <option value="">Select the bank or credit-card account used</option>
@@ -62,11 +64,11 @@
       </div>
       {% endif %}
 
-      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 24px;">
-        {% for field in form %}
+      <div class="payment-grid">
+        {% for field in form.visible_fields %}
           {% if field.name != "notes" %}
           <div>
-            <label for="{{ field.id_for_label }}" style="display:block;font-weight:600;margin-bottom:7px;">{{ field.label }}{% if field.field.required %} <span style="color:#dc2626;">*</span>{% endif %}</label>
+            <div class="payment-label"><label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} <span class="payment-required">*</span>{% endif %}</label>{% if field.help_text %}<details class="payment-help"><summary aria-label="{{ field.label }} help">i</summary><div>{{ field.help_text }}</div></details>{% endif %}</div>
             {{ field }}
             {{ field.errors }}
           </div>
@@ -75,7 +77,7 @@
       </div>
 
       <div style="margin-top:20px;">
-        <label for="{{ form.notes.id_for_label }}" style="display:block;font-weight:600;margin-bottom:7px;">Notes</label>
+        <div class="payment-label"><label for="{{ form.notes.id_for_label }}">{{ form.notes.label }}{% if form.notes.field.required %} <span class="payment-required">*</span>{% endif %}</label>{% if form.notes.help_text %}<details class="payment-help"><summary aria-label="{{ form.notes.label }} help">i</summary><div>{{ form.notes.help_text }}</div></details>{% endif %}</div>
         {{ form.notes }}
         {{ form.notes.errors }}
       </div>
@@ -91,4 +93,40 @@
     </form>
   </div>
 </div>
+
+</div>
+<style>
+.payment-editor{max-width:1440px;margin:0 auto;color:#24364b}
+.payment-editor .card{overflow:visible;border:1px solid #dce4ef;border-radius:14px;background:#fff}
+.payment-editor .card-header{padding:22px 28px;border-bottom:1px solid #edf1f6}
+.payment-editor .card-header h2{margin:0;font-size:1.2rem}
+.payment-editor .card>div:last-child{padding:28px!important}
+.payment-summary{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:center}
+.payment-totals{display:flex;gap:30px;flex-wrap:wrap}
+.payment-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+.payment-grid>div{min-width:0}
+.payment-label{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:1rem;font-weight:600;line-height:1.5}
+.payment-required{color:#F5822F}
+.payment-editor input:not([type=hidden]):not([type=checkbox]):not([type=radio]),.payment-editor select,.payment-editor textarea{box-sizing:border-box;width:100%;max-width:100%;min-width:0;min-height:52px;padding:12px 15px;border:1px solid #cbd5e1;border-radius:9px;background:#fff;color:#24364b;font:inherit;line-height:1.5}
+.payment-editor textarea{min-height:130px;resize:vertical}
+.payment-editor input:required,.payment-editor select:required,.payment-editor textarea:required{border-color:#eab17f;background:#fffaf5}
+.payment-editor input:focus-visible,.payment-editor select:focus-visible,.payment-editor textarea:focus-visible,.payment-help summary:focus-visible{outline:2px solid #01AACE;outline-offset:3px}
+.payment-editor input:disabled,.payment-editor select:disabled{background:#f5f7fa;color:#64748b;opacity:1;cursor:not-allowed}
+.payment-editor .errorlist{margin:8px 0 0;padding-left:20px;color:#b42318;font-size:.9rem}
+.payment-help{position:relative;display:inline-block;font-weight:400;flex:0 0 auto}
+.payment-help summary{list-style:none;display:flex;align-items:center;justify-content:center;width:23px;height:23px;border-radius:50%;background:#01AACE;color:#fff;cursor:pointer;font-weight:700}
+.payment-help summary::-webkit-details-marker{display:none}
+.payment-help>div{position:absolute;top:31px;left:0;z-index:20;width:min(300px,70vw);padding:14px;border:1px solid #dce4ef;border-radius:10px;background:#fff;box-shadow:0 8px 24px #24364b20;color:#334155;font-size:.95rem;line-height:1.5}
+.payment-editor .btn{min-height:42px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;padding:10px 18px;border-radius:9px;font:inherit;text-decoration:none}
+.payment-editor form>div:last-child{flex-wrap:wrap}
+@media(max-width:760px){.payment-grid,.payment-summary{grid-template-columns:minmax(0,1fr)}.payment-editor .card>div:last-child{padding:20px!important}.payment-editor .card-header{padding:20px}.payment-editor form>div:last-child .btn{width:100%}.payment-help>div{left:auto;right:0}}
+</style>
+<script>
+(function(){
+const root=document.querySelector('.payment-editor');
+if(!root)return;
+document.addEventListener('click',function(event){root.querySelectorAll('.payment-help[open]').forEach(function(help){if(!help.contains(event.target))help.removeAttribute('open');});});
+document.addEventListener('keydown',function(event){if(event.key==='Escape')root.querySelectorAll('.payment-help[open]').forEach(function(help){help.removeAttribute('open');help.querySelector('summary').focus();});});
+})();
+</script>
 {% endblock %}

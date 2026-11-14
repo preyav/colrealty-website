@@ -30,7 +30,7 @@ def source_posted(prefix):
     from django.db.models import Q
     return BookPosting.objects.filter(Q(source_key=prefix)|Q(source_key__startswith=prefix+':')).exists()
 
-def _book(config,basis,key,date,lines,actor,source,memo,unit=None):
+def _book(config,basis,key,date,lines,actor,source,memo,unit=None,*,fund_type=None):
     previous=BookPosting.objects.filter(entity=config.entity,basis=basis,source_key=key).first()
     if previous:
         if previous.snapshot!=source:raise ValidationError('This source has changed after posting. Review and reverse it before correcting the books.')
@@ -41,7 +41,11 @@ def _book(config,basis,key,date,lines,actor,source,memo,unit=None):
     if basis=='cash' and BankReconciliation.objects.filter(entity_bank__entity=config.entity,entity_bank__bank__ledger_account_id__in=bank_ids,status='final',statement_end__gte=date).exists():raise ValidationError('This bank period is finalized. Use an open-period correction.')
     fund_types={account.fund_type for account,amount in lines if account.fund_type}
     if len(fund_types)>1:raise ValidationError('Posting accounts have conflicting fund types.')
-    journal=post_journal({'date':date,'memo':memo,'property':config.property,'unit':unit,'fund_type':next(iter(fund_types),''),'book_future':True},
+    if fund_type is None:
+        fund_type=next(iter(fund_types),'')
+    elif any(value!=fund_type for value in fund_types):
+        raise ValidationError('Posting account fund types conflict with the posted bill fund type. Review the bill and account classifications before posting payment.')
+    journal=post_journal({'date':date,'memo':memo,'property':config.property,'unit':unit,'fund_type':fund_type,'book_future':True},
         [{'account':account,'debit':max(amount,ZERO),'credit':max(-amount,ZERO)} for account,amount in lines if amount],
         uuid.uuid5(uuid.NAMESPACE_URL,f'col360-book:{config.entity_id}:{basis}:{key}'),actor,book_internal=True)
     return BookPosting.objects.create(journal=journal,entity=config.entity,basis=basis,source_key=key,snapshot=source)
@@ -112,14 +116,15 @@ def post_bill_payment(payment,actor):
     if OnBehalfSettlement.objects.filter(payment=payment).exists():
         from .reimbursements import post_on_behalf
         return post_on_behalf(payment,actor)
-    post_bill(invoice,actor);bank=bank_account(config,payment.financial_account)
+    bill_posting=post_bill(invoice,actor)
+    bank=bank_account(config,payment.financial_account)
     details=invoice.book_details
     if payment.payment_date<details.recognition_date:raise ValidationError('Prepaid vendor expenses need a prepaid-asset schedule; this payment cannot be treated as an incurred bill.')
     if invoice.outstanding_amount<0 and not source_posted('bill-payment:'+str(payment.pk)):raise ValidationError('Payment exceeds the remaining bill after credits; review the vendor credit/refund first.')
     if invoice.paid_amount>invoice.amount:raise ValidationError('Bill payments exceed the bill amount.')
     source=snapshot(payment,['amount','payment_date','invoice_id','financial_account_id'])
     for basis,account in [('cash',details.expense_account),('accrual',config.payable)]:
-        _book(config,basis,'bill-payment:'+str(payment.pk),payment.payment_date,[(account,payment.amount),(bank,-payment.amount)],actor,source,str(payment),invoice.work_order.unit)
+        _book(config,basis,'bill-payment:'+str(payment.pk),payment.payment_date,[(account,payment.amount),(bank,-payment.amount)],actor,source,str(payment),invoice.work_order.unit,fund_type=bill_posting.journal.fund_type)
 
 @transaction.atomic
 def reverse_source(config,prefixes,date,reason,actor):

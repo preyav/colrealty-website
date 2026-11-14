@@ -207,3 +207,52 @@ class BookAccountingTests(TestCase):
         with patch('accounting.book_services.record_event',side_effect=RuntimeError('audit failure')):
             with self.assertRaises(RuntimeError):self.funds('deposit_in','100')
         self.assertEqual(FundsEvent.objects.count(),0);self.assertEqual(BookPosting.objects.count(),0)
+
+    def test_bill_payment_inherits_posted_bill_fund_in_both_books_and_retries(self):
+        from maintenance.models import VendorPayment
+        self.config.payable.fund_type='operating'
+        self.config.payable.save(update_fields=['fund_type'])
+        invoice,expense=self.bill()
+        bill_posting=post_bill(invoice,self.staff)
+        payment=VendorPayment.objects.create(invoice=invoice,amount=Decimal('100'),payment_date=self.today,payment_method='check',financial_account=self.bank,recorded_by=self.staff)
+        post_bill_payment(payment,self.staff)
+        postings=BookPosting.objects.filter(source_key='bill-payment:'+str(payment.pk))
+        self.assertEqual(postings.count(),2)
+        self.assertEqual(set(postings.values_list('journal__fund_type',flat=True)),{bill_posting.journal.fund_type})
+        self.assertEqual(bill_posting.journal.fund_type,'operating')
+        self.assertEqual(self.balance('payable'),200)
+        self.assertEqual(account_balance(self.entity,expense,self.today,basis='cash'),100)
+        self.assertEqual(account_balance(self.entity,expense,self.today,basis='accrual'),300)
+        originals=list(postings.order_by('basis').values_list('journal_id',flat=True))
+        post_bill_payment(payment,self.staff)
+        self.assertEqual(originals,list(postings.order_by('basis').values_list('journal_id',flat=True)))
+        self.assertEqual(postings.count(),2)
+
+    def test_bill_payment_fund_conflict_rolls_back_both_payment_books(self):
+        from maintenance.models import VendorPayment
+        self.config.payable.fund_type='operating'
+        self.config.payable.save(update_fields=['fund_type'])
+        invoice,expense=self.bill()
+        post_bill(invoice,self.staff)
+        expense.fund_type='reserve'
+        expense.save(update_fields=['fund_type'])
+        payment=VendorPayment.objects.create(invoice=invoice,amount=Decimal('100'),payment_date=self.today,payment_method='check',financial_account=self.bank,recorded_by=self.staff)
+        with self.assertRaises(ValidationError):
+            post_bill_payment(payment,self.staff)
+        self.assertFalse(BookPosting.objects.filter(source_key='bill-payment:'+str(payment.pk)).exists())
+        self.assertEqual(self.balance('payable'),300)
+        self.assertEqual(account_balance(self.entity,expense,self.today,basis='cash'),0)
+
+    def test_bill_payment_does_not_reclassify_an_existing_unknown_bill(self):
+        from maintenance.models import VendorPayment
+        invoice,expense=self.bill()
+        posting=post_bill(invoice,self.staff)
+        self.assertEqual(posting.journal.fund_type,'')
+        self.config.payable.fund_type='operating'
+        self.config.payable.save(update_fields=['fund_type'])
+        payment=VendorPayment.objects.create(invoice=invoice,amount=Decimal('100'),payment_date=self.today,payment_method='check',financial_account=self.bank,recorded_by=self.staff)
+        with self.assertRaises(ValidationError):
+            post_bill_payment(payment,self.staff)
+        self.assertFalse(BookPosting.objects.filter(source_key='bill-payment:'+str(payment.pk)).exists())
+        posting.journal.refresh_from_db()
+        self.assertEqual(posting.journal.fund_type,'')
