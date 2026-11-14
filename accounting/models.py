@@ -143,6 +143,8 @@ class QuickBooksConnection(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        verbose_name = 'QuickBooks connection'
+        verbose_name_plural = 'QuickBooks connections'
         ordering = ["-connected_at"]
 
     def __str__(self):
@@ -169,6 +171,8 @@ class QuickBooksVendorMapping(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        verbose_name = 'QuickBooks vendor mapping'
+        verbose_name_plural = 'QuickBooks vendor mappings'
         ordering = ["vendor__company_name", "vendor__name"]
         constraints = [
             models.UniqueConstraint(
@@ -207,6 +211,8 @@ class QuickBooksBillMapping(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        verbose_name = 'QuickBooks bill mapping'
+        verbose_name_plural = 'QuickBooks bill mappings'
         ordering = ["-last_synced_at", "-created_at"]
         constraints = [
             models.UniqueConstraint(
@@ -260,6 +266,8 @@ class QuickBooksPaymentMapping(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        verbose_name = 'QuickBooks payment mapping'
+        verbose_name_plural = 'QuickBooks payment mappings'
         ordering = ["-last_synced_at", "-created_at"]
         constraints = [
             models.UniqueConstraint(

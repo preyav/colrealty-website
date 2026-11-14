@@ -8,6 +8,10 @@ from django.core.exceptions import ValidationError
 BASIS=[('cash','Cash'),('accrual','Accrual')]
 
 class AccountingEntity(models.Model):
+    class Meta:
+        verbose_name = 'accounting entity'
+        verbose_name_plural = 'accounting entities'
+
     name=models.CharField(max_length=180,unique=True)
     default_basis=models.CharField(max_length=10,choices=BASIS,default='cash')
     is_active=models.BooleanField(default=True)
@@ -71,6 +75,10 @@ class BookPosting(models.Model):
     def delete(self,*args,**kwargs):raise ValidationError('Posting links are immutable.')
 
 class BillAccounting(models.Model):
+    class Meta:
+        verbose_name = 'bill accounting details'
+        verbose_name_plural = 'bill accounting details'
+
     invoice=models.OneToOneField('maintenance.VendorInvoice',on_delete=models.PROTECT,related_name='book_details')
     expense_account=models.ForeignKey('accounting.ChartAccount',on_delete=models.PROTECT)
     service_start=models.DateField()
