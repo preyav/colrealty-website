@@ -18,6 +18,10 @@ class AccountingEntity(models.Model):
     def __str__(self):return self.name
 
 class PropertyBooks(models.Model):
+    class Meta:
+        verbose_name = 'property books'
+        verbose_name_plural = 'property books'
+
     property=models.OneToOneField('properties.Property',on_delete=models.PROTECT,related_name='books')
     entity=models.ForeignKey(AccountingEntity,on_delete=models.PROTECT)
     operating_bank=models.ForeignKey('accounting.FinancialAccount',null=True,blank=True,on_delete=models.PROTECT,related_name='+')
