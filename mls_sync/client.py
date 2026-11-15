@@ -64,17 +64,9 @@ class MLSClient:
 
         try:
             response = requests.get(
-                f"{self.base_url}/Property",
+                f"{self.base_url}/Property('{key}')",
                 headers=self._headers(),
-                params={
-                    "$filter": (
-                        f"ListingKey eq '{key}' "
-                        f"and OriginatingSystemName eq '{self.originating}' "
-                        "and MlgCanView eq true"
-                    ),
-                    "$expand": "Media",
-                    "$top": 1,
-                },
+                params={"$expand": "Media"},
                 timeout=30,
             )
             if response.status_code == 429:
@@ -143,15 +135,7 @@ class MLSClient:
             ) from exc
 
         if not isinstance(record, dict):
-            raise MLSClientError("Unexpected MLS Grid response")
-
-        records = record.get("value")
-        if not isinstance(records, list):
-            raise MLSClientError("Unexpected MLS Grid Property collection")
-        if len(records) != 1 or not isinstance(records[0], dict):
-            raise MLSClientError("Expected exactly one MLS Grid Property")
-
-        record = records[0]
+            raise MLSClientError("Unexpected MLS Grid Property response")
 
         if str(record.get("ListingKey")) != key:
             raise MLSClientError("MLS Grid returned a different ListingKey")

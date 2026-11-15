@@ -361,17 +361,15 @@ class MLSGridRateLimitTests(TestCase):
         MLS_ORIGINATING_SYSTEM_NAME="actris",
     )
     @patch("mls_sync.client.requests.get")
-    def test_single_property_lookup_uses_targeted_filter(self, mock_get):
+    def test_single_property_lookup_uses_entity_key(self, mock_get):
         from mls_sync.client import MLSClient
 
         mock_get.return_value.status_code = 200
         mock_get.return_value.json.return_value = {
-            "value": [{
-                "ListingKey": "ACT117518432",
-                "OriginatingSystemName": "actris",
-                "MlgCanView": True,
-                "Media": [{"MediaURL": "https://example.test/photo.jpg"}],
-            }]
+            "ListingKey": "ACT117518432",
+            "OriginatingSystemName": "actris",
+            "MlgCanView": True,
+            "Media": [{"MediaURL": "https://example.test/photo.jpg"}],
         }
 
         media = MLSClient().get_property_media("ACT117518432")
@@ -379,16 +377,15 @@ class MLSGridRateLimitTests(TestCase):
         mock_get.assert_called_once()
         args, kwargs = mock_get.call_args
 
-        self.assertEqual(args[0], "https://example.test/v2/Property")
-        self.assertIn("ListingKey eq 'ACT117518432'", kwargs["params"]["$filter"])
-        self.assertIn("OriginatingSystemName eq 'actris'", kwargs["params"]["$filter"])
-        self.assertEqual(kwargs["params"]["$expand"], "Media")
-        self.assertEqual(kwargs["params"]["$top"], 1)
+        self.assertEqual(
+            args[0],
+            "https://example.test/v2/Property('ACT117518432')",
+        )
+        self.assertEqual(kwargs["params"], {"$expand": "Media"})
         self.assertEqual(
             media,
             [{"MediaURL": "https://example.test/photo.jpg"}],
         )
-
 
     @override_settings(
         MLS_API_BASE_URL="https://example.test/v2",
