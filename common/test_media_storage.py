@@ -56,3 +56,30 @@ class MediaStorageTests(SimpleTestCase):
             ),
             "listings/123/photo.jpg",
         )
+        
+    @override_settings(MEDIA_URL="/media/")
+    @patch("common.media_storage.default_storage")
+    def test_s3_url_with_relative_media_url(self, mock_storage):
+        mock_storage.base_url = None
+        mock_storage.bucket_name = "example-bucket"
+        mock_storage.url.return_value = (
+            "https://example-bucket.s3.amazonaws.com/"
+            "media/__media_url_validation_probe__"
+        )
+
+        url = (
+            "https://example-bucket.s3.amazonaws.com/"
+            "media/listings/123/photo_000.jpeg"
+        )
+
+        self.assertEqual(
+            media_storage_key(url),
+            "listings/123/photo_000.jpeg",
+        )
+
+        self.assertIsNone(
+            media_storage_key(
+                "https://untrusted.example.com/"
+                "media/listings/123/photo_000.jpeg"
+            )
+        )
