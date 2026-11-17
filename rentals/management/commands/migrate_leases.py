@@ -9,6 +9,7 @@ Usage:
 """
 
 from django.core.management.base import BaseCommand
+from common.media_storage import media_storage_key
 from listings.models import Listing
 from rentals.models import Rental
 
@@ -32,6 +33,53 @@ FIELDS_TO_SYNC = [
     "description", "directions", "latitude", "longitude", "is_featured",
 ]
 
+def sync_values(listing, existing):
+    """Build changed fields without discarding permanent rental images."""
+    changes = {}
+
+    rental_ts = existing.mls_modification_timestamp
+    listing_ts = listing.mls_modification_timestamp
+
+    # Do not overwrite newer Rental data with older Listing data.
+    if rental_ts and (not listing_ts or listing_ts < rental_ts):
+        return changes
+
+    for field in FIELDS_TO_SYNC:
+        incoming = getattr(listing, field)
+        current = getattr(existing, field)
+
+        if field == "main_image_url":
+            # Preserve an existing permanently cached Rental primary image.
+            if media_storage_key(current) is not None:
+                continue
+
+        elif field == "image_urls":
+            # Preserve existing permanent images, while retaining incoming
+            # MLS media references for later caching.
+            permanent = [
+                url for url in (current or [])
+                if media_storage_key(url) is not None
+            ]
+            incoming_urls = incoming if isinstance(incoming, list) else []
+            incoming = list(dict.fromkeys(permanent + incoming_urls))
+
+        if current != incoming:
+            changes[field] = incoming
+
+    # Preserve the leased status of existing rental records.
+    if existing.status == "leased":
+        new_status = "leased"
+    else:
+        new_status = (
+            listing.status
+            if listing.status in ["active", "inactive"]
+            else "inactive"
+        )
+
+    if existing.status != new_status:
+        changes["status"] = new_status
+
+    return changes
 
 class Command(BaseCommand):
     help = "Migrate lease listings from Listing model to Rental model"
@@ -69,12 +117,16 @@ class Command(BaseCommand):
 
                 if existing:
                     if update:
-                        for field in FIELDS_TO_SYNC:
-                            setattr(existing, field, getattr(listing, field))
-                        existing.status = listing.status if listing.status in ["active", "inactive"] else "inactive"
-                        if commit:
-                            existing.save()
-                        updated += 1
+                        changes = sync_values(listing, existing)
+
+                        if changes:
+                            if commit:
+                                for field, value in changes.items():
+                                    setattr(existing, field, value)
+                                existing.save(update_fields=list(changes))
+                            updated += 1
+                        else:
+                            skipped += 1
                     else:
                         skipped += 1
                     continue
