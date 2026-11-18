@@ -6,9 +6,12 @@ Usage:
     python manage.py migrate_leases --commit           # migrate new only
     python manage.py migrate_leases --update           # dry run update existing
     python manage.py migrate_leases --update --commit  # update existing + migrate new
+    python manage.py migrate_leases --update --limit 10  # dry-run first 10 changes
+    python manage.py migrate_leases --update --limit 10 --commit  # commit first 10 changes
+    python manage.py migrate_leases --mls-id ACT123 --update  # one listing, dry run
 """
 
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from common.media_storage import media_storage_key
 from listings.models import Listing
 from rentals.models import Rental
@@ -95,11 +98,32 @@ class Command(BaseCommand):
             action="store_true",
             help="Also update existing Rental records with latest data from Listing",
         )
+        parser.add_argument(
+            "--limit",
+            type=int,
+            default=None,
+            help="Maximum number of Rentals to create or update",
+        )
+        parser.add_argument(
+            "--mls-id",
+            type=str,
+            default=None,
+            help="Synchronize one specific MLS listing",
+        )
 
     def handle(self, *args, **options):
         commit = options["commit"]
         update = options["update"]
+        limit = options["limit"]
+        mls_id = options["mls_id"]
+
+        if limit is not None and limit < 1:
+            raise CommandError("--limit must be a positive integer")
+
         qs = Listing.objects.filter(property_type__in=LEASE_TYPES)
+        if mls_id:
+            qs = qs.filter(mls_id=mls_id)
+        qs = qs.order_by("pk")
         total = qs.count()
 
         self.stdout.write(f"Found {total} lease listings in Listing model")
@@ -112,6 +136,8 @@ class Command(BaseCommand):
         errors = 0
 
         for listing in qs.iterator():
+            if limit is not None and migrated + updated >= limit:
+                break
             try:
                 existing = Rental.objects.filter(mls_id=listing.mls_id).first()
 
@@ -149,7 +175,7 @@ class Command(BaseCommand):
         self.stdout.write("=" * 50)
         self.stdout.write(f"{'Migrated' if commit else 'Would migrate'} new: {migrated}")
         self.stdout.write(f"{'Updated' if commit else 'Would update'} existing: {updated}")
-        self.stdout.write(f"Skipped (no --update flag): {skipped}")
+        self.stdout.write(f"Skipped (unchanged or --update not specified): {skipped}")
         self.stdout.write(f"Errors: {errors}")
 
         if commit:
