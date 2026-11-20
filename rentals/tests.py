@@ -334,3 +334,55 @@ class RentalMigrationBatchTests(SimpleTestCase):
         self.assertEqual(records[2].save.call_count, 1)
         self.assertIn("Updated existing: 2", output.getvalue())
         self.assertIn("Errors: 1", output.getvalue())
+
+    @patch("rentals.management.commands.migrate_leases.Rental")
+    @patch("rentals.management.commands.migrate_leases.Listing")
+    def test_existing_only_skips_missing_rentals(
+        self, mock_listing, mock_rental
+    ):
+        listings = [SimpleNamespace(mls_id=f"TEST{i}") for i in range(3)]
+        self.make_query(mock_listing, listings)
+        mock_rental.objects.filter.return_value.first.return_value = None
+        output = StringIO()
+
+        call_command(
+            "migrate_leases",
+            "--update",
+            "--existing-only",
+            "--commit",
+            stdout=output,
+        )
+
+        mock_rental.objects.create.assert_not_called()
+        self.assertIn("Migrated new: 0", output.getvalue())
+        self.assertIn(
+            "Skipped (unchanged or --update not specified): 3",
+            output.getvalue(),
+        )
+
+    @patch("rentals.management.commands.migrate_leases.Rental")
+    @patch("rentals.management.commands.migrate_leases.Listing")
+    @patch("rentals.management.commands.migrate_leases.sync_values")
+    def test_existing_only_updates_existing_rentals(
+        self, mock_sync, mock_listing, mock_rental
+    ):
+        listings = [SimpleNamespace(mls_id="TEST1")]
+        self.make_query(mock_listing, listings)
+
+        existing = MagicMock()
+        mock_rental.objects.filter.return_value.first.return_value = existing
+        mock_sync.return_value = {"status": "inactive"}
+        output = StringIO()
+
+        call_command(
+            "migrate_leases",
+            "--update",
+            "--existing-only",
+            "--commit",
+            stdout=output,
+        )
+
+        self.assertEqual(existing.status, "inactive")
+        existing.save.assert_called_once_with(update_fields=["status"])
+        mock_rental.objects.create.assert_not_called()
+        self.assertIn("Updated existing: 1", output.getvalue())

@@ -110,12 +110,21 @@ class Command(BaseCommand):
             default=None,
             help="Synchronize one specific MLS listing",
         )
+        parser.add_argument(
+            "--existing-only",
+            action="store_true",
+            help="Update existing Rentals only; do not create missing Rental records",
+        )
 
     def handle(self, *args, **options):
         commit = options["commit"]
         update = options["update"]
         limit = options["limit"]
         mls_id = options["mls_id"]
+        existing_only = options["existing_only"]
+
+        if existing_only and not update:
+            raise CommandError("--existing-only requires --update")
 
         if limit is not None and limit < 1:
             raise CommandError("--limit must be a positive integer")
@@ -155,6 +164,11 @@ class Command(BaseCommand):
                             skipped += 1
                     else:
                         skipped += 1
+                    continue
+
+                # Skip missing Rentals when synchronizing existing records only.
+                if existing_only:
+                    skipped += 1
                     continue
 
                 if commit:
