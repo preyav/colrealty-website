@@ -10,6 +10,9 @@ from listings.models import Listing
 from .client import MLSClient
 from .mappers import map_property_to_listing_data
 
+from rentals.models import Rental
+from rentals.management.commands.migrate_leases import LEASE_TYPES, sync_values
+
 logger = logging.getLogger(__name__)
 
 def is_permanent_media_url(url: str) -> bool:
@@ -141,6 +144,20 @@ def sync_mls_listings(updated_since: Optional[str] = None) -> int:
                     mls_id=mls_id,
                     defaults=data,
                 )
+
+                # Keep existing rentals synchronized with updated MLS listings.
+                # Do not automatically create new Rental records.
+                if listing.property_type in LEASE_TYPES:
+                    rental = Rental.objects.filter(mls_id=mls_id).first()
+
+                    if rental is not None:
+                        changes = sync_values(listing, rental)
+
+                        if changes:
+                            for field, value in changes.items():
+                                setattr(rental, field, value)
+
+                            rental.save(update_fields=list(changes))
 
             if created:
                 created_count += 1
