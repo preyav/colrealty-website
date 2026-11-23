@@ -5,6 +5,7 @@ from typing import Optional
 from django.conf import settings
 from django.db import transaction
 from django.db.models import Max
+from django.utils.dateparse import parse_datetime
 
 from listings.models import Listing
 from .client import MLSClient
@@ -93,6 +94,26 @@ def sync_mls_listings(updated_since: Optional[str] = None) -> int:
     for record in client.iter_properties(updated_since=updated_since):
         try:
             data = map_property_to_listing_data(record)
+
+            # Normalize the MLS Grid timestamp before updating Django models.
+            # MLS Grid may return an ISO 8601 string, while the database
+            # returns a datetime object.
+            modification_ts = data.get("mls_modification_timestamp")
+
+            if isinstance(modification_ts, str):
+                parsed_ts = parse_datetime(modification_ts)
+
+                if parsed_ts is None:
+                    raise ValueError(
+                        f"Invalid MLS ModificationTimestamp: {modification_ts!r}"
+                    )
+
+                if parsed_ts.tzinfo is None:
+                    raise ValueError(
+                        f"MLS ModificationTimestamp has no timezone: {modification_ts!r}"
+                    )
+
+                data["mls_modification_timestamp"] = parsed_ts
 
             mls_id = data.pop("mls_id", None)
 

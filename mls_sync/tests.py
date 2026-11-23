@@ -278,3 +278,48 @@ class MLSImagePipelineTests(TestCase):
 
         self.assertEqual(listing.status, "active")
         self.assertEqual(rental.status, "active")
+
+    @patch("mls_sync.services.MLSClient")
+    def test_mls_string_timestamp_updates_existing_rental(
+        self,
+        mock_client_class,
+    ):
+        from datetime import datetime, timezone
+
+        record = self._record(
+            listing_key="TEST-LEASE-TIMESTAMP",
+            status="Closed",
+        )
+        record["PropertyType"] = "Residential Lease"
+        record["ModificationTimestamp"] = "2026-11-23T15:00:00Z"
+
+        Rental.objects.create(
+            mls_id="TEST-LEASE-TIMESTAMP",
+            status="active",
+            price=2500,
+            mls_modification_timestamp=datetime(
+                2026, 11, 22, 15, 0, tzinfo=timezone.utc
+            ),
+        )
+
+        mock_client_class.return_value.iter_properties.return_value = [
+            record
+        ]
+
+        sync_mls_listings(
+            updated_since="2026-11-22T00:00:00Z"
+        )
+
+        listing = Listing.objects.get(
+            mls_id="TEST-LEASE-TIMESTAMP"
+        )
+        rental = Rental.objects.get(
+            mls_id="TEST-LEASE-TIMESTAMP"
+        )
+
+        self.assertEqual(listing.status, "inactive")
+        self.assertEqual(rental.status, "inactive")
+        self.assertEqual(
+            rental.mls_modification_timestamp,
+            datetime(2026, 11, 23, 15, 0, tzinfo=timezone.utc),
+        )
